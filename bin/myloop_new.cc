@@ -153,7 +153,7 @@ int main(int argc, char** argv)
     int hlt_size = N_HLT_BOOKINGS;
 
     if(run_on_mc)
-      hlt_size = N_HLT_BOOKINGS - 1;
+      hlt_size = N_HLT_BOOKINGS - 2; //to ignore the last two HLT paths in the list in myloop.h, as they are only for data
     
     int HLT_book[hlt_size];
     
@@ -374,7 +374,7 @@ int main(int argc, char** argv)
 	    for (int i=0;i<hlt_size;i++)
 	      br->hltbook[i] = HLT_book[i];
               
-	    //the user chooses to preforme the cuts or not. this is useful to calculate efficiencies. this affects both data and MC.
+	    //the user chooses to preform the cuts or not. this is useful to calculate efficiencies. this affects both data and MC.
 	    if(cuts)
 	      {
 		// Basic muon selections
@@ -714,9 +714,16 @@ int main(int argc, char** argv)
 		if(b_type != 7) //not to use HLT filter in the jpsi pipi channel
 		  {
 		    if(run_on_mc)
-		      {if (br->hltbook[HLT_DoubleMu4_JpsiTrk_Displaced_v1]!=1) continue;}
+		      {
+			if (br->hltbook[HLT_DoubleMu4_JpsiTrk_Displaced_v1]!=1) continue;
+		      }
 		    else
-		      {if (br->hltbook[HLT_DoubleMu4_JpsiTrk_Displaced_v1]!=1 && br->hltbook[HLT_DoubleMu4_JpsiTrk_Displaced_v2]!=1) continue;}
+		      {
+			if (br->hltbook[HLT_DoubleMu4_JpsiTrk_Displaced_v1]!=1 &&
+			    br->hltbook[HLT_DoubleMu4_JpsiTrk_Displaced_v2]!=1 &&
+			    br->hltbook[HLT_DoubleMu4_JpsiTrk_Displaced_v3]!=1) //for 2016 data
+			  continue;
+		      }
 		    
 		    if(run_on_mc)
 		      particle_flow_number[20]++;

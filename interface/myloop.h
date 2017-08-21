@@ -24,6 +24,7 @@ enum {
     HLT_DoubleMu4_3_Jpsi_Displaced_v1,      // 4
     HLT_DoubleMu4_JpsiTrk_Displaced_v1,     // 5
     HLT_DoubleMu4_JpsiTrk_Displaced_v2,     // 6
+    HLT_DoubleMu4_JpsiTrk_Displaced_v3,     // 7
     N_HLT_BOOKINGS
 };
 
@@ -34,7 +35,8 @@ const char HLT_paths[N_HLT_BOOKINGS][64] = {
     "HLT_Dimuon20_Jpsi_v1",                 // 3
     "HLT_DoubleMu4_3_Jpsi_Displaced_v1",    // 4
     "HLT_DoubleMu4_JpsiTrk_Displaced_v1",   // 5
-    "HLT_DoubleMu4_JpsiTrk_Displaced_v2"    // 6
+    "HLT_DoubleMu4_JpsiTrk_Displaced_v2",   // 6
+    "HLT_DoubleMu4_JpsiTrk_Displaced_v3"    // 7
 };
 
 // HLT matching records

@@ -463,11 +463,11 @@ int main(int argc, char** argv)
 		double k_short_window = 0.015; //originally was 0.060
 		double lambda_window = 0.015;  //originally was 0.010
 
-		//double k_star_window = 0.200;  //try 0.060 //originally was 0.050
-		//double k_star_veto = 0.050;
+		double k_star_window = 0.500;
+		double k_star_veto = 0.050;
 
-		//double phi_window = 0.015;    //try 0.010 //originally was 0.060
-		//double phi_veto = 0.010;
+		double phi_window = 0.010;
+		double phi_veto = 0.010;
 
 		switch(b_type)
 		  {
@@ -477,11 +477,11 @@ int main(int argc, char** argv)
 
 		  case 4: // Kstar mode
 		  case 5: // Kstar mode
-		    //if (fabs(BInfo->tktk_mass[bidx]-KSTAR_MASS)>=k_star_window) continue;
+		    if (fabs(BInfo->tktk_mass[bidx]-KSTAR_MASS)>=k_star_window) continue;
 		    break;
 		    
 		  case 6: // phi mode
-		    //if (fabs(BInfo->tktk_mass[bidx]-PHI_MASS)>=phi_window) continue;
+		    if (fabs(BInfo->tktk_mass[bidx]-PHI_MASS)>=phi_window) continue;
 		    break;
 		    
 		  case 8: // Lambda mode
@@ -503,17 +503,17 @@ int main(int argc, char** argv)
 		  case 5: // Kstar mode
 		    v4_tk1.SetPtEtaPhiM(TrackInfo->pt[tk1idx],TrackInfo->eta[tk1idx],TrackInfo->phi[tk1idx],KAON_MASS);
 		    v4_tk2.SetPtEtaPhiM(TrackInfo->pt[tk2idx],TrackInfo->eta[tk2idx],TrackInfo->phi[tk2idx],KAON_MASS);
-		    //if (fabs((v4_tk1+v4_tk2).Mag()-PHI_MASS)<=phi_veto) continue;
+		    if (fabs((v4_tk1+v4_tk2).Mag()-PHI_MASS)<=phi_veto) continue;
 		    break;
 		    
 		  case 6: // phi mode
 		    v4_tk1.SetPtEtaPhiM(TrackInfo->pt[tk1idx],TrackInfo->eta[tk1idx],TrackInfo->phi[tk1idx],KAON_MASS);
 		    v4_tk2.SetPtEtaPhiM(TrackInfo->pt[tk2idx],TrackInfo->eta[tk2idx],TrackInfo->phi[tk2idx],PION_MASS);
-		    //if (fabs((v4_tk1+v4_tk2).Mag()-KSTAR_MASS)<=k_star_veto) continue;
+		    if (fabs((v4_tk1+v4_tk2).Mag()-KSTAR_MASS)<=k_star_veto) continue;
 		    
 		    v4_tk1.SetPtEtaPhiM(TrackInfo->pt[tk1idx],TrackInfo->eta[tk1idx],TrackInfo->phi[tk1idx],PION_MASS);
 		    v4_tk2.SetPtEtaPhiM(TrackInfo->pt[tk2idx],TrackInfo->eta[tk2idx],TrackInfo->phi[tk2idx],KAON_MASS);
-		    //if (fabs((v4_tk1+v4_tk2).Mag()-KSTAR_MASS)<=k_star_veto) continue;
+		    if (fabs((v4_tk1+v4_tk2).Mag()-KSTAR_MASS)<=k_star_veto) continue;
 		    break;
 		    
 		  case 8: // Lambda mode
@@ -772,7 +772,8 @@ int main(int argc, char** argv)
 	
 	//===========================================================================================================================
 	//cicle over the selected_bees vector, and choose the best B0 candidate. This is for channel 2, to take care of the K pi swap
-		
+	//The selection of the best B0 candidate has to be done after the K* window selection and the phi veto. If done in the inverse order, one of the candidates is excluded to start with.
+
 	//set the reducedbranches and ttree pointer to the right addresses
 	ReducedBranches *br_cand = NULL;
 	TTree *nt_cand = NULL;

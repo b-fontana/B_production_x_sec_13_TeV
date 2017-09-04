@@ -136,6 +136,8 @@ int main(int argc, char** argv)
   
   int b_counter = 0;
 
+  bool ditrack_flag = false;
+
   for (int evt=0; evt<n_entries; evt++) 
     {
       if (evt%1000==0 || evt==n_entries-1) printf("processing %d/%d (%.2f%%).\n",evt,n_entries-1,(double)evt/(double)(n_entries-1)*100.);
@@ -180,6 +182,8 @@ int main(int argc, char** argv)
 		  (GenInfo->pdgId[idx_tk1]!=-211 || GenInfo->pdgId[idx_tk2]!=321)) continue; //not k+pi-
      	      if (abs(GenInfo->pdgId[idx_mu1])!=13) continue; // not mu+-
 	      if (abs(GenInfo->pdgId[idx_mu2])!=13) continue; // not mu+-
+
+	      ditrack_flag = true;
 	      break;
 	      
 	    case 3:
@@ -199,6 +203,8 @@ int main(int argc, char** argv)
 	      if((GenInfo->pdgId[idx_tk1]!=321 || GenInfo->pdgId[idx_tk2]!=-321) && (GenInfo->pdgId[idx_tk1]!=-321 || GenInfo->pdgId[idx_tk2]!=321)) continue; //not k+k- and k-k+
 	      if(abs(GenInfo->pdgId[idx_mu1])!=13) continue; // not mu+-
 	      if(abs(GenInfo->pdgId[idx_mu2])!=13) continue; // not mu+
+
+	      ditrack_flag = true;
 	      break;
 
 	    case 5:
@@ -244,13 +250,25 @@ int main(int argc, char** argv)
 	  br->tk1phi  = GenInfo->phi[idx_tk1];
 	  br->tk1charge  = GenInfo->pdgId[idx_tk1]/abs(GenInfo->pdgId[idx_tk1]);
 
-	  /*
-	  br->tk2pt   = GenInfo->pt[idx_tk2];
-	  br->tk2eta  = GenInfo->eta[idx_tk2];
-	  br->tk2phi  = GenInfo->phi[idx_tk2];
-	  br->tk2charge  = GenInfo->pdgId[idx_tk2]/abs(GenInfo->pdgId[idx_tk2]);
-	  */
-
+	  if(ditrack_flag)
+	    {
+	      br->tk2pt   = GenInfo->pt[idx_tk2];
+	      br->tk2eta  = GenInfo->eta[idx_tk2];
+	      br->tk2phi  = GenInfo->phi[idx_tk2];
+	      br->tk2charge  = GenInfo->pdgId[idx_tk2]/abs(GenInfo->pdgId[idx_tk2]);
+	      
+	      /* change this to save the tktk info
+		 br->ujmass  = GenInfo->mass[idx_jpsi];
+		 br->ujpt    = GenInfo->pt[idx_jpsi];
+		 br->ujeta   = GenInfo->eta[idx_jpsi];
+		 br->ujphi   = GenInfo->phi[idx_jpsi];
+		 br->ujy     = v4_uj.Rapidity();
+		 br->ujvx    = GenInfo->vx[idx_jpsi];
+		 br->ujvy    = GenInfo->vy[idx_jpsi];
+		 br->ujvz    = GenInfo->vz[idx_jpsi];
+	      */
+	    }
+	  
 	  nt->Fill();
 	} //end of GenInfo loop
     } // end of evt loop

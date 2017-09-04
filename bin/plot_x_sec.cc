@@ -189,7 +189,7 @@ int main(int argc, char** argv)
 
           if(eff)
             {
-              x_sec[j][i] /= (2 * totaleff[j][i] * b_fraction);
+              x_sec[j][i] /= (2 * totaleff[j][i] * b_fraction * LUMINOSITY);
 	      x_sec[j][i] *= (1e-9); //the 1e-9 factor is just for scale in the final plot
 
               x_sec_syst_sqrt_lo[j][i] += pow(totaleff_err_lo[j][i]/totaleff[j][i],2) + pow(b_fraction_err/b_fraction,2) + pow(0.04,2);  //the 4% is from Luminosity

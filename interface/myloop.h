@@ -342,8 +342,12 @@ public:
     double  tk1pt;
     double  tk1eta;
     double  tk1phi;
-    int     tk1charge;
-    
+    int     tk1charge;   
+    double  tk2pt;
+    double  tk2eta;
+    double  tk2phi;
+    int     tk2charge;
+
     void regTree(TTree *root){
         root->Branch("mass",&mass,"mass/D");
         root->Branch("pt",&pt,"pt/D");
@@ -371,6 +375,10 @@ public:
         root->Branch("tk1eta",&tk1eta,"tk1eta/D");
         root->Branch("tk1phi",&tk1phi,"tk1phi/D");
         root->Branch("tk1charge",&tk1charge,"tk1charge/I");
+        root->Branch("tk2pt",&tk1pt,"tk2pt/D");
+        root->Branch("tk2eta",&tk1eta,"tk2eta/D");
+        root->Branch("tk2phi",&tk1phi,"tk2phi/D");
+        root->Branch("tk2charge",&tk1charge,"tk2charge/I");
     }
     void setbranchadd(TTree *root){
         root->SetBranchAddress("mass",&mass);
@@ -399,5 +407,9 @@ public:
         root->SetBranchAddress("tk1eta",&tk1eta);
         root->SetBranchAddress("tk1phi",&tk1phi);
         root->SetBranchAddress("tk1charge",&tk1charge);
+        root->SetBranchAddress("tk2pt",&tk1pt);
+        root->SetBranchAddress("tk2eta",&tk1eta);
+        root->SetBranchAddress("tk2phi",&tk1phi);
+        root->SetBranchAddress("tk2charge",&tk1charge);
     }
 };

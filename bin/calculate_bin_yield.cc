@@ -1,6 +1,6 @@
 #include "UserCode/B_production_x_sec_13_TeV/interface/functions.h"
 
-//-----------------------------------------------------------------
+//----------------------------------------------------------------
 // Definition of channel #
 // channel = 1: B+ -> J/psi K+
 // channel = 2: B0 -> J/psi K*
@@ -8,7 +8,7 @@
 // channel = 4: Bs -> J/psi phi
 // channel = 5: Jpsi + pipi
 // channel = 6: Lambda_b -> Jpsi + Lambda
-//-----------------------------------------------------------------
+//----------------------------------------------------------------
 
 //input example: calculate_bin_yield --channel 1 --ptmin 10 --ptmax 20 --ymin 0.00 --ymax 0.50
 int main(int argc, char** argv)

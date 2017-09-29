@@ -221,7 +221,7 @@ int main(int argc, char** argv)
     std::vector<ReducedBranches> selected_bees;
 
     //debug:
-    std::vector<std::string> particle_flow_string = {"event","signal","mu1pt","mu2pt","mu1eta","mu2eta","mu1soft","mu2soft","jpsi_mass","jpsi_pt","tk1pt","tk2pt","tk1eta","tk2eta","tk1chi_ndf","tk2chi_ndf","tk1hits","tk2hits","tktk_mass","tktk_veto","HLT_selection","vtx_prob","lxy_errlxy","cos2D"};
+    std::vector<std::string> particle_flow_string = {"event","signal","HLT_selection","mu1pt","mu2pt","mu1eta","mu2eta","mu1soft","mu2soft","jpsi_mass","jpsi_pt","tk1pt","tk2pt","tk1eta","tk2eta","tk1chi_ndf","tk2chi_ndf","tk1hits","tk2hits","tktk_mass","tktk_veto","vtx_prob","lxy_errlxy","cos2D"};
     std::vector<int> particle_flow_number;
 
     for(int i=0; i < (int)particle_flow_string.size(); i++)
@@ -377,30 +377,50 @@ int main(int argc, char** argv)
 	    //the user chooses to preform the cuts or not. this is useful to calculate efficiencies. this affects both data and MC.
 	    if(cuts)
 	      {
+		//HLT selection
+		//----------------------------------------------------------------
+		if(b_type != 7) //not to use HLT filter in the jpsi pipi channel
+		  {
+		    if(run_on_mc)
+		      {
+			if (br->hltbook[HLT_DoubleMu4_JpsiTrk_Displaced_v1]!=1) continue;
+		      }
+		    else
+		      {
+			if (br->hltbook[HLT_DoubleMu4_JpsiTrk_Displaced_v1]!=1 &&
+			    br->hltbook[HLT_DoubleMu4_JpsiTrk_Displaced_v2]!=1 &&
+			    br->hltbook[HLT_DoubleMu4_JpsiTrk_Displaced_v3]!=1) //for 2016 data
+			  continue;
+		      }
+		    
+		    if(run_on_mc)	
+		      particle_flow_number[2]++;
+		  }
+
 		// Basic muon selections
 		if (MuonInfo->pt[mu1idx]<=4.) continue;
 		if(run_on_mc)
-		  particle_flow_number[2]++;
+		  particle_flow_number[3]++;
 
 		if (MuonInfo->pt[mu2idx]<=4.) continue;
 		if(run_on_mc)
-		  particle_flow_number[3]++;
+		  particle_flow_number[4]++;
 		
 		if (fabs(MuonInfo->eta[mu1idx])>=2.4) continue;
 		if(run_on_mc)
-		  particle_flow_number[4]++;
+		  particle_flow_number[5]++;
 		
 		if (fabs(MuonInfo->eta[mu2idx])>=2.4) continue;
 		if(run_on_mc)
-		  particle_flow_number[5]++;
+		  particle_flow_number[6]++;
 
 		if (!MuonInfo->SoftMuID[mu1idx]) continue;
 		if(run_on_mc)
-		  particle_flow_number[6]++;
+		  particle_flow_number[7]++;
 
 		if (!MuonInfo->SoftMuID[mu2idx]) continue;
 		if(run_on_mc)
-		  particle_flow_number[7]++;
+		  particle_flow_number[8]++;
 		
 		//-----------------------------------------------------------------
 		// J/psi cut
@@ -408,11 +428,11 @@ int main(int argc, char** argv)
 		//add the jpsi vertex prob!?
 		if (fabs(BInfo->uj_mass[ujidx]-JPSI_MASS)>=0.150) continue;
 		if(run_on_mc)
-		  particle_flow_number[8]++;
+		  particle_flow_number[9]++;
 		
 		if (BInfo->uj_pt[ujidx]<=10.0) continue; //was 8.0 before
 		if(run_on_mc)
-		  particle_flow_number[9]++;
+		  particle_flow_number[10]++;
 		
 		//-----------------------------------------------------------------
 		// Basic track selections
@@ -427,35 +447,35 @@ int main(int argc, char** argv)
 		  { // others (2 tracks)
 		    if (TrackInfo->pt[tk1idx]<=0.7) continue;
 		    if(run_on_mc)
-		      particle_flow_number[10]++;
+		      particle_flow_number[11]++;
 		    
 		    if (TrackInfo->pt[tk2idx]<=0.7) continue;
 		    if(run_on_mc)
-		      particle_flow_number[11]++;
+		      particle_flow_number[12]++;
 
 		    if (fabs(TrackInfo->eta[tk1idx])>=2.5) continue;
 		    if(run_on_mc)
-		      particle_flow_number[12]++;
+		      particle_flow_number[13]++;
 		    
 		    if (fabs(TrackInfo->eta[tk2idx])>=2.5) continue;
 		    if(run_on_mc)
-		      particle_flow_number[13]++;
+		      particle_flow_number[14]++;
 
 		    if (TrackInfo->chi2[tk1idx]/TrackInfo->ndf[tk1idx]>=5.) continue;
 		    if(run_on_mc)
-		      particle_flow_number[14]++;
+		      particle_flow_number[15]++;
 		    
 		    if (TrackInfo->chi2[tk2idx]/TrackInfo->ndf[tk2idx]>=5.) continue;
 		    if(run_on_mc)
-		      particle_flow_number[15]++;
+		      particle_flow_number[16]++;
 		    
 		    if (TrackInfo->striphit[tk1idx]+TrackInfo->pixelhit[tk1idx]<5) continue;
 		    if(run_on_mc)
-		      particle_flow_number[16]++;
+		      particle_flow_number[17]++;
 
 		    if (TrackInfo->striphit[tk2idx]+TrackInfo->pixelhit[tk2idx]<5) continue;
 		    if(run_on_mc)
-		      particle_flow_number[17]++;
+		      particle_flow_number[18]++;
 		  }
 
 		//---------------------------------------------------------------------
@@ -491,7 +511,7 @@ int main(int argc, char** argv)
 		  }
 
 		if(run_on_mc)
-		  particle_flow_number[18]++;
+		  particle_flow_number[19]++;
 		
 		//------------------------------------------------------------------------------------
 		// ditrack vetos
@@ -525,7 +545,7 @@ int main(int argc, char** argv)
 		  }
 		
 		if(run_on_mc)
-		  particle_flow_number[19]++;
+		  particle_flow_number[20]++;
 
 	      } //end of cuts, there are more cuts later in the code
 	    
@@ -708,26 +728,6 @@ int main(int argc, char** argv)
 	    if(cuts)
 	      {
 		// cuts that depend on complex variables defined above.
-		
-		//HLT selection
-		//----------------------------------------------------------------
-		if(b_type != 7) //not to use HLT filter in the jpsi pipi channel
-		  {
-		    if(run_on_mc)
-		      {
-			if (br->hltbook[HLT_DoubleMu4_JpsiTrk_Displaced_v1]!=1) continue;
-		      }
-		    else
-		      {
-			if (br->hltbook[HLT_DoubleMu4_JpsiTrk_Displaced_v1]!=1 &&
-			    br->hltbook[HLT_DoubleMu4_JpsiTrk_Displaced_v2]!=1 &&
-			    br->hltbook[HLT_DoubleMu4_JpsiTrk_Displaced_v3]!=1) //for 2016 data
-			  continue;
-		      }
-		    
-		    if(run_on_mc)
-		      particle_flow_number[20]++;
-		  }
 				
 		if(b_type==1 || b_type==2 || b_type==4 || b_type==5 || b_type==6) //for K+, pi+, K*0, phi
 		  {

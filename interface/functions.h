@@ -285,7 +285,7 @@ void build_pdf(RooWorkspace& w, int channel, std::string choice, std::string cho
       {
 	pdf_m_combinatorial=new RooAddPdf("pdf_m_combinatorial","pdf_m_combinatorial",RooArgList(pdf_m_combinatorial_bern,pdf_m_combinatorial_exp),RooArgList(m_fraction_exp));
 	m_exp.setConstant(kTRUE);
-	m_fraction_exp.setVal(1.);    
+	m_fraction_exp.setVal(1.);
       }
     else 
       if(choice2=="background" && choice=="power")

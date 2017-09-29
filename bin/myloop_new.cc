@@ -258,7 +258,7 @@ int main(int argc, char** argv)
 	    int b_type = BInfo->type[bidx];
 	    
 	    //the indices to run over the Binfo. These are used to identify the signal when running on MC.
-	    ujidx = BInfo->rfuj_index[bidx]; 
+	    ujidx = BInfo->rfuj_index[bidx];
 	    tk1idx = BInfo->rftk1_index[bidx];
 	    tk2idx = BInfo->rftk2_index[bidx];
 	    mu1idx = BInfo->uj_rfmu1_index[ujidx];

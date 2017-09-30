@@ -10,13 +10,15 @@
 #include "UserCode/B_production_x_sec_13_TeV/interface/myloop.h"
 #include "UserCode/B_production_x_sec_13_TeV/interface/channel.h"
 
-//myloop_new --channel 1 --mc 0 --truth 0 --cuts 1 --debug 0 --output /some/place
+//myloop_new --channel 1 --mc 0 --truth 0 --cuts 1 --tk_win 1 --tk_veto 1 --debug 0 --output /some/place
 int main(int argc, char** argv)
 {
   int channel = 1;
   int run_on_mc= 0;
   int mc_truth=0;
   int cuts = 1;
+  int tk_window_cut =1;
+  int tk_veto_cut =1;
   int debug = 0;
   std::string dir ="";
 
@@ -47,6 +49,18 @@ int main(int argc, char** argv)
 	{
           convert << argv[++i];
           convert >> cuts;
+        }
+      
+      if(argument == "--tk_win")
+	{
+          convert << argv[++i];
+          convert >> tk_window_cut;
+        }
+      
+      if(argument == "--tk_veto")
+	{
+          convert << argv[++i];
+          convert >> tk_veto_cut;
         }
       
       if(argument == "--debug")
@@ -165,7 +179,9 @@ int main(int argc, char** argv)
     TString directory = "";
     TString data = "";
     TString filter = "";
-    
+    TString tk_win = "";
+    TString tk_veto = "";
+
     if(cuts)
       filter = "with_cuts";
     else
@@ -180,8 +196,14 @@ int main(int argc, char** argv)
       }
     else
       data = "data";
+
+    if(!tk_window_cut)
+      tk_win = "_no_tk_win_cut";
+
+    if(!tk_veto_cut)
+      tk_veto = "_no_tk_veto_cut";
     
-    directory = "myloop_new_" + data + "_" + channel_to_ntuple_name(channel) + "_" + filter + ".root";
+    directory = "myloop_new_" + data + "_" + channel_to_ntuple_name(channel) + "_" + filter + tk_win + tk_veto + ".root";
 
     if(dir != "")
       directory = dir + directory;
@@ -480,68 +502,76 @@ int main(int argc, char** argv)
 
 		//---------------------------------------------------------------------
 		// ditrack mass window selection
+		
 		double k_short_window = 0.015; //originally was 0.060
 		double lambda_window = 0.015;  //originally was 0.010
-
+		
 		double k_star_window = 0.500;
 		double k_star_veto = 0.050;
-
+		
 		double phi_window = 0.010;
 		double phi_veto = 0.010;
-
-		switch(b_type)
+		
+		if(tk_window_cut)
 		  {
-		  case 3: // Ks mode
-		   if (fabs(BInfo->tktk_mass[bidx]-KSHORT_MASS)>=k_short_window) continue; 
-		   break;
-
-		  case 4: // Kstar mode
-		  case 5: // Kstar mode
-		    if (fabs(BInfo->tktk_mass[bidx]-KSTAR_MASS)>=k_star_window) continue;
-		    break;
+		    switch(b_type)
+		      {
+		      case 3: // Ks mode
+			if (fabs(BInfo->tktk_mass[bidx]-KSHORT_MASS)>=k_short_window) continue; 
+			break;
+			
+		      case 4: // Kstar mode
+		      case 5: // Kstar mode
+			if (fabs(BInfo->tktk_mass[bidx]-KSTAR_MASS)>=k_star_window) continue;
+			break;
 		    
-		  case 6: // phi mode
-		    if (fabs(BInfo->tktk_mass[bidx]-PHI_MASS)>=phi_window) continue;
-		    break;
+		      case 6: // phi mode
+			if (fabs(BInfo->tktk_mass[bidx]-PHI_MASS)>=phi_window) continue;
+			break;
 		    
-		  case 8: // Lambda mode
-		  case 9: // Lambda mode
-		    if (fabs(BInfo->tktk_mass[bidx]-LAMBDA_MASS)>=lambda_window) continue; 
-		    break;
+		      case 8: // Lambda mode
+		      case 9: // Lambda mode
+			if (fabs(BInfo->tktk_mass[bidx]-LAMBDA_MASS)>=lambda_window) continue; 
+			break;
+		      }
 		  }
-
+		
 		if(run_on_mc)
 		  particle_flow_number[19]++;
 		
 		//------------------------------------------------------------------------------------
 		// ditrack vetos
-		TLorentzVector v4_tk1, v4_tk2;
-		
-		switch(b_type)
+
+		if(tk_veto_cut)
 		  {
-		  case 4: // Kstar mode
-		  case 5: // Kstar mode
-		    v4_tk1.SetPtEtaPhiM(TrackInfo->pt[tk1idx],TrackInfo->eta[tk1idx],TrackInfo->phi[tk1idx],KAON_MASS);
-		    v4_tk2.SetPtEtaPhiM(TrackInfo->pt[tk2idx],TrackInfo->eta[tk2idx],TrackInfo->phi[tk2idx],KAON_MASS);
-		    if (fabs((v4_tk1+v4_tk2).Mag()-PHI_MASS)<=phi_veto) continue;
-		    break;
+		    TLorentzVector v4_tk1, v4_tk2;
+		
+		    switch(b_type)
+		      {
+		      case 4: // Kstar mode
+		      case 5: // Kstar mode
+			v4_tk1.SetPtEtaPhiM(TrackInfo->pt[tk1idx],TrackInfo->eta[tk1idx],TrackInfo->phi[tk1idx],KAON_MASS);
+			v4_tk2.SetPtEtaPhiM(TrackInfo->pt[tk2idx],TrackInfo->eta[tk2idx],TrackInfo->phi[tk2idx],KAON_MASS);
+			if (fabs((v4_tk1+v4_tk2).Mag()-PHI_MASS)<=phi_veto) continue;
+			break;
 		    
-		  case 6: // phi mode
-		    v4_tk1.SetPtEtaPhiM(TrackInfo->pt[tk1idx],TrackInfo->eta[tk1idx],TrackInfo->phi[tk1idx],KAON_MASS);
-		    v4_tk2.SetPtEtaPhiM(TrackInfo->pt[tk2idx],TrackInfo->eta[tk2idx],TrackInfo->phi[tk2idx],PION_MASS);
-		    if (fabs((v4_tk1+v4_tk2).Mag()-KSTAR_MASS)<=k_star_veto) continue;
+		      case 6: // phi mode
+			v4_tk1.SetPtEtaPhiM(TrackInfo->pt[tk1idx],TrackInfo->eta[tk1idx],TrackInfo->phi[tk1idx],KAON_MASS);
+			v4_tk2.SetPtEtaPhiM(TrackInfo->pt[tk2idx],TrackInfo->eta[tk2idx],TrackInfo->phi[tk2idx],PION_MASS);
+			if (fabs((v4_tk1+v4_tk2).Mag()-KSTAR_MASS)<=k_star_veto) continue;
 		    
-		    v4_tk1.SetPtEtaPhiM(TrackInfo->pt[tk1idx],TrackInfo->eta[tk1idx],TrackInfo->phi[tk1idx],PION_MASS);
-		    v4_tk2.SetPtEtaPhiM(TrackInfo->pt[tk2idx],TrackInfo->eta[tk2idx],TrackInfo->phi[tk2idx],KAON_MASS);
-		    if (fabs((v4_tk1+v4_tk2).Mag()-KSTAR_MASS)<=k_star_veto) continue;
-		    break;
+			v4_tk1.SetPtEtaPhiM(TrackInfo->pt[tk1idx],TrackInfo->eta[tk1idx],TrackInfo->phi[tk1idx],PION_MASS);
+			v4_tk2.SetPtEtaPhiM(TrackInfo->pt[tk2idx],TrackInfo->eta[tk2idx],TrackInfo->phi[tk2idx],KAON_MASS);
+			if (fabs((v4_tk1+v4_tk2).Mag()-KSTAR_MASS)<=k_star_veto) continue;
+			break;
 		    
-		  case 8: // Lambda mode
-		  case 9: // Lambda mode
-		    v4_tk1.SetPtEtaPhiM(TrackInfo->pt[tk1idx],TrackInfo->eta[tk1idx],TrackInfo->phi[tk1idx],PION_MASS);
-		    v4_tk2.SetPtEtaPhiM(TrackInfo->pt[tk2idx],TrackInfo->eta[tk2idx],TrackInfo->phi[tk2idx],PION_MASS);
-		    if (fabs((v4_tk1+v4_tk2).Mag()-KSHORT_MASS)<=k_short_window) continue;
-		    break;
+		      case 8: // Lambda mode
+		      case 9: // Lambda mode
+			v4_tk1.SetPtEtaPhiM(TrackInfo->pt[tk1idx],TrackInfo->eta[tk1idx],TrackInfo->phi[tk1idx],PION_MASS);
+			v4_tk2.SetPtEtaPhiM(TrackInfo->pt[tk2idx],TrackInfo->eta[tk2idx],TrackInfo->phi[tk2idx],PION_MASS);
+			if (fabs((v4_tk1+v4_tk2).Mag()-KSHORT_MASS)<=k_short_window) continue;
+			break;
+		      }
 		  }
 		
 		if(run_on_mc)

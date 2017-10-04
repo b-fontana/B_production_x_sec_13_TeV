@@ -7,10 +7,8 @@
 
 using namespace RooFit;
 
-<<<<<<< HEAD
-=======
 //Example: k_pi_swap --output name -- log 0
->>>>>>> alpha
+
 int main(int argc, char** argv)
 {
   std::string output = "";
@@ -45,11 +43,7 @@ int main(int argc, char** argv)
   RooRealVar pt("pt","pt",pt_min,pt_max);
   RooRealVar y("y","y",y_min,y_max);
   
-<<<<<<< HEAD
-  TString input_file = TString::Format(BASE_DIR) + "myloop_new_mc_truth_ntkstar_with_cuts.root";
-=======
   TString input_file = /*TString::Format(BASE_DIR)*/ "/lstore/cms/brunogal/input_for_B_production_x_sec_13_TeV/myloop_new_mc_truth_ntkstar_with_cuts.root";
->>>>>>> alpha
 
   TFile *fin = new TFile(input_file);
   TString directory = "";
@@ -95,13 +89,10 @@ int main(int argc, char** argv)
   //true signal fit
   RooRealVar n1_signal("n1_signal","n1_signal",250000,0,500000);
   RooRealVar n2_signal("n2_signal","n2_signal",100000,0,500000);
-<<<<<<< HEAD
-  RooRealVar sigma1_signal("#sigma_{1,signal}","sigma1_signal", 0.01, 0.001, 0.3);
-  RooRealVar sigma2_signal("#sigma_{2,signal}","sigma2_signal", 0.03, 0.001, 0.3);
-=======
+
   RooRealVar sigma1_signal("#sigma_{1,signal}","sigma1_signal", 0.001, 0.150);
   RooRealVar sigma2_signal("#sigma_{2,signal}","sigma2_signal", 0.001, 0.150);
->>>>>>> alpha
+
   RooGaussian gauss1_signal("gauss1_signal","gauss1_signal", mass, mean, sigma1_signal);
   RooGaussian gauss2_signal("gauss2_signal","gauss2_signal", mass, mean, sigma2_signal);
   RooAddPdf signal("signal","signal", RooArgList(gauss1_signal,gauss2_signal), RooArgList(n1_signal,n2_signal));
@@ -118,11 +109,7 @@ int main(int argc, char** argv)
     
   signal.fitTo(*data_signal);
   signal.paramOn(frame1, Layout(0.6,0.96,0.8));
-<<<<<<< HEAD
   signal.plotOn(frame1, LineColor(7), LineWidth(4), LineStyle(1));
-=======
-  signal.plotOn(frame1, LineColor(6), LineWidth(4), LineStyle(1));
->>>>>>> alpha
   signal.plotOn(frame1,Components("gauss1_signal"),LineColor(8),LineWidth(4),LineStyle(2));
   signal.plotOn(frame1,Components("gauss2_signal"),LineColor(5),LineWidth(4),LineStyle(2));
     
@@ -131,8 +118,6 @@ int main(int argc, char** argv)
   c1.SetLogy();
   c1.cd();
   frame1->Draw();
-<<<<<<< HEAD
-=======
 
   double chi_square1 = frame1->chiSquare("thePdf1","theSignal");
   TLatex* tex1 = new TLatex(0.17, 0.8, Form("#chi^{2} = %.3lf", chi_square1));
@@ -141,7 +126,6 @@ int main(int argc, char** argv)
   tex1->SetTextSize(0.035);  
   tex1->Draw();
 
->>>>>>> alpha
   directory = output + "mass_signal.png";
   c1.SaveAs(directory);
 
@@ -168,10 +152,7 @@ int main(int argc, char** argv)
 
   RooPlot* frame2 = mass.frame(Title("Swapped signal fit"));
   data_swapped->plotOn(frame2,Name("theSwapped"),Binning(channel_to_nbins(2)));
-<<<<<<< HEAD
-=======
   swapped.plotOn(frame2,Name("thePdf2"), LineColor(0));
->>>>>>> alpha
   
   swapped.fitTo(*data_swapped);
   swapped.paramOn(frame2, Layout(0.7,0.99,0.99));
@@ -186,11 +167,6 @@ int main(int argc, char** argv)
     c2.SetLogy();
   c2.cd();
   frame2->Draw();
-<<<<<<< HEAD
-  directory = output + "mass_swapped.png";
-  c2.SaveAs(directory);
-
-=======
 
   double chi_square2 = frame2->chiSquare("thePdf2","theSwapped");
   TLatex* tex2 = new TLatex(0.17, 0.8, Form("#chi^{2} = %.3lf", chi_square2));
@@ -202,8 +178,6 @@ int main(int argc, char** argv)
   directory = output + "mass_swapped.png";
   c2.SaveAs(directory);
 
-
->>>>>>> alpha
   //set signal and swapped fits constant
   n1_swapped.setConstant(kTRUE);
   n2_swapped.setConstant(kTRUE);
@@ -220,31 +194,19 @@ int main(int argc, char** argv)
 
   RooPlot* frame3 = mass.frame(Title("Full signal fit"));
   data_full->plotOn(frame3,Name("theFull"),Binning(channel_to_nbins(2)));
-<<<<<<< HEAD
-  
-=======
+  full.plotOn(frame2,Name("thePdf3"), LineColor(0));
 
-  full.plotOn(frame3,Name("thePdf3"), LineColor(0));
-
->>>>>>> alpha
   full.fitTo(*data_full);
   full.paramOn(frame3/*, Parameters(RooArgSet(r_final))*/,Layout(0.58,0.88,0.8));
   full.plotOn(frame3, LineColor(7), LineWidth(4), LineStyle(1));
   full.plotOn(frame3,Components("swapped"),LineColor(8),LineWidth(4),LineStyle(2));
   full.plotOn(frame3,Components("signal"),LineColor(5),LineWidth(4),LineStyle(2));
-<<<<<<< HEAD
-  
-=======
 
-
->>>>>>> alpha
   TCanvas c3;
   if(log)
     c3.SetLogy();
   c3.cd();
   frame3->Draw();
-<<<<<<< HEAD
-=======
 
   double chi_square3 = frame3->chiSquare("thePdf3","theFull");
   TLatex* tex3 = new TLatex(0.17, 0.8, Form("#chi^{2} = %.3lf", chi_square3));
@@ -253,7 +215,6 @@ int main(int argc, char** argv)
   tex3->SetTextSize(0.035);
   tex3->Draw();
 
->>>>>>> alpha
   directory = output + "mass_full.png";
   c3.SaveAs(directory);
   double number_signal = (double)data_signal->sumEntries();
@@ -265,23 +226,7 @@ int main(int argc, char** argv)
   std::cout << " " << std::endl;
   
   std::cout << "Numbers from the fits" << std::endl;
-<<<<<<< HEAD
-  //std::cout << "ratios:" << " r1" << r1.getVal() << " r2" << r2.getVal() << std::endl;
-  std::cout << "Signal events: " << n1_signal.getValV() + n2_signal.getValV() << std::endl;
-  std::cout << "Swapped events: " << n1_swapped.getValV() + n2_swapped.getValV() << std::endl;
-  std::cout << "Fraction of swapped events: " << (n1_swapped.getVal()+n2_swapped.getVal())/(n1_signal.getVal()+n2_signal.getVal()+n1_swapped.getVal()+n2_swapped.getVal()) << std::endl;
-  std::cout << " " << std::endl;
 
-  std::cout << "O número de eventos no data_full é igual à soma dos outros dois conjuntos de dados: " << data_swapped->sumEntries()+data_signal->sumEntries() << "----" << data_full->sumEntries() << std::endl;
-  std::cout << " " << std::endl;
-
-  double res_signal =  TMath::Sqrt(TMath::Power(sigma1_signal.getValV(),2)+TMath::Power(sigma2_signal.getValV(),2));
-  double res_swapped = TMath::Sqrt(TMath::Power(sigma1_swapped.getValV(),2)+TMath::Power(sigma2_swapped.getValV(),2));
-  std::cout << "Resolução" << std::endl;
-  std::cout << "Signal: " << res_signal << std::endl;
-  std::cout << "Swapped: " << res_swapped << std::endl;
-  std::cout << "Total: " << TMath::Sqrt(TMath::Power(res_signal,2)+TMath::Power(res_swapped,2)) << std::endl;
-=======
   std::cout << "Signal events: " << n1_signal.getVal() + n2_signal.getVal() << std::endl;
   std::cout << "Swapped events: " << n1_swapped.getVal() + n2_swapped.getVal() << std::endl;
   std::cout << "Fraction of swapped events: " << (n1_swapped.getVal()+n2_swapped.getVal())/(n1_signal.getVal()+n2_signal.getVal()+n1_swapped.getVal()+n2_swapped.getVal()) << ". Calculated with the fraction: " << r_final.getVal() << "." << std::endl;
@@ -301,7 +246,6 @@ int main(int argc, char** argv)
   std::cout << chi_square1 << std::endl;
   std::cout << chi_square2 << std::endl;
   std::cout << chi_square3 << std::endl;
->>>>>>> alpha
 
   delete data_signal;
   delete data_swapped;

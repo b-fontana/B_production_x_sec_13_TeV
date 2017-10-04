@@ -69,7 +69,6 @@ using namespace RooFit;
 //////////////////////////////////////////////
 
 void create_dir(std::vector<std::string> list);
-
 void set_up_workspace_variables(RooWorkspace& w, int channel, double mass_min = 0.0 , double mass_max = 0.0);
 void read_data(RooWorkspace& w, TString filename,int channel);
 void read_data_cut(RooWorkspace& w, RooAbsData* data);
@@ -209,7 +208,7 @@ void build_pdf(RooWorkspace& w, int channel, std::string choice, std::string cho
   RooRealVar m_mean("m_mean","m_mean",mass_peak,mass_peak-0.09,mass_peak+0.09);
   RooRealVar m_sigma1("m_sigma1","m_sigma1",0.010,0.009,0.200);
   RooRealVar m_sigma2("m_sigma2","m_sigma2",0.005,0.004,0.100);
-  RooRealVar m_fraction("m_fraction","m_fraction", 0.5, 0, 1);
+  RooRealVar m_fraction("m_fraction","m_fraction", 0.4, 0., .85);
   RooGaussian m_gaussian1("m_gaussian1","m_gaussian1",mass,m_mean,m_sigma1);
   RooGaussian m_gaussian2("m_gaussian2","m_gaussian2",mass,m_mean,m_sigma2);
 
@@ -219,9 +218,9 @@ void build_pdf(RooWorkspace& w, int channel, std::string choice, std::string cho
   RooCBShape m_crystal("m_crystal", "m_crystal", mass, m_mean, m_sigma1, m_alpha, m_n);
 
   //Three Gaussians
-  RooRealVar m_sigma3("m_sigma3","m_sigma3",0.030,0.001,0.100);
+  RooRealVar m_sigma3("m_sigma3","m_sigma3",0.020,0.001,0.100);
   RooGaussian m_gaussian3("m_gaussian3","m_gaussian3",mass,m_mean,m_sigma3);
-  RooRealVar m_fraction2("m_fraction2","m_fraction2",0.5);
+  RooRealVar m_fraction2("m_fraction2","m_fraction2",0.20, 0., .5);
 
   RooAddPdf* pdf_m_signal;
 
@@ -246,24 +245,28 @@ void build_pdf(RooWorkspace& w, int channel, std::string choice, std::string cho
 	pdf_m_signal = new RooAddPdf("pdf_m_signal","pdf_m_signal",RooArgList(m_gaussian1,m_gaussian2),RooArgList(m_fraction));
 	m_sigma2.setConstant(kTRUE);
 	m_fraction.setVal(1.);
+	m_fraction.setConstant(kTRUE);
       }
     else
-      if(choice2=="signal" && choice=="3gauss")
+      if(choice2=="signal" && choice=="3gauss") {
 	pdf_m_signal = new RooAddPdf("pdf_m_signal","pdf_m_signal",RooArgList(m_gaussian1,m_gaussian2,m_gaussian3),RooArgList(m_fraction,m_fraction2));
-      else //this is the nominal signal
+      }
+      else { //this is the nominal signal
 	pdf_m_signal = new RooAddPdf("pdf_m_signal","pdf_m_signal",RooArgList(m_gaussian1,m_gaussian2),RooArgList(m_fraction));
+	m_fraction2.setConstant(kTRUE);
+      }
   
   //-----------------------------------------------------------------
   // combinatorial background PDF
   
   //One Exponential
-  RooRealVar m_exp("m_exp","m_exp",-0.3,-4.,0.);
+  RooRealVar m_exp("m_exp","m_exp",-1.,-4.,0.);
   RooExponential pdf_m_combinatorial_exp("pdf_m_combinatorial_exp","pdf_m_combinatorial_exp",mass,m_exp);
   
   //Two Exponentials
   RooRealVar m_exp2("m_exp2","m_exp2",-0.3,-4.,0.);
   RooExponential pdf_m_combinatorial_exp2("pdf_m_combinatorial_exp2","pdf_m_combinatorial_exp2",mass,m_exp2);
-  RooRealVar m_fraction_exp("m_fraction_exp", "m_fraction_exp", 0.5);
+  RooRealVar m_fraction_exp("m_fraction_exp", "m_fraction_exp", 0.33, 0., 1.);
 
   //Bernstein
   RooRealVar m_par1("m_par1","m_par2",1.,0,+10.);
@@ -298,8 +301,9 @@ void build_pdf(RooWorkspace& w, int channel, std::string choice, std::string cho
 	{
 	  pdf_m_combinatorial=new RooAddPdf("pdf_m_combinatorial","pdf_m_combinatorial",RooArgList(pdf_m_combinatorial_exp,pdf_m_combinatorial_exp2),RooArgList(m_fraction_exp));
 	  m_exp2.setConstant(kTRUE);
-	  m_fraction_exp.setVal(1.);    
+	  m_fraction_exp.setVal(1.);
 	}
+
   ////////////////////////////////////////////////////////////////////////////////////////////
   //The components below have no systematic variation yet, they are part of the nominal fit.//
   ////////////////////////////////////////////////////////////////////////////////////////////
@@ -790,11 +794,12 @@ RooRealVar* bin_mass_fit(RooWorkspace& w, int channel, double pt_min, double pt_
 
   TString syst_info = "";
   
-if(choice != "" && choice2 != "")
+  if(choice != "" && choice2 != "")
   {
-    base_dir += "syst/"; 
+    //base_dir += "syst/"; 
     syst_info = "_syst_" + choice + "_" + choice2;
   }
+  
   TString dir = "";
   
   dir = base_dir + channel_to_ntuple_name(channel) + "/" + channel_to_ntuple_name(channel) + syst_info + "_mass_fit_" + TString::Format("pt_from_%d_to_%d_y_from_%.2f_to_%.2f",(int)pt_min,(int)pt_max,y_min,y_max) + mass_info;

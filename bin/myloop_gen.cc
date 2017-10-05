@@ -54,27 +54,30 @@ int main(int argc, char** argv)
     case 1:
       if(bfilter)
 	{
-	  //for Bfilter processed with Bfinder_mc.cc
-	  root->Add("/gstore/t3cms/store/user/martinsg/Bfinder_mc_Bu_Bfilter_v1/BuToJpsiKV2_BFilter_TuneCUEP8M1_13TeV-pythia8-evtgen/crab_Bfinder_mc_Bu_Bfilter_v1/160812_095709/0000/Bfinder_mc_*.root");
+	  //for Bfilter processed with DumpGenInfo.cc
+	  root->Add("/gstore/t3cms/store/user/martinsg/DumpGenInfo_Bu_Bfilter_ext_v1/BuToJpsiKV2_BFilter_TuneCUEP8M1_13TeV-pythia8-evtgen/crab_DumpGenInfo_Bu_Bfilter_ext_v1/170929_092549/0000/DumpGenInfo_*.root");
+	  root->Add("/gstore/t3cms/store/user/martinsg/DumpGenInfo_Bu_Bfilter_ext_v1/BuToJpsiKV2_BFilter_TuneCUEP8M1_13TeV-pythia8-evtgen/crab_DumpGenInfo_Bu_Bfilter_ext_v1/170929_092549/0001/DumpGenInfo_*.root");
+	  root->Add("/gstore/t3cms/store/user/martinsg/DumpGenInfo_Bu_Bfilter_ext_v1/BuToJpsiKV2_BFilter_TuneCUEP8M1_13TeV-pythia8-evtgen/crab_DumpGenInfo_Bu_Bfilter_ext_v1/170929_092549/0002/DumpGenInfo_*.root");
 	}
       else
 	{
-	  //for BMuonfilter processed with Bfinder_mc.cc
-	  root->Add("/gstore/t3cms/store/user/martinsg/Bfinder_test_v2/BuToJpsiKV2_BMuonFilter_TuneCUEP8M1_13TeV-pythia8-evtgen/crab_Bfinder_test_v2/160811_210322/0000/Bfinder_mc_*.root");
+	  //for BMuonfilter processed with DumpGenInfo.cc
+	  root->Add("/gstore/t3cms/store/user/martinsg/DumpGenInfo_Bu_muonfilter_ext_v1/BuToJpsiKV2_BMuonFilter_TuneCUEP8M1_13TeV-pythia8-evtgen/crab_DumpGenInfo_Bu_muonfilter_ext_v1/170927_180738/0000/DumpGenInfo_*.root");
+	  root->Add("/gstore/t3cms/store/user/martinsg/DumpGenInfo_Bu_muonfilter_ext_v1/BuToJpsiKV2_BMuonFilter_TuneCUEP8M1_13TeV-pythia8-evtgen/crab_DumpGenInfo_Bu_muonfilter_ext_v1/170927_180738/0001/DumpGenInfo_*.root");
+	  root->Add("/gstore/t3cms/store/user/martinsg/DumpGenInfo_Bu_muonfilter_ext_v1/BuToJpsiKV2_BMuonFilter_TuneCUEP8M1_13TeV-pythia8-evtgen/crab_DumpGenInfo_Bu_muonfilter_ext_v1/170927_180738/0002/DumpGenInfo_*.root");
+	  root->Add("/gstore/t3cms/store/user/martinsg/DumpGenInfo_Bu_muonfilter_ext_v1/BuToJpsiKV2_BMuonFilter_TuneCUEP8M1_13TeV-pythia8-evtgen/crab_DumpGenInfo_Bu_muonfilter_ext_v1/170927_180738/0003/DumpGenInfo_*.root");
 	}
       break;
     case 2:
       if(bfilter)
 	{
-	  //for Bfilter processed with Bfinder_mc.cc
-	  //root->Add("/gstore/t3cms/store/user/martinsg/Bfinder_mc_Bd_Bfilter_v1/BdToJpsiKstarV2_BFilter_TuneCUEP8M1_13TeV-pythia8-evtgen/crab_Bfinder_mc_Bd_Bfilter_v1/160812_115744/0000/Bfinder_mc_*.root");
-	  
-	  root->Add("/gstore/t3cms/store/user/martinsg/Bfinder_mc_Bd_Bfilter_ext_v1/BdToJpsiKstarV2_BFilter_TuneCUEP8M1_13TeV-pythia8-evtgen/crab_Bfinder_mc_Bd_Bfilter_ext_v1/170121_121833/0000/Bfinder_mc_*.root");
+	  //for Bfilter processed with DumpGenInfo.cc
+	  root->Add("/gstore/t3cms/store/user/martinsg/DumpGenInfo_Bd_Bfilter_ext_v1/BdToJpsiKstarV2_BFilter_TuneCUEP8M1_13TeV-pythia8-evtgen/crab_DumpGenInfo_Bd_Bfilter_ext_v1/170929_094756/0000/DumpGenInfo_*.root");
 	}
       else
 	{
-	  //for BMuonfilter processed with Bfinder_mc.cc
-	  root->Add("/gstore/t3cms/store/user/martinsg/Bfinder_mc_Bd_muonfilter_v1/BdToJpsiKstarV2_BMuonFilter_TuneCUEP8M1_13TeV-pythia8-evtgen/crab_Bfinder_mc_Bd_muonfilter_v1/160812_135133/0000/Bfinder_mc_*.root");
+	  //for BMuonfilter processed with DumpGenInfo.cc
+	  root->Add("/gstore/t3cms/store/user/martinsg/DumpGenInfo_Bd_muonfilter_ext_v1/BdToJpsiKstarV2_BMuonFilter_TuneCUEP8M1_13TeV-pythia8-evtgen/crab_DumpGenInfo_Bd_muonfilter_ext_v1/170929_084003/0000/DumpGenInfo_*.root");
 	}
       break;
     case 3:
@@ -83,14 +86,12 @@ int main(int argc, char** argv)
       if(bfilter)
 	{
 	  //for Bfilter processed with Bfinder_mc.cc
-	  //root->Add("/gstore/t3cms/store/user/martinsg/Bfinder_mc_Bs_Bfilter_v3/BsToJpsiPhi_BFilter_TuneCUEP8M1_13TeV-pythia8-evtgen/crab_Bfinder_mc_Bs_Bfilter_v3/160812_235643/0000/Bfinder_mc_*.root");
-	  
-	  root->Add("/gstore/t3cms/store/user/martinsg/Bfinder_mc_Bs_Bfilter_ext_v1/BsToJpsiPhiV2_BFilter_TuneCUEP8M1_13TeV-pythia8-evtgen/crab_Bfinder_mc_Bs_Bfilter_ext_v1/170120_150004/0000/Bfinder_mc_*.root");
+	  root->Add("/gstore/t3cms/store/user/martinsg/DumpGenInfo_Bs_Bfilter_ext_v1/BsToJpsiPhiV2_BFilter_TuneCUEP8M1_13TeV-pythia8-evtgen/crab_DumpGenInfo_Bs_Bfilter_ext_v1/170929_094959/0000/DumpGenInfo_*.root");
 	}
       else
 	{
 	  //for BMuonfilter processed with Bfinder_mc.cc
-	  root->Add("/gstore/t3cms/store/user/martinsg/Bfinder_mc_Bs_muonfilter_v1/BsToJpsiPhi_BMuonFilter_TuneCUEP8M1_13TeV-pythia8-evtgen/crab_Bfinder_mc_Bs_muonfilter_v1/160812_151233/0000/Bfinder_mc_*.root");
+	  root->Add("/gstore/t3cms/store/user/martinsg/DumpGenInfo_Bs_muonfilter_ext_v1/BsToJpsiPhi_BMuonFilter_TuneCUEP8M1_13TeV-pythia8-evtgen/crab_DumpGenInfo_Bs_muonfilter_ext_v1/170929_085951/0000/DumpGenInfo_*.root");
 	}
       break;
     case 5:

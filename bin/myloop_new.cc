@@ -10,7 +10,7 @@
 #include "UserCode/B_production_x_sec_13_TeV/interface/myloop.h"
 #include "UserCode/B_production_x_sec_13_TeV/interface/channel.h"
 
-//myloop_new --channel 1 --mc 0 --truth 0 --cuts 1 --tk_win 1 --tk_veto 1 --debug 0 --output /some/place
+//myloop_new --channel 1 --mc 0 --truth 0 --cuts 1 --tk_win 1 --tk_veto 1 --debug 0 --input file --output /some/place
 int main(int argc, char** argv)
 {
   int channel = 1;
@@ -20,6 +20,7 @@ int main(int argc, char** argv)
   int tk_window_cut =1;
   int tk_veto_cut =1;
   int debug = 0;
+  TString input_file = "";
   std::string dir ="";
 
   for(int i=1 ; i<argc ; ++i)
@@ -68,7 +69,13 @@ int main(int argc, char** argv)
           convert << argv[++i];
           convert >> debug;
         }
-
+      
+      if(argument == "--input")
+	{
+          convert << argv[++i];
+          convert >> input_file;
+        }
+      
       if(argument == "--output")
         {
           convert << argv[++i];
@@ -79,65 +86,73 @@ int main(int argc, char** argv)
     TChain *root = new TChain("demo/root");
     TChain *HltTree = new TChain("hltanalysis/HltTree");
 
-    if(run_on_mc)
+    if(input_file == "")
       {
-	switch(channel)
+	if(run_on_mc)
 	  {
-	  default:
-	  case 1:
-	    //for BMuonFilter processed with Bfinder_mc	    
-	    root->Add("/gstore/t3cms/store/user/martinsg/Bfinder_mc_Bu_muonfilter_ext_v1/BuToJpsiKV2_BMuonFilter_TuneCUEP8M1_13TeV-pythia8-evtgen/crab_Bfinder_mc_Bu_muonfilter_ext_v1/170515_161931/0000/Bfinder_mc_*.root");
-	    root->Add("/gstore/t3cms/store/user/martinsg/Bfinder_mc_Bu_muonfilter_ext_v1/BuToJpsiKV2_BMuonFilter_TuneCUEP8M1_13TeV-pythia8-evtgen/crab_Bfinder_mc_Bu_muonfilter_ext_v1/170515_161931/0001/Bfinder_mc_*.root");
-	    root->Add("/gstore/t3cms/store/user/martinsg/Bfinder_mc_Bu_muonfilter_ext_v1/BuToJpsiKV2_BMuonFilter_TuneCUEP8M1_13TeV-pythia8-evtgen/crab_Bfinder_mc_Bu_muonfilter_ext_v1/170515_161931/0002/Bfinder_mc_*.root");
-	    root->Add("/gstore/t3cms/store/user/martinsg/Bfinder_mc_Bu_muonfilter_ext_v1/BuToJpsiKV2_BMuonFilter_TuneCUEP8M1_13TeV-pythia8-evtgen/crab_Bfinder_mc_Bu_muonfilter_ext_v1/170515_161931/0003/Bfinder_mc_*.root");
+	    switch(channel)
+	      {
+	      default:
+	      case 1:
+		//for BMuonFilter processed with Bfinder_mc	    
+		root->Add("/gstore/t3cms/store/user/martinsg/Bfinder_mc_Bu_muonfilter_ext_v1/BuToJpsiKV2_BMuonFilter_TuneCUEP8M1_13TeV-pythia8-evtgen/crab_Bfinder_mc_Bu_muonfilter_ext_v1/170515_161931/0000/Bfinder_mc_*.root");
+		root->Add("/gstore/t3cms/store/user/martinsg/Bfinder_mc_Bu_muonfilter_ext_v1/BuToJpsiKV2_BMuonFilter_TuneCUEP8M1_13TeV-pythia8-evtgen/crab_Bfinder_mc_Bu_muonfilter_ext_v1/170515_161931/0001/Bfinder_mc_*.root");
+		root->Add("/gstore/t3cms/store/user/martinsg/Bfinder_mc_Bu_muonfilter_ext_v1/BuToJpsiKV2_BMuonFilter_TuneCUEP8M1_13TeV-pythia8-evtgen/crab_Bfinder_mc_Bu_muonfilter_ext_v1/170515_161931/0002/Bfinder_mc_*.root");
+		root->Add("/gstore/t3cms/store/user/martinsg/Bfinder_mc_Bu_muonfilter_ext_v1/BuToJpsiKV2_BMuonFilter_TuneCUEP8M1_13TeV-pythia8-evtgen/crab_Bfinder_mc_Bu_muonfilter_ext_v1/170515_161931/0003/Bfinder_mc_*.root");
 
-	    HltTree->Add("/gstore/t3cms/store/user/martinsg/Bfinder_mc_Bu_muonfilter_ext_v1/BuToJpsiKV2_BMuonFilter_TuneCUEP8M1_13TeV-pythia8-evtgen/crab_Bfinder_mc_Bu_muonfilter_ext_v1/170515_161931/0000/Bfinder_mc_*.root");
-	    HltTree->Add("/gstore/t3cms/store/user/martinsg/Bfinder_mc_Bu_muonfilter_ext_v1/BuToJpsiKV2_BMuonFilter_TuneCUEP8M1_13TeV-pythia8-evtgen/crab_Bfinder_mc_Bu_muonfilter_ext_v1/170515_161931/0001/Bfinder_mc_*.root");
-	    HltTree->Add("/gstore/t3cms/store/user/martinsg/Bfinder_mc_Bu_muonfilter_ext_v1/BuToJpsiKV2_BMuonFilter_TuneCUEP8M1_13TeV-pythia8-evtgen/crab_Bfinder_mc_Bu_muonfilter_ext_v1/170515_161931/0002/Bfinder_mc_*.root");
-	    HltTree->Add("/gstore/t3cms/store/user/martinsg/Bfinder_mc_Bu_muonfilter_ext_v1/BuToJpsiKV2_BMuonFilter_TuneCUEP8M1_13TeV-pythia8-evtgen/crab_Bfinder_mc_Bu_muonfilter_ext_v1/170515_161931/0003/Bfinder_mc_*.root");
-	    break;
+		HltTree->Add("/gstore/t3cms/store/user/martinsg/Bfinder_mc_Bu_muonfilter_ext_v1/BuToJpsiKV2_BMuonFilter_TuneCUEP8M1_13TeV-pythia8-evtgen/crab_Bfinder_mc_Bu_muonfilter_ext_v1/170515_161931/0000/Bfinder_mc_*.root");
+		HltTree->Add("/gstore/t3cms/store/user/martinsg/Bfinder_mc_Bu_muonfilter_ext_v1/BuToJpsiKV2_BMuonFilter_TuneCUEP8M1_13TeV-pythia8-evtgen/crab_Bfinder_mc_Bu_muonfilter_ext_v1/170515_161931/0001/Bfinder_mc_*.root");
+		HltTree->Add("/gstore/t3cms/store/user/martinsg/Bfinder_mc_Bu_muonfilter_ext_v1/BuToJpsiKV2_BMuonFilter_TuneCUEP8M1_13TeV-pythia8-evtgen/crab_Bfinder_mc_Bu_muonfilter_ext_v1/170515_161931/0002/Bfinder_mc_*.root");
+		HltTree->Add("/gstore/t3cms/store/user/martinsg/Bfinder_mc_Bu_muonfilter_ext_v1/BuToJpsiKV2_BMuonFilter_TuneCUEP8M1_13TeV-pythia8-evtgen/crab_Bfinder_mc_Bu_muonfilter_ext_v1/170515_161931/0003/Bfinder_mc_*.root");
+		break;
 
-	  case 2:
-	    //for BMuonFilter processed with Bfinder_mc
-	    root->Add("/gstore/t3cms/store/user/martinsg/Bfinder_mc_Bd_muonfilter_ext_v1/BdToJpsiKstarV2_BMuonFilter_TuneCUEP8M1_13TeV-pythia8-evtgen/crab_Bfinder_mc_Bd_muonfilter_ext_v1/170516_100548/0000/Bfinder_mc_*.root");
-	    HltTree->Add("/gstore/t3cms/store/user/martinsg/Bfinder_mc_Bd_muonfilter_ext_v1/BdToJpsiKstarV2_BMuonFilter_TuneCUEP8M1_13TeV-pythia8-evtgen/crab_Bfinder_mc_Bd_muonfilter_ext_v1/170516_100548/0000/Bfinder_mc_*.root");
-	    break;
+	      case 2:
+		//for BMuonFilter processed with Bfinder_mc
+		root->Add("/gstore/t3cms/store/user/martinsg/Bfinder_mc_Bd_muonfilter_ext_v1/BdToJpsiKstarV2_BMuonFilter_TuneCUEP8M1_13TeV-pythia8-evtgen/crab_Bfinder_mc_Bd_muonfilter_ext_v1/170516_100548/0000/Bfinder_mc_*.root");
+		HltTree->Add("/gstore/t3cms/store/user/martinsg/Bfinder_mc_Bd_muonfilter_ext_v1/BdToJpsiKstarV2_BMuonFilter_TuneCUEP8M1_13TeV-pythia8-evtgen/crab_Bfinder_mc_Bd_muonfilter_ext_v1/170516_100548/0000/Bfinder_mc_*.root");
+		break;
 
-	  case 3:
-	    break;
+	      case 3:
+		break;
 
-	  case 4:
-	    //for BMuonFilter processed with Bfinder_mc.py
-	    root->Add("/gstore/t3cms/store/user/martinsg/Bfinder_mc_Bs_muonfilter_ext_v1/BsToJpsiPhi_BMuonFilter_TuneCUEP8M1_13TeV-pythia8-evtgen/crab_Bfinder_mc_Bs_muonfilter_ext_v1/170515_155751/0000/Bfinder_mc_*.root");
-	    HltTree->Add("/gstore/t3cms/store/user/martinsg/Bfinder_mc_Bs_muonfilter_ext_v1/BsToJpsiPhi_BMuonFilter_TuneCUEP8M1_13TeV-pythia8-evtgen/crab_Bfinder_mc_Bs_muonfilter_ext_v1/170515_155751/0000/Bfinder_mc_*.root");
-	    break;
+	      case 4:
+		//for BMuonFilter processed with Bfinder_mc.py
+		root->Add("/gstore/t3cms/store/user/martinsg/Bfinder_mc_Bs_muonfilter_ext_v1/BsToJpsiPhi_BMuonFilter_TuneCUEP8M1_13TeV-pythia8-evtgen/crab_Bfinder_mc_Bs_muonfilter_ext_v1/170515_155751/0000/Bfinder_mc_*.root");
+		HltTree->Add("/gstore/t3cms/store/user/martinsg/Bfinder_mc_Bs_muonfilter_ext_v1/BsToJpsiPhi_BMuonFilter_TuneCUEP8M1_13TeV-pythia8-evtgen/crab_Bfinder_mc_Bs_muonfilter_ext_v1/170515_155751/0000/Bfinder_mc_*.root");
+		break;
 
-	  case 5:
-	    break;
+	      case 5:
+		break;
 	    
-	  case 6:
-	    break;
+	      case 6:
+		break;
+	      }
+	  }
+	else
+	  { //the data contains all the B's from the different channels. 
+	    root->Add("/gstore/t3cms/store/user/martinsg/Bfinder_25ns_promptreco_v1/Charmonium/Run2015D-Bfinder-promptreco-v1/160309_114238/0000/Bfinder_25ns_*.root");
+
+	    root->Add("/gstore/t3cms/store/user/martinsg/Bfinder_25ns_promptreco_v3/Charmonium/Run2015D-Bfinder-promptreco-v3/160308_233052/0001/Bfinder_25ns_*.root");
+	    root->Add("/gstore/t3cms/store/user/martinsg/Bfinder_25ns_promptreco_v3/Charmonium/Run2015D-Bfinder-promptreco-v3/160308_233052/0000/Bfinder_25ns_*.root");
+
+	    root->Add("/gstore/t3cms/store/user/martinsg/Bfinder_25ns_promptreco_v4/Charmonium/Run2015D-Bfinder-promptreco-v4/160315_105743/0000/Bfinder_25ns_*.root");
+	    root->Add("/gstore/t3cms/store/user/martinsg/Bfinder_25ns_promptreco_v4/Charmonium/Run2015D-Bfinder-promptreco-v4/160315_105743/0001/Bfinder_25ns_*.root");
+	    root->Add("/gstore/t3cms/store/user/martinsg/Bfinder_25ns_promptreco_v4/Charmonium/Run2015D-Bfinder-promptreco-v4/160315_105743/0002/Bfinder_25ns_*.root");
+	
+	    HltTree->Add("/gstore/t3cms/store/user/martinsg/Bfinder_25ns_promptreco_v1/Charmonium/Run2015D-Bfinder-promptreco-v1/160309_114238/0000/Bfinder_25ns_*.root");
+
+	    HltTree->Add("/gstore/t3cms/store/user/martinsg/Bfinder_25ns_promptreco_v3/Charmonium/Run2015D-Bfinder-promptreco-v3/160308_233052/0001/Bfinder_25ns_*.root");
+	    HltTree->Add("/gstore/t3cms/store/user/martinsg/Bfinder_25ns_promptreco_v3/Charmonium/Run2015D-Bfinder-promptreco-v3/160308_233052/0000/Bfinder_25ns_*.root");    
+
+	    HltTree->Add("/gstore/t3cms/store/user/martinsg/Bfinder_25ns_promptreco_v4/Charmonium/Run2015D-Bfinder-promptreco-v4/160315_105743/0000/Bfinder_25ns_*.root");
+	    HltTree->Add("/gstore/t3cms/store/user/martinsg/Bfinder_25ns_promptreco_v4/Charmonium/Run2015D-Bfinder-promptreco-v4/160315_105743/0001/Bfinder_25ns_*.root");
+	    HltTree->Add("/gstore/t3cms/store/user/martinsg/Bfinder_25ns_promptreco_v4/Charmonium/Run2015D-Bfinder-promptreco-v4/160315_105743/0002/Bfinder_25ns_*.root");
 	  }
       }
-    else
-      { //the data contains all the B's from the different channels. 
-	root->Add("/gstore/t3cms/store/user/martinsg/Bfinder_25ns_promptreco_v1/Charmonium/Run2015D-Bfinder-promptreco-v1/160309_114238/0000/Bfinder_25ns_*.root");
-
-	root->Add("/gstore/t3cms/store/user/martinsg/Bfinder_25ns_promptreco_v3/Charmonium/Run2015D-Bfinder-promptreco-v3/160308_233052/0001/Bfinder_25ns_*.root");
-	root->Add("/gstore/t3cms/store/user/martinsg/Bfinder_25ns_promptreco_v3/Charmonium/Run2015D-Bfinder-promptreco-v3/160308_233052/0000/Bfinder_25ns_*.root");
-
-	root->Add("/gstore/t3cms/store/user/martinsg/Bfinder_25ns_promptreco_v4/Charmonium/Run2015D-Bfinder-promptreco-v4/160315_105743/0000/Bfinder_25ns_*.root");
-	root->Add("/gstore/t3cms/store/user/martinsg/Bfinder_25ns_promptreco_v4/Charmonium/Run2015D-Bfinder-promptreco-v4/160315_105743/0001/Bfinder_25ns_*.root");
-	root->Add("/gstore/t3cms/store/user/martinsg/Bfinder_25ns_promptreco_v4/Charmonium/Run2015D-Bfinder-promptreco-v4/160315_105743/0002/Bfinder_25ns_*.root");
-	
-	HltTree->Add("/gstore/t3cms/store/user/martinsg/Bfinder_25ns_promptreco_v1/Charmonium/Run2015D-Bfinder-promptreco-v1/160309_114238/0000/Bfinder_25ns_*.root");
-
-	HltTree->Add("/gstore/t3cms/store/user/martinsg/Bfinder_25ns_promptreco_v3/Charmonium/Run2015D-Bfinder-promptreco-v3/160308_233052/0001/Bfinder_25ns_*.root");
-	HltTree->Add("/gstore/t3cms/store/user/martinsg/Bfinder_25ns_promptreco_v3/Charmonium/Run2015D-Bfinder-promptreco-v3/160308_233052/0000/Bfinder_25ns_*.root");    
-
-	HltTree->Add("/gstore/t3cms/store/user/martinsg/Bfinder_25ns_promptreco_v4/Charmonium/Run2015D-Bfinder-promptreco-v4/160315_105743/0000/Bfinder_25ns_*.root");
-	HltTree->Add("/gstore/t3cms/store/user/martinsg/Bfinder_25ns_promptreco_v4/Charmonium/Run2015D-Bfinder-promptreco-v4/160315_105743/0001/Bfinder_25ns_*.root");
-	HltTree->Add("/gstore/t3cms/store/user/martinsg/Bfinder_25ns_promptreco_v4/Charmonium/Run2015D-Bfinder-promptreco-v4/160315_105743/0002/Bfinder_25ns_*.root");
+    else //if the user chooses an input file
+      {
+	root->Add(input_file);
+	HltTree->Add(input_file);
       }
     
     //-----------------------------------------------------------------
@@ -882,6 +897,7 @@ int main(int argc, char** argv)
     
     if(run_on_mc)
       {
+	std::cout << "THIS VALUES ONLY MAKES SENSE FOR THE DITRACK CHANNELS!!" << std::endl;
 	std::cout << "cut  :  number  :  efficiency" << std::endl;
 	std::cout << particle_flow_string[0] << " : " << particle_flow_number[0] << " : " << ((double)particle_flow_number[0]/(double)particle_flow_number[0])*100 << std::endl;
 

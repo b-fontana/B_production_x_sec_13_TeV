@@ -70,7 +70,11 @@ int main(int argc, char** argv)
 	  idx_mu1  = GenInfo->da1[idx_jpsi];
 	  idx_mu2  = GenInfo->da2[idx_jpsi];
 	  	  	  
-	  if(fabs(GenInfo->pdgId[idx_b]) != 521 && fabs(GenInfo->pdgId[idx_b]) != 511 && fabs(GenInfo->pdgId[idx_b]) != 531 && fabs(GenInfo->pdgId[idx_b]) != 543) continue;
+	  //if(fabs(GenInfo->pdgId[idx_b]) != 521 && fabs(GenInfo->pdgId[idx_b]) != 511 && fabs(GenInfo->pdgId[idx_b]) != 531 && fabs(GenInfo->pdgId[idx_b]) != 541) continue;
+
+	  if(fabs(GenInfo->pdgId[idx_b]) != 541) continue;
+	  if(fabs(GenInfo->pdgId[idx_jpsi]) != 443) continue;
+	  if(fabs(GenInfo->pdgId[idx_tktk]) != 211) continue;
 
 	  std::cout << "B pdgID : " << GenInfo->pdgId[idx_b] << std::endl;
 

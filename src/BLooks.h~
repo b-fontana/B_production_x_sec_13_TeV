@@ -1,0 +1,16 @@
+#include "UserCode/B_production_x_sec_13_TeV/interface/BLooks.h"
+#include <string>
+
+TLatex* BLooks::StandardLatexEntry() 
+{
+  TLatex* tex = new TLatex(0.7,y_pos_s,"2.71 fb^{-1} (13 TeV)");
+  tex->SetNDC(kTRUE);
+  tex->SetLineWidth(2);
+  tex->Draw();
+  tex = new TLatex(0.1,y_pos_s,"CMS Preliminary");
+  tex->SetNDC(kTRUE);
+  tex->SetTextFont(42);
+  tex->SetLineWidth(2);
+  tex->Draw();
+
+}

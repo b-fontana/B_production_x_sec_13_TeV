@@ -1,0 +1,23 @@
+#ifndef BSELECTION_H
+#define BSELECTION_H
+
+#include<string>
+
+class BSelection {
+ public:
+  struct getCuts_struct {
+    double lower_cut;
+    double upper_cut;
+  };
+  getCuts_struct getCuts(std::string);
+};
+
+
+
+BSelection::getCuts_struct var = BSelectiondf.getCuts("dfg")
+var.lower_cut
+
+getCuts_struct var = BSelectiondf.getCuts("dfg")
+var.lower_cut
+
+#endif

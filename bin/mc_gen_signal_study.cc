@@ -12,7 +12,7 @@
 #include "UserCode/B_production_x_sec_13_TeV/interface/myloop.h"
 #include "UserCode/B_production_x_sec_13_TeV/interface/channel.h"
 
-//mc_signal_study --input file
+//mc_gen_signal_study --input file
 int main(int argc, char** argv)
 {
   TString input_file = "";
@@ -29,7 +29,7 @@ int main(int argc, char** argv)
         }
     }
     
-  TChain *root = new TChain("demo/root");
+  TChain *root = new TChain("analysis/root");
   
   root->Add(input_file);
   
@@ -70,17 +70,17 @@ int main(int argc, char** argv)
 	  idx_mu1  = GenInfo->da1[idx_jpsi];
 	  idx_mu2  = GenInfo->da2[idx_jpsi];
 	  	  	  
-	  //if(fabs(GenInfo->pdgId[idx_b]) != 521 && fabs(GenInfo->pdgId[idx_b]) != 511 && fabs(GenInfo->pdgId[idx_b]) != 531 && fabs(GenInfo->pdgId[idx_b]) != 541) continue;
+	  if(fabs(GenInfo->pdgId[idx_b]) != 521 && fabs(GenInfo->pdgId[idx_b]) != 511 && fabs(GenInfo->pdgId[idx_b]) != 531 && fabs(GenInfo->pdgId[idx_b]) != 541) continue;
 
-	  if(fabs(GenInfo->pdgId[idx_b]) != 541) continue;
-	  if(fabs(GenInfo->pdgId[idx_jpsi]) != 443) continue;
-	  if(fabs(GenInfo->pdgId[idx_tktk]) != 211) continue;
+	  //if(fabs(GenInfo->pdgId[idx_b]) != 541) continue;
+	  //if(fabs(GenInfo->pdgId[idx_jpsi]) != 443) continue;
+	  //if(fabs(GenInfo->pdgId[idx_tktk]) != 211) continue;
 
 	  std::cout << "B pdgID : " << GenInfo->pdgId[idx_b] << std::endl;
 
 	  std::cout << "da1 or JPSI pdgID : " << GenInfo->pdgId[idx_jpsi] << std::endl;
 	  std::cout << "da1->da1 or mu1  pdgID : " << GenInfo->pdgId[idx_mu1] << std::endl;
-	  std::cout << "da1->da or mu2  pdgID : " << GenInfo->pdgId[idx_mu2] << std::endl;
+	  std::cout << "da1->da2 or mu2  pdgID : " << GenInfo->pdgId[idx_mu2] << std::endl;
 
 	  std::cout << "da2 or tktk  pdgID : " << GenInfo->pdgId[idx_tktk] << std::endl;
 	  std::cout << "da2->da1 or tk1  pdgID : " << GenInfo->pdgId[idx_tk1] << std::endl;

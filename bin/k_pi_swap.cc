@@ -4,6 +4,7 @@
 //This is then introduced in the pdf to extract the signal of B0->jpsi K*0, in other sripts in the cross sections studies.
 
 #include "UserCode/B_production_x_sec_13_TeV/interface/functions.h"
+#include "RooBinning.h"
 
 using namespace RooFit;
 
@@ -25,13 +26,28 @@ int main(int argc, char** argv)
         }
     }
 
-  double mass_min = 4.79;
-  double mass_max = 5.70;
+  double mass_min = 4.90;
+  double mass_max = 5.6;
   double pt_min = 0;
   double pt_max = 300;
   double y_min = -3;
   double y_max = 3;
 
+  int count = 0;
+  RooBinning bins(mass_min, mass_max);
+  double bound = mass_min;
+
+  while (bound<mass_max) {
+    count = count + 1;
+    if (bound >= 5.20 && bound <= 5.35)
+      bound = bound + (mass_max - mass_min)/500;
+    else if (bound <= 5.00 || bound >= 5.50)
+      bound = bound + (mass_max - mass_min)/10;
+    else 
+      bound = bound + (mass_max - mass_min)/50;
+    bins.addBoundary(bound);
+  }
+ 
   RooRealVar mass("mass","mass",mass_min,mass_max);
   RooRealVar pt("pt","pt",pt_min,pt_max);
   RooRealVar y("y","y",y_min,y_max);
@@ -57,9 +73,9 @@ int main(int argc, char** argv)
   RooDataSet* data_swapped = new RooDataSet("data_swapped","data_swapped", tr, RooArgSet(mass,pt,y) );
   
   //create histograms
-  TH1D* histo_full = (TH1D*)data_full->createHistogram("histo_full", mass, Binning(100, mass.getMin(), mass.getMax() ));
-  TH1D* histo_signal = (TH1D*)data_signal->createHistogram("histo_signal", mass, Binning(100, mass.getMin(), mass.getMax() ));
-  TH1D* histo_swapped = (TH1D*)data_swapped->createHistogram("histo_swapped", mass, Binning(100, mass.getMin(), mass.getMax() ));
+  TH1D* histo_full = (TH1D*)data_full->createHistogram("histo_full", mass, Binning(bins));
+  TH1D* histo_signal = (TH1D*)data_signal->createHistogram("histo_signal", mass, Binning(bins));
+  TH1D* histo_swapped = (TH1D*)data_swapped->createHistogram("histo_swapped", mass, Binning(bins));
   
   for (int i=1; i<=channel_to_nbins(2); i++)
     {
@@ -72,12 +88,6 @@ int main(int argc, char** argv)
 
   RooRealVar mean("mean","mean", B0_MASS);
   mean.setConstant(kTRUE);
-  
-  /*
-    In the case we need to detail the background:
-    RooRealVar m_exp("m_exp","m_exp",-4. ,-6., 0.);
-    RooExponential combinatorial_exp("combinatorial_exp","combinatorial_exp", mass, m_exp);
-  */
 
   //true signal fit
   RooRealVar n1_signal("n1_signal","n1_signal",200000,0,500000);
@@ -100,8 +110,7 @@ int main(int argc, char** argv)
   RooAddPdf signal("signal","signal", RooArgList(crystball1_signal,crystball2_signal,crystball3_signal), RooArgList(n1_signal,n2_signal,n3_signal));
   
   RooPlot* frame1 = mass.frame(Title("True signal fit"));
-  data_signal->plotOn(frame1,Name("theSignal"),Binning(100));
-    
+  data_signal->plotOn(frame1,Name("theSignal"),Binning(bins));
   signal.fitTo(*data_signal);
   signal.paramOn(frame1, Layout(0.65,0.99,0.99));
   frame1->getAttText()->SetTextSize(0.027);
@@ -114,12 +123,13 @@ int main(int argc, char** argv)
   c1.cd();
   frame1->Draw();
 
-  double chi_square1 = frame1->chiSquare("thePdf1","theSignal");
+  /*double chi_square1 = frame1->chiSquare("thePdf1","theSignal");
   TLatex* tex1 = new TLatex(0.17, 0.97, Form("#chi^{2} = %.3lf", chi_square1));
   tex1->SetNDC(kTRUE);
   tex1->SetTextFont(42);
   tex1->SetTextSize(0.035);  
   tex1->Draw();
+  */
 
   directory = output + "mass_signal_logy.png";
   c1.SaveAs(directory);
@@ -128,12 +138,13 @@ int main(int argc, char** argv)
   c1_new.cd();
   frame1->Draw();
 
-  double chi_square1_new = frame1->chiSquare("thePdf1","theSignal");
+  /*  double chi_square1_new = frame1->chiSquare("thePdf1","theSignal");
   TLatex* tex1_new = new TLatex(0.17, 0.6, Form("#chi^{2} = %.3lf", chi_square1_new));
   tex1_new->SetNDC(kTRUE);
   tex1_new->SetTextFont(42);
   tex1_new->SetTextSize(0.035);  
   tex1_new->Draw();
+  */
 
   directory = output + "mass_signal.png";
   c1_new.SaveAs(directory);  
@@ -162,7 +173,7 @@ int main(int argc, char** argv)
   RooRealVar alpha2("#alpha_{2}","alpha2", B0_MASS, 0.01000, B0_MASS+6.00000);
   RooRealVar alpha3("#alpha_{3}","alpha3", -B0_MASS, -4.00000*B0_MASS, 0.00000);
   RooRealVar n1_parameter_swapped("n1_parameter_swapped", "n1_parameter_swapped", 7.00, 0.01, 25.11);
-  RooRealVar n2_parameter_swapped("n2_parameter_swapped", "n2_parameter_swapped", 12.88, 0.01, 15.00);  
+  RooRealVar n2_parameter_swapped("n2_parameter_swapped", "n2_parameter_swapped", 12.88, 0.01, 25.00);  
   RooRealVar n3_parameter_swapped("n3_parameter_swapped", "n3_parameter_swapped", 183.00, 50.00, 250.00);
 
   RooCBShape crystball1_swapped("crystball1_swapped","crystball1_swapped", mass, mean, sigma1_swapped, alpha1, n1_parameter_swapped);
@@ -172,7 +183,7 @@ int main(int argc, char** argv)
   RooAddPdf swapped("swapped","swapped", RooArgList(crystball1_swapped,crystball2_swapped,crystball3_swapped), RooArgList(n1_swapped,n2_swapped,n3_swapped));
 
   RooPlot* frame2 = mass.frame(Title("Swapped signal fit"));
-  data_swapped->plotOn(frame2,Name("theSwapped"),Binning(100)); 
+  data_swapped->plotOn(frame2,Name("theSwapped"),Binning(bins)); 
   swapped.fitTo(*data_swapped);
   swapped.paramOn(frame2, Layout(0.65,0.99,0.99));
   frame2->getAttText()->SetTextSize(0.027);
@@ -186,12 +197,13 @@ int main(int argc, char** argv)
   c2.cd();
   frame2->Draw();
 
-  double chi_square2 = frame2->chiSquare("thePdf2","theSwapped");
+  /*double chi_square2 = frame2->chiSquare("thePdf2","theSwapped");
   TLatex* tex2 = new TLatex(0.17, 0.6, Form("#chi^{2} = %.3lf", chi_square2));
   tex2->SetNDC(kTRUE);
   tex2->SetTextFont(42);
   tex2->SetTextSize(0.035);
   tex2->Draw();
+  */
 
   directory = output + "mass_swapped_logy.png";
   c2.SaveAs(directory);
@@ -200,12 +212,13 @@ int main(int argc, char** argv)
   c2_new.cd();
   frame2->Draw();
 
-  double chi_square2_new = frame2->chiSquare("thePdf2","theSwapped");
+  /*double chi_square2_new = frame2->chiSquare("thePdf2","theSwapped");
   TLatex* tex2_new = new TLatex(0.17, 0.6, Form("#chi^{2} = %.3lf", chi_square2_new));
   tex2_new->SetNDC(kTRUE);
   tex2_new->SetTextFont(42);
   tex2_new->SetTextSize(0.035);
   tex2_new->Draw();
+  */
 
   directory = output + "mass_swapped.png";
   c2_new.SaveAs(directory);
@@ -229,10 +242,9 @@ int main(int argc, char** argv)
   RooAddPdf full("full","full", RooArgList(swapped,signal), r_final);
 
   RooPlot* frame3 = mass.frame(Title("Full signal fit"));
-  data_full->plotOn(frame3,Name("theFull"),Binning(100));
-
+  data_full->plotOn(frame3,Name("theFull"),Binning(bins));
   full.fitTo(*data_full);
-  full.paramOn(frame3/*, Parameters(RooArgSet(r_final))*/,Layout(0.58,0.88,0.8));
+  full.paramOn(frame3,Layout(0.58,0.88,0.8));
   frame3->getAttText()->SetTextSize(0.027);
   full.plotOn(frame3, Name("thePdf3"), LineColor(7), LineWidth(1), LineStyle(1));
   full.plotOn(frame3,Components("swapped"),LineColor(8),LineWidth(1),LineStyle(2));
@@ -243,12 +255,13 @@ int main(int argc, char** argv)
   c3.cd();
   frame3->Draw();
 
-  double chi_square3 = frame3->chiSquare("thePdf3","theFull");
+  /*double chi_square3 = frame3->chiSquare("thePdf3","theFull");
   TLatex* tex3 = new TLatex(0.17, 0.8, Form("#chi^{2} = %.3lf", chi_square3));
   tex3->SetNDC(kTRUE);
   tex3->SetTextFont(42);
   tex3->SetTextSize(0.035);
   tex3->Draw();
+  */
 
   directory = output + "mass_full_logy.png";
   c3.SaveAs(directory);
@@ -257,12 +270,13 @@ int main(int argc, char** argv)
   c3_new.cd();
   frame3->Draw();
 
-  double chi_square3_new = frame3->chiSquare("thePdf3","theFull");
+  /*double chi_square3_new = frame3->chiSquare("thePdf3","theFull");
   TLatex* tex3_new = new TLatex(0.17, 0.8, Form("#chi^{2} = %.3lf", chi_square3_new));
   tex3_new->SetNDC(kTRUE);
   tex3_new->SetTextFont(42);
   tex3_new->SetTextSize(0.035);
   tex3_new->Draw();
+  */
 
   directory = output + "mass_full.png";
   c3_new.SaveAs(directory);
@@ -292,13 +306,15 @@ int main(int argc, char** argv)
   std::cout << "Swapped: " << res_swapped << std::endl;
   std::cout << "Total: " << TMath::Sqrt(TMath::Power(res_signal,2)+TMath::Power(res_swapped,2)) << std::endl;
 
-  std::cout << "Chi-squares: " << std::endl;
+  /*std::cout << "Chi-squares: " << std::endl;
   std::cout << chi_square1 << std::endl;
   std::cout << chi_square2 << std::endl;
   std::cout << chi_square3 << std::endl;
+  */
 
   delete data_signal;
   delete data_swapped;
   delete data_full;
   delete fin;
+  
 }

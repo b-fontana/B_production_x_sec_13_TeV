@@ -171,9 +171,8 @@ int main(int argc, char** argv)
       
       if(syst == "mass_window")
 	signal_res = mass_window_syst(*ws, channel, pt_min, pt_max, y_min, y_max, nominal_yield.getVal(), data_selection_input_file);
-      else
-	if(syst == "signal_pdf" || syst == "cb_pdf")
-	  signal_res = pdf_syst(*ws, channel, pt_min, pt_max, y_min, y_max, nominal_yield.getVal(), syst);
+      else if(syst == "signal_pdf" || syst == "cb_pdf")
+	signal_res = pdf_syst(*ws, channel, pt_min, pt_max, y_min, y_max, nominal_yield.getVal(), syst);
       
       absolute_syst_val = fabs(nominal_yield.getVal() - signal_res)/nominal_yield.getVal();
     }

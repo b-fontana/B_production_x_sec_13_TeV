@@ -62,7 +62,7 @@ int main(int argc, char** argv)
         }
     }
 
-    TChain *root = new TChain("demo/root");
+    TChain *root = new TChain("analysis/root");
     TChain *HltTree = new TChain("hltanalysis/HltTree");
 
     if(run_on_mc)
@@ -99,23 +99,9 @@ int main(int argc, char** argv)
       }
     else
       { //the data contains all the B's from the different channels. 
-	root->Add("/gstore/t3cms/store/user/martinsg/Bfinder_25ns_promptreco_v1/Charmonium/Run2015D-Bfinder-promptreco-v1/160309_114238/0000/Bfinder_25ns_*.root");
+	root->Add("/gstore/t3cms/store/user/bfontana/Bfinder_Data2015_RunC/Charmonium/X/170928_091955/0000/bfinder_*.root");
 
-	root->Add("/gstore/t3cms/store/user/martinsg/Bfinder_25ns_promptreco_v3/Charmonium/Run2015D-Bfinder-promptreco-v3/160308_233052/0001/Bfinder_25ns_*.root");
-	root->Add("/gstore/t3cms/store/user/martinsg/Bfinder_25ns_promptreco_v3/Charmonium/Run2015D-Bfinder-promptreco-v3/160308_233052/0000/Bfinder_25ns_*.root");
-
-	root->Add("/gstore/t3cms/store/user/martinsg/Bfinder_25ns_promptreco_v4/Charmonium/Run2015D-Bfinder-promptreco-v4/160315_105743/0000/Bfinder_25ns_*.root");
-	root->Add("/gstore/t3cms/store/user/martinsg/Bfinder_25ns_promptreco_v4/Charmonium/Run2015D-Bfinder-promptreco-v4/160315_105743/0001/Bfinder_25ns_*.root");
-	root->Add("/gstore/t3cms/store/user/martinsg/Bfinder_25ns_promptreco_v4/Charmonium/Run2015D-Bfinder-promptreco-v4/160315_105743/0002/Bfinder_25ns_*.root");
-	
-	HltTree->Add("/gstore/t3cms/store/user/martinsg/Bfinder_25ns_promptreco_v1/Charmonium/Run2015D-Bfinder-promptreco-v1/160309_114238/0000/Bfinder_25ns_*.root");
-
-	HltTree->Add("/gstore/t3cms/store/user/martinsg/Bfinder_25ns_promptreco_v3/Charmonium/Run2015D-Bfinder-promptreco-v3/160308_233052/0001/Bfinder_25ns_*.root");
-	HltTree->Add("/gstore/t3cms/store/user/martinsg/Bfinder_25ns_promptreco_v3/Charmonium/Run2015D-Bfinder-promptreco-v3/160308_233052/0000/Bfinder_25ns_*.root");    
-
-	HltTree->Add("/gstore/t3cms/store/user/martinsg/Bfinder_25ns_promptreco_v4/Charmonium/Run2015D-Bfinder-promptreco-v4/160315_105743/0000/Bfinder_25ns_*.root");
-	HltTree->Add("/gstore/t3cms/store/user/martinsg/Bfinder_25ns_promptreco_v4/Charmonium/Run2015D-Bfinder-promptreco-v4/160315_105743/0001/Bfinder_25ns_*.root");
-	HltTree->Add("/gstore/t3cms/store/user/martinsg/Bfinder_25ns_promptreco_v4/Charmonium/Run2015D-Bfinder-promptreco-v4/160315_105743/0002/Bfinder_25ns_*.root");
+	HltTree->Add("/gstore/t3cms/store/user/bfontana/Bfinder_Data2015_RunC/Charmonium/X/170928_091955/0000/bfinder_*.root");
       }
     
     //-----------------------------------------------------------------

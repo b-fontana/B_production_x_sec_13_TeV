@@ -28,6 +28,7 @@
 #include <RooChebychev.h>
 #include <RooBernstein.h>
 #include <RooExponential.h>
+#include <RooFFTConvPdf.h>
 #include <RooWorkspace.h>
 #include <RooAddPdf.h>
 #include <RooGenericPdf.h>

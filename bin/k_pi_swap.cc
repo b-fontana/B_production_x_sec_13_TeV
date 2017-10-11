@@ -25,9 +25,8 @@ int main(int argc, char** argv)
         }
     }
 
-  double mass_window = 0.6;
-  double mass_min = B0_MASS - mass_window;
-  double mass_max = B0_MASS + 1.2*mass_window;
+  double mass_min = 4.79;
+  double mass_max = 5.70;
   double pt_min = 0;
   double pt_max = 300;
   double y_min = -3;
@@ -58,9 +57,9 @@ int main(int argc, char** argv)
   RooDataSet* data_swapped = new RooDataSet("data_swapped","data_swapped", tr, RooArgSet(mass,pt,y) );
   
   //create histograms
-  TH1D* histo_full = (TH1D*)data_full->createHistogram("histo_full", mass, Binning(channel_to_nbins(2), mass.getMin(), mass.getMax() ));
-  TH1D* histo_signal = (TH1D*)data_signal->createHistogram("histo_signal", mass, Binning(channel_to_nbins(2), mass.getMin(), mass.getMax() ));
-  TH1D* histo_swapped = (TH1D*)data_swapped->createHistogram("histo_swapped", mass, Binning(channel_to_nbins(2), mass.getMin(), mass.getMax() ));
+  TH1D* histo_full = (TH1D*)data_full->createHistogram("histo_full", mass, Binning(100, mass.getMin(), mass.getMax() ));
+  TH1D* histo_signal = (TH1D*)data_signal->createHistogram("histo_signal", mass, Binning(100, mass.getMin(), mass.getMax() ));
+  TH1D* histo_swapped = (TH1D*)data_swapped->createHistogram("histo_swapped", mass, Binning(100, mass.getMin(), mass.getMax() ));
   
   for (int i=1; i<=channel_to_nbins(2); i++)
     {
@@ -81,7 +80,7 @@ int main(int argc, char** argv)
   */
 
   //true signal fit
-  RooRealVar n1_signal("n1_signal","n1_signal",250000,0,500000);
+  RooRealVar n1_signal("n1_signal","n1_signal",200000,0,500000);
   RooRealVar n2_signal("n2_signal","n2_signal",100000,0,500000);
   RooRealVar n3_signal("n3_signal","n3_signal",100000,0,500000);
 
@@ -90,8 +89,8 @@ int main(int argc, char** argv)
   RooRealVar sigma3_signal("#sigma_{3,signal}","sigma3_signal", 0.040, 0.001, 0.100);
 
   RooRealVar alpha1_signal("#alpha_{1,signal}","alpha1_signal", B0_MASS, 0.01000, B0_MASS+6.00000);
-  RooRealVar alpha2_signal("#alpha_{2,signal}","alpha2_signal", B0_MASS, 0.01, B0_MASS+6);
-  RooRealVar alpha3_signal("#alpha_{3,signal}","alpha3_signal", -B0_MASS, -2*B0_MASS, -0.01);
+  RooRealVar alpha2_signal("#alpha_{2,signal}","alpha2_signal", B0_MASS, 0.01000, B0_MASS+6.00000);
+  RooRealVar alpha3_signal("#alpha_{3,signal}","alpha3_signal", -B0_MASS, -4.00000*B0_MASS, -0.01000);
   RooRealVar n1_parameter_signal("n1_parameter_signal", "n1_parameter", 14.8, 0.01, 15.0);
   RooRealVar n2_parameter_signal("n2_parameter", "n2_parameter_signal", 1.906, 0.01, 15.0);  
   RooRealVar n3_parameter_signal("n3_parameter", "n3_parameter_signal", 3.14, 0.01, 15.0);
@@ -101,11 +100,11 @@ int main(int argc, char** argv)
   RooAddPdf signal("signal","signal", RooArgList(crystball1_signal,crystball2_signal,crystball3_signal), RooArgList(n1_signal,n2_signal,n3_signal));
   
   RooPlot* frame1 = mass.frame(Title("True signal fit"));
-  data_signal->plotOn(frame1,Name("theSignal"),Binning(channel_to_nbins(2)));
+  data_signal->plotOn(frame1,Name("theSignal"),Binning(100));
     
   signal.fitTo(*data_signal);
-  signal.paramOn(frame1, Layout(0.6,0.99,0.8));
-  frame1->getAttText()->SetTextSize(0.030);
+  signal.paramOn(frame1, Layout(0.65,0.99,0.99));
+  frame1->getAttText()->SetTextSize(0.027);
   signal.plotOn(frame1, Name("thePdf1"), LineColor(7), LineWidth(1), LineStyle(1));
   signal.plotOn(frame1,Components("crystball1_signal"),LineColor(8),LineWidth(1),LineStyle(2));
   signal.plotOn(frame1,Components("crystball2_signal"),LineColor(5),LineWidth(1),LineStyle(2));  
@@ -130,7 +129,7 @@ int main(int argc, char** argv)
   frame1->Draw();
 
   double chi_square1_new = frame1->chiSquare("thePdf1","theSignal");
-  TLatex* tex1_new = new TLatex(0.17, 0.97, Form("#chi^{2} = %.3lf", chi_square1_new));
+  TLatex* tex1_new = new TLatex(0.17, 0.6, Form("#chi^{2} = %.3lf", chi_square1_new));
   tex1_new->SetNDC(kTRUE);
   tex1_new->SetTextFont(42);
   tex1_new->SetTextSize(0.035);  
@@ -153,9 +152,9 @@ int main(int argc, char** argv)
   alpha3_signal.setConstant(kTRUE);
 
   //swapped signal fit
-  RooRealVar n1_swapped("n1_swapped","n1_swapped",50000,0,200000);
-  RooRealVar n2_swapped("n2_swapped","n2_swapped",50000,0,200000);
-  RooRealVar n3_swapped("n3_swapped","n3_swapped",25000,0,100000);
+  RooRealVar n1_swapped("n1_swapped","n1_swapped",40000,0,200000);
+  RooRealVar n2_swapped("n2_swapped","n2_swapped",40000,0,200000);
+  RooRealVar n3_swapped("n3_swapped","n3_swapped",20000,0,100000);
   RooRealVar sigma1_swapped("#sigma_{1,swapped}","sigma1_swapped",0.110, 0.005, 0.200);
   RooRealVar sigma2_swapped("#sigma_{2,swapped}","sigma2_swapped",0.030, 0.005, 0.150);
   RooRealVar sigma3_swapped("#sigma_{3,swapped}","sigma3_swapped",0.030, 0.001, 0.100);
@@ -173,10 +172,10 @@ int main(int argc, char** argv)
   RooAddPdf swapped("swapped","swapped", RooArgList(crystball1_swapped,crystball2_swapped,crystball3_swapped), RooArgList(n1_swapped,n2_swapped,n3_swapped));
 
   RooPlot* frame2 = mass.frame(Title("Swapped signal fit"));
-  data_swapped->plotOn(frame2,Name("theSwapped"),Binning(channel_to_nbins(2))); 
+  data_swapped->plotOn(frame2,Name("theSwapped"),Binning(100)); 
   swapped.fitTo(*data_swapped);
   swapped.paramOn(frame2, Layout(0.65,0.99,0.99));
-  frame2->getAttText()->SetTextSize(0.030);
+  frame2->getAttText()->SetTextSize(0.027);
   swapped.plotOn(frame2, Name("thePdf2"), LineColor(7), LineWidth(1), LineStyle(1));
   swapped.plotOn(frame2,Components("crystball1_swapped"),LineColor(8),LineWidth(1),LineStyle(2));
   swapped.plotOn(frame2,Components("crystball2_swapped"),LineColor(5),LineWidth(1),LineStyle(2));
@@ -188,7 +187,7 @@ int main(int argc, char** argv)
   frame2->Draw();
 
   double chi_square2 = frame2->chiSquare("thePdf2","theSwapped");
-  TLatex* tex2 = new TLatex(0.17, 0.8, Form("#chi^{2} = %.3lf", chi_square2));
+  TLatex* tex2 = new TLatex(0.17, 0.6, Form("#chi^{2} = %.3lf", chi_square2));
   tex2->SetNDC(kTRUE);
   tex2->SetTextFont(42);
   tex2->SetTextSize(0.035);
@@ -202,7 +201,7 @@ int main(int argc, char** argv)
   frame2->Draw();
 
   double chi_square2_new = frame2->chiSquare("thePdf2","theSwapped");
-  TLatex* tex2_new = new TLatex(0.17, 0.8, Form("#chi^{2} = %.3lf", chi_square2_new));
+  TLatex* tex2_new = new TLatex(0.17, 0.6, Form("#chi^{2} = %.3lf", chi_square2_new));
   tex2_new->SetNDC(kTRUE);
   tex2_new->SetTextFont(42);
   tex2_new->SetTextSize(0.035);
@@ -230,11 +229,11 @@ int main(int argc, char** argv)
   RooAddPdf full("full","full", RooArgList(swapped,signal), r_final);
 
   RooPlot* frame3 = mass.frame(Title("Full signal fit"));
-  data_full->plotOn(frame3,Name("theFull"),Binning(channel_to_nbins(2)));
+  data_full->plotOn(frame3,Name("theFull"),Binning(100));
 
   full.fitTo(*data_full);
   full.paramOn(frame3/*, Parameters(RooArgSet(r_final))*/,Layout(0.58,0.88,0.8));
-  frame3->getAttText()->SetTextSize(0.030);
+  frame3->getAttText()->SetTextSize(0.027);
   full.plotOn(frame3, Name("thePdf3"), LineColor(7), LineWidth(1), LineStyle(1));
   full.plotOn(frame3,Components("swapped"),LineColor(8),LineWidth(1),LineStyle(2));
   full.plotOn(frame3,Components("signal"),LineColor(5),LineWidth(1),LineStyle(2));
@@ -270,25 +269,25 @@ int main(int argc, char** argv)
 
   double number_signal = (double)data_signal->sumEntries();
   double number_swap   = (double)data_swapped->sumEntries();
-  std::cout << "Counting the entries" << std::endl;
+  std::cout << "Counting the entries:" << std::endl;
   std::cout << "Signal events: " << number_signal << std::endl;
   std::cout << "Swapped events: " << number_swap << std::endl;
   std::cout << "Fraction of swapped events: " << number_swap/(number_swap+number_signal) << std::endl;
   std::cout << " " << std::endl;
   
-  std::cout << "Numbers from the fits" << std::endl;
+  std::cout << "Numbers from the fits:" << std::endl;
 
-  std::cout << "Signal events: " << n1_signal.getVal() + n2_signal.getVal() << std::endl;
-  std::cout << "Swapped events: " << n1_swapped.getVal() + n2_swapped.getVal() << std::endl;
-  std::cout << "Fraction of swapped events: " << (n1_swapped.getVal()+n2_swapped.getVal())/(n1_signal.getVal()+n2_signal.getVal()+n1_swapped.getVal()+n2_swapped.getVal()) << ". Calculated with the fraction: " << r_final.getVal() << "." << std::endl;
+  std::cout << "Signal events: " << n1_signal.getVal() + n2_signal.getVal() + n3_signal.getVal() << std::endl;
+  std::cout << "Swapped events: " << n1_swapped.getVal() + n2_swapped.getVal() + n3_swapped.getVal() << std::endl;
+  std::cout << "Fraction of swapped events: " << (n1_swapped.getVal()+n2_swapped.getVal()+n3_swapped.getVal())/(n1_signal.getVal()+n2_signal.getVal()+n3_signal.getVal()+n1_swapped.getVal()+n2_swapped.getVal()+n3_swapped.getVal()) << ". Calculated with the fraction: " << r_final.getVal() << "." << std::endl;
   std::cout << " " << std::endl;
   
   std::cout << "O número de eventos no data_full é igual à soma dos outros dois conjuntos de dados: " << data_swapped->sumEntries()+data_signal->sumEntries() << "----" << data_full->sumEntries() << std::endl;
   std::cout << " " << std::endl;
 
-  double res_signal =  TMath::Sqrt(TMath::Power(sigma1_signal.getVal(),2)+TMath::Power(sigma2_signal.getVal(),2));
-  double res_swapped = TMath::Sqrt(TMath::Power(sigma1_swapped.getVal(),2)+TMath::Power(sigma2_swapped.getVal(),2));
-  std::cout << "Resolução" << std::endl;
+  double res_signal =  TMath::Sqrt(TMath::Power(sigma1_signal.getVal(),2)+TMath::Power(sigma2_signal.getVal(),2)+TMath::Power(sigma3_signal.getVal(),2));
+  double res_swapped = TMath::Sqrt(TMath::Power(sigma1_swapped.getVal(),2)+TMath::Power(sigma2_swapped.getVal(),2)+TMath::Power(sigma3_swapped.getVal(),2));
+  std::cout << "Resolução:" << std::endl;
   std::cout << "Signal: " << res_signal << std::endl;
   std::cout << "Swapped: " << res_swapped << std::endl;
   std::cout << "Total: " << TMath::Sqrt(TMath::Power(res_signal,2)+TMath::Power(res_swapped,2)) << std::endl;

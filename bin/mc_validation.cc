@@ -105,10 +105,10 @@ int main(int argc, char **argv) {
     }
 
   if (input_data_flag!=1) {
-    input_data = "/lstore/cms/brunogal/input_for_B_production_x_sec_13_TeV/myloop_new_data_"+ channel_to_ntuple_name(channel) + "_with_cuts.root";
+    input_data = "/lstore/cms/balves/Jobs/Full_Dataset_2015/C_myloop_new_data_" + channel_to_ntuple_name(channel) + "_with_cuts.root";
   }
   if (input_mc_flag!=1) {
-    input_mc = "/lstore/cms/brunogal/input_for_B_production_x_sec_13_TeV/myloop_new_mc_truth_" +  channel_to_ntuple_name(channel) + "_with_cuts.root";
+    input_mc = "/lstore/cms/brunogal/input_for_B_production_x_sec_13_TeV/new_inputs/myloop_new_mc_truth_" +  channel_to_ntuple_name(channel) + "_with_cuts.root";
   }
   std::cout << std::endl;
 

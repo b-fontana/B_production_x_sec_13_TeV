@@ -10,20 +10,20 @@
 // channel = 6: Lambda_b -> Jpsi + Lambda
 //-----------------------------------------------------------------
 
-//input example: display_val --file input_file.root
+//input example: print_val --file input_file.root
 int main(int argc, char** argv)
 {
-  TString in_file_name = "";
+  TString input_file = "";
 
   for(int i=1 ; i<argc ; ++i)
     {
       std::string argument = argv[i];
       std::stringstream convert;
       
-      if(argument == "--file")
+      if(argument == "--input")
 	{
 	  convert << argv[++i];
-	  convert >> in_file_name;
+	  convert >> input_file;
 	}
     }
   
@@ -32,28 +32,27 @@ int main(int argc, char** argv)
   /////////////////////////////////////////////////////////////////
 
   //debug
-  std::cout << "read :" << in_file_name << std::endl;
+  std::cout << "read :" << input_file << std::endl;
 
   double out_val;
   double out_err_lo;
   double out_err_hi;
 
   //open input file
-  TFile* fin = new TFile(in_file_name);
+  TFile* fin = new TFile(input_file);
+  
+  fin->ls();
+
   TVectorD *in_val = (TVectorD*)fin->Get("val");
   TVectorD *in_err_lo = (TVectorD*)fin->Get("err_lo");
   TVectorD *in_err_hi = (TVectorD*)fin->Get("err_hi");
-  delete fin;
-
+  
   out_val = in_val[0][0];
   out_err_lo = in_err_lo[0][0];
   out_err_hi = in_err_hi[0][0];
       
   //print the val and the err
   std::cout << "val : " << out_val << " err_lo : " << out_err_lo << " err_hi : " << out_err_hi << std::endl;
-  //out_val.Print();
-  //out_err_lo.Print();
-  //out_err_hi.Print();
-
-
+  
+  delete fin;
 }//end

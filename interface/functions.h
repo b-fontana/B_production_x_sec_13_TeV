@@ -28,7 +28,6 @@
 #include <RooChebychev.h>
 #include <RooBernstein.h>
 #include <RooExponential.h>
-#include <RooFFTConvPdf.h>
 #include <RooWorkspace.h>
 #include <RooAddPdf.h>
 #include <RooGenericPdf.h>
@@ -70,6 +69,7 @@ using namespace RooFit;
 //////////////////////////////////////////////
 
 void create_dir(std::vector<std::string> list);
+
 void set_up_workspace_variables(RooWorkspace& w, int channel, double mass_min = 0.0 , double mass_max = 0.0);
 void read_data(RooWorkspace& w, TString filename,int channel);
 void read_data_cut(RooWorkspace& w, RooAbsData* data);
@@ -209,7 +209,7 @@ void build_pdf(RooWorkspace& w, int channel, std::string choice, std::string cho
   RooRealVar m_mean("m_mean","m_mean",mass_peak,mass_peak-0.09,mass_peak+0.09);
   RooRealVar m_sigma1("m_sigma1","m_sigma1",0.010,0.009,0.200);
   RooRealVar m_sigma2("m_sigma2","m_sigma2",0.005,0.004,0.100);
-  RooRealVar m_fraction("m_fraction","m_fraction", 0.4, 0., .85);
+  RooRealVar m_fraction("m_fraction","m_fraction", 0.5, 0, 1);
   RooGaussian m_gaussian1("m_gaussian1","m_gaussian1",mass,m_mean,m_sigma1);
   RooGaussian m_gaussian2("m_gaussian2","m_gaussian2",mass,m_mean,m_sigma2);
 
@@ -219,9 +219,9 @@ void build_pdf(RooWorkspace& w, int channel, std::string choice, std::string cho
   RooCBShape m_crystal("m_crystal", "m_crystal", mass, m_mean, m_sigma1, m_alpha, m_n);
 
   //Three Gaussians
-  RooRealVar m_sigma3("m_sigma3","m_sigma3",0.020,0.001,0.100);
+  RooRealVar m_sigma3("m_sigma3","m_sigma3",0.030,0.001,0.100);
   RooGaussian m_gaussian3("m_gaussian3","m_gaussian3",mass,m_mean,m_sigma3);
-  RooRealVar m_fraction2("m_fraction2","m_fraction2",0.20, 0., .5);
+  RooRealVar m_fraction2("m_fraction2","m_fraction2",0.5);
 
   RooAddPdf* pdf_m_signal;
 
@@ -246,28 +246,24 @@ void build_pdf(RooWorkspace& w, int channel, std::string choice, std::string cho
 	pdf_m_signal = new RooAddPdf("pdf_m_signal","pdf_m_signal",RooArgList(m_gaussian1,m_gaussian2),RooArgList(m_fraction));
 	m_sigma2.setConstant(kTRUE);
 	m_fraction.setVal(1.);
-	m_fraction.setConstant(kTRUE);
       }
     else
-      if(choice2=="signal" && choice=="3gauss") {
+      if(choice2=="signal" && choice=="3gauss")
 	pdf_m_signal = new RooAddPdf("pdf_m_signal","pdf_m_signal",RooArgList(m_gaussian1,m_gaussian2,m_gaussian3),RooArgList(m_fraction,m_fraction2));
-      }
-      else { //this is the nominal signal
+      else //this is the nominal signal
 	pdf_m_signal = new RooAddPdf("pdf_m_signal","pdf_m_signal",RooArgList(m_gaussian1,m_gaussian2),RooArgList(m_fraction));
-	m_fraction2.setConstant(kTRUE);
-      }
   
   //-----------------------------------------------------------------
   // combinatorial background PDF
   
   //One Exponential
-  RooRealVar m_exp("m_exp","m_exp",-1.,-4.,0.);
+  RooRealVar m_exp("m_exp","m_exp",-0.3,-4.,0.);
   RooExponential pdf_m_combinatorial_exp("pdf_m_combinatorial_exp","pdf_m_combinatorial_exp",mass,m_exp);
   
   //Two Exponentials
   RooRealVar m_exp2("m_exp2","m_exp2",-0.3,-4.,0.);
   RooExponential pdf_m_combinatorial_exp2("pdf_m_combinatorial_exp2","pdf_m_combinatorial_exp2",mass,m_exp2);
-  RooRealVar m_fraction_exp("m_fraction_exp", "m_fraction_exp", 0.33, 0., 1.);
+  RooRealVar m_fraction_exp("m_fraction_exp", "m_fraction_exp", 0.5);
 
   //Bernstein
   RooRealVar m_par1("m_par1","m_par2",1.,0,+10.);
@@ -302,36 +298,20 @@ void build_pdf(RooWorkspace& w, int channel, std::string choice, std::string cho
 	{
 	  pdf_m_combinatorial=new RooAddPdf("pdf_m_combinatorial","pdf_m_combinatorial",RooArgList(pdf_m_combinatorial_exp,pdf_m_combinatorial_exp2),RooArgList(m_fraction_exp));
 	  m_exp2.setConstant(kTRUE);
-	  m_fraction_exp.setVal(1.);
+	  m_fraction_exp.setVal(1.);    
 	}
-
   ////////////////////////////////////////////////////////////////////////////////////////////
   //The components below have no systematic variation yet, they are part of the nominal fit.//
   ////////////////////////////////////////////////////////////////////////////////////////////
 
   //K pi swap component, for channel 2. B0->jpsi K*0  
-
-  //the r1 and r2 values were obtained from the yields associated with the CB components of the fit.
-  //For example, r1 was calculated with yield1/(yield1+yield2+yield3)
-  //The fit was performed in non-extended mode in the k_pi_swap.cc macro
-  RooRealVar sigma_swapped1("sigma_swapped1","sigma_swapped1", 0.1098);
-  RooRealVar sigma_swapped2("sigma_swapped2","sigma_swapped2", 0.0209);
-  RooRealVar sigma_swapped3("sigma_swapped3","sigma_swapped3", 0.0500);
-  RooRealVar alpha1("alpha1","alpha1", 0.916);
-  RooRealVar alpha2("alpha2","alpha2", 0.305);
-  RooRealVar alpha3("alpha3","alpha3", -3.72);
-  RooRealVar n1_parameter("n1_parameter", "n1_parameter", 10.10);
-  RooRealVar n2_parameter("n2_parameter", "n2_parameter", 16.60);
-  RooRealVar n3_parameter("n3_parameter", "n3_parameter", 170.70);
-
-  RooCBShape swapped1("swapped1","swapped1", mass, m_mean, sigma_swapped1, alpha1, n1_parameter);
-  RooCBShape swapped2("swapped2","swapped2", mass, m_mean, sigma_swapped2, alpha2, n2_parameter);
-  RooCBShape swapped3("swapped3","swapped3", mass, m_mean, sigma_swapped3, alpha3, n3_parameter);
-
-  RooRealVar r1("r1","r1", 0.2918); 
-  RooRealVar r2("r12","r12", 0.4773);
-  RooAddPdf k_pi_swap("k_pi_swap","k_pi_swap", RooArgSet(swapped1,swapped2,swapped3), RooArgSet(r1,r2));
-
+  RooRealVar sigma_swapped1("sigma_swapped1","sigma_swapped1", 0.0419);
+  RooRealVar sigma_swapped2("sigma_swapped2","sigma_swapped2", 0.1138);
+  
+  RooGaussian swapped1("swapped1","swapped1",mass, m_mean, sigma_swapped1);
+  RooGaussian swapped2("swapped2","swapped2",mass, m_mean, sigma_swapped2);
+  RooRealVar r12("r12","r12", 0.655);
+  RooAddPdf k_pi_swap("k_pi_swap","k_pi_swap",RooArgSet(swapped1,swapped2),r12);
   //--------------------------------------------------------------------
 
   //jpsi_pi component, for channel 1.
@@ -383,7 +363,7 @@ void build_pdf(RooWorkspace& w, int channel, std::string choice, std::string cho
   RooRealVar n_combinatorial("n_combinatorial","n_combinatorial",n_combinatorial_initial,0.,data->sumEntries());
   RooRealVar n_x3872("n_x3872","n_x3872",200.,0.,data->sumEntries());
 
-  RooRealVar f_swap("f_swap","f_swap", 0.1403); //for the k pi swap component of channel 2
+  RooRealVar f_swap("f_swap","f_swap", 0.136765); //for the k pi swap component of channel 2
   //set n_swap like n_jpsipi in case we want to count the k_pi_swap component as background.
   
   RooRealVar f_jpsipi("f_jpsipi","f_jpsipi",4.1E-5/1.026E-3,0.,0.1); //BF(jpsi_pi) = (4.1+-0.4)*10^-5 / BF(jpsi K) = (1.026+-0.031)*10^-3
@@ -810,12 +790,11 @@ RooRealVar* bin_mass_fit(RooWorkspace& w, int channel, double pt_min, double pt_
 
   TString syst_info = "";
   
-  if(choice != "" && choice2 != "")
+if(choice != "" && choice2 != "")
   {
-    //base_dir += "syst/"; 
+    base_dir += "syst/"; 
     syst_info = "_syst_" + choice + "_" + choice2;
   }
-  
   TString dir = "";
   
   dir = base_dir + channel_to_ntuple_name(channel) + "/" + channel_to_ntuple_name(channel) + syst_info + "_mass_fit_" + TString::Format("pt_from_%d_to_%d_y_from_%.2f_to_%.2f",(int)pt_min,(int)pt_max,y_min,y_max) + mass_info;

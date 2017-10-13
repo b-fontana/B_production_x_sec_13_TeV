@@ -83,7 +83,7 @@ int main(int argc, char** argv)
         }
     }
 
-    TChain *root = new TChain("analysis/root");
+    TChain *root = new TChain("demo/root");
     TChain *HltTree = new TChain("hltanalysis/HltTree");
 
     if(input_file == "")

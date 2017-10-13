@@ -76,7 +76,7 @@ int channel_to_nbins(int channel)
     nbins = 50;
     break;
   case 5:
-    nbins = 50;
+    nbins = 80;
     break;
   case 6:
     nbins = 50;

@@ -26,8 +26,6 @@
 #include "TMath.h"
 using namespace RooFit;
 
-#define BASE_DIR "/lstore/cms/brunogal/input_for_B_production_x_sec_13_TeV/"
-
 //-----------------------------------------------------------------
 // Definition of channel #
 // channel = 1: B+ -> J/psi K+
@@ -37,7 +35,7 @@ using namespace RooFit;
 // channel = 5: Jpsi + pipi
 // channel = 6: Lambda_b -> Jpsi + Lambda
 
-//input example: reduce_mc --channel 1 --mc 1 --gen 1 --input /some/place/
+//input example: reduce_tree --channel 1 --mc 1 --gen 1 --input file
 int main(int argc, char** argv)
 {
   int channel = 1;
@@ -77,7 +75,44 @@ int main(int argc, char** argv)
     {
       printf("ERROR: no input file was indicated. Please use --input /some/file \n");
     }
-    
+  
+  TFile* old_file = new TFile(input_file);
+  TString ntuple_name = channel_to_ntuple_name(channel);
+  
+  if(mc && gen)
+    ntuple_name += "_gen";
+  
+  //if(channel == 2 && mc && !gen) //to get the correctly assigned signal, and not include the swapped component.
+  //ntuple_name += "_true";
+
+  TTree* old_tree = (TTree*)old_file->Get(ntuple_name);
+
+  old_tree->SetBranchStatus("*",0);
+  old_tree->SetBranchStatus("mass",1);
+  old_tree->SetBranchStatus("pt",1);
+  old_tree->SetBranchStatus("eta",1);
+  old_tree->SetBranchStatus("y",1);
+  old_tree->SetBranchStatus("mu1pt",1);
+  old_tree->SetBranchStatus("mu1eta",1);
+  old_tree->SetBranchStatus("mu2pt",1);
+  old_tree->SetBranchStatus("mu2eta",1);
+
+  /////////////////////////////////////////////////////////////////////////////////////
+  
+  TString output_file = "reduced_" + input_file;
+  TFile *new_file = new TFile(output_file,"recreate");
+  
+  TTree* new_tree = old_tree->CloneTree(0);
+  new_tree->CopyEntries(old_tree);
+
+  new_file->Write();
+  new_file->Close();
+
+  delete old_file;
+  delete new_file;
+}
+
+/*
   TString data_selection_output_file = "reduced_" + input_file;
   
   TFile *fout = new TFile(data_selection_output_file,"recreate");
@@ -143,3 +178,4 @@ int main(int argc, char** argv)
   fout->Write();
   fout->Close();
 }
+*/

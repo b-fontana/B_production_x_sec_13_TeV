@@ -10,14 +10,17 @@
 #include "UserCode/B_production_x_sec_13_TeV/interface/myloop.h"
 #include "UserCode/B_production_x_sec_13_TeV/interface/channel.h"
 
-//myloop_new --channel 1 --mc 0 --truth 0 --cuts 1 --debug 0 --output /some/place
+//myloop_new --channel 1 --mc 0 --truth 0 --cuts 1 --tk_win 1 --tk_veto 1 --debug 0 --input file --output /some/place
 int main(int argc, char** argv)
 {
   int channel = 1;
   int run_on_mc= 0;
   int mc_truth=0;
   int cuts = 1;
+  int tk_window_cut =1;
+  int tk_veto_cut =1;
   int debug = 0;
+  TString input_file = "";
   std::string dir ="";
 
   for(int i=1 ; i<argc ; ++i)
@@ -49,12 +52,30 @@ int main(int argc, char** argv)
           convert >> cuts;
         }
       
+      if(argument == "--tk_win")
+	{
+          convert << argv[++i];
+          convert >> tk_window_cut;
+        }
+      
+      if(argument == "--tk_veto")
+	{
+          convert << argv[++i];
+          convert >> tk_veto_cut;
+        }
+      
       if(argument == "--debug")
 	{
           convert << argv[++i];
           convert >> debug;
         }
-
+      
+      if(argument == "--input")
+	{
+          convert << argv[++i];
+          convert >> input_file;
+        }
+      
       if(argument == "--output")
         {
           convert << argv[++i];
@@ -65,43 +86,73 @@ int main(int argc, char** argv)
     TChain *root = new TChain("analysis/root");
     TChain *HltTree = new TChain("hltanalysis/HltTree");
 
-    if(run_on_mc)
+    if(input_file == "")
       {
-	switch(channel)
+	if(run_on_mc)
 	  {
-	  default:
-	  case 1:
-	    //for BMuonFilter processed with Bfinder_mc	    
-	    root->Add("/gstore/t3cms/store/user/martinsg/Bfinder_test_v2/BuToJpsiKV2_BMuonFilter_TuneCUEP8M1_13TeV-pythia8-evtgen/crab_Bfinder_test_v2/160811_210322/0000/Bfinder_mc_*.root");
-	    HltTree->Add("/gstore/t3cms/store/user/martinsg/Bfinder_test_v2/BuToJpsiKV2_BMuonFilter_TuneCUEP8M1_13TeV-pythia8-evtgen/crab_Bfinder_test_v2/160811_210322/0000/Bfinder_mc_*.root");
-	    break;
+	    switch(channel)
+	      {
+	      default:
+	      case 1:
+		//for BMuonFilter processed with Bfinder_mc	    
+		root->Add("/gstore/t3cms/store/user/martinsg/Bfinder_mc_Bu_muonfilter_ext_v1/BuToJpsiKV2_BMuonFilter_TuneCUEP8M1_13TeV-pythia8-evtgen/crab_Bfinder_mc_Bu_muonfilter_ext_v1/170515_161931/0000/Bfinder_mc_*.root");
+		root->Add("/gstore/t3cms/store/user/martinsg/Bfinder_mc_Bu_muonfilter_ext_v1/BuToJpsiKV2_BMuonFilter_TuneCUEP8M1_13TeV-pythia8-evtgen/crab_Bfinder_mc_Bu_muonfilter_ext_v1/170515_161931/0001/Bfinder_mc_*.root");
+		root->Add("/gstore/t3cms/store/user/martinsg/Bfinder_mc_Bu_muonfilter_ext_v1/BuToJpsiKV2_BMuonFilter_TuneCUEP8M1_13TeV-pythia8-evtgen/crab_Bfinder_mc_Bu_muonfilter_ext_v1/170515_161931/0002/Bfinder_mc_*.root");
+		root->Add("/gstore/t3cms/store/user/martinsg/Bfinder_mc_Bu_muonfilter_ext_v1/BuToJpsiKV2_BMuonFilter_TuneCUEP8M1_13TeV-pythia8-evtgen/crab_Bfinder_mc_Bu_muonfilter_ext_v1/170515_161931/0003/Bfinder_mc_*.root");
 
-	  case 2:
-	    //for BMuonFilter processed with Bfinder_mc
-	    root->Add("/gstore/t3cms/store/user/martinsg/Bfinder_mc_Bd_muonfilter_v1/BdToJpsiKstarV2_BMuonFilter_TuneCUEP8M1_13TeV-pythia8-evtgen/crab_Bfinder_mc_Bd_muonfilter_v1/160812_135133/0000/Bfinder_mc_*.root");
-	    HltTree->Add("/gstore/t3cms/store/user/martinsg/Bfinder_mc_Bd_muonfilter_v1/BdToJpsiKstarV2_BMuonFilter_TuneCUEP8M1_13TeV-pythia8-evtgen/crab_Bfinder_mc_Bd_muonfilter_v1/160812_135133/0000/Bfinder_mc_*.root");
-	    break;
+		HltTree->Add("/gstore/t3cms/store/user/martinsg/Bfinder_mc_Bu_muonfilter_ext_v1/BuToJpsiKV2_BMuonFilter_TuneCUEP8M1_13TeV-pythia8-evtgen/crab_Bfinder_mc_Bu_muonfilter_ext_v1/170515_161931/0000/Bfinder_mc_*.root");
+		HltTree->Add("/gstore/t3cms/store/user/martinsg/Bfinder_mc_Bu_muonfilter_ext_v1/BuToJpsiKV2_BMuonFilter_TuneCUEP8M1_13TeV-pythia8-evtgen/crab_Bfinder_mc_Bu_muonfilter_ext_v1/170515_161931/0001/Bfinder_mc_*.root");
+		HltTree->Add("/gstore/t3cms/store/user/martinsg/Bfinder_mc_Bu_muonfilter_ext_v1/BuToJpsiKV2_BMuonFilter_TuneCUEP8M1_13TeV-pythia8-evtgen/crab_Bfinder_mc_Bu_muonfilter_ext_v1/170515_161931/0002/Bfinder_mc_*.root");
+		HltTree->Add("/gstore/t3cms/store/user/martinsg/Bfinder_mc_Bu_muonfilter_ext_v1/BuToJpsiKV2_BMuonFilter_TuneCUEP8M1_13TeV-pythia8-evtgen/crab_Bfinder_mc_Bu_muonfilter_ext_v1/170515_161931/0003/Bfinder_mc_*.root");
+		break;
 
-	  case 3:
-	    break;
+	      case 2:
+		//for BMuonFilter processed with Bfinder_mc
+		root->Add("/gstore/t3cms/store/user/martinsg/Bfinder_mc_Bd_muonfilter_ext_v1/BdToJpsiKstarV2_BMuonFilter_TuneCUEP8M1_13TeV-pythia8-evtgen/crab_Bfinder_mc_Bd_muonfilter_ext_v1/170516_100548/0000/Bfinder_mc_*.root");
+		HltTree->Add("/gstore/t3cms/store/user/martinsg/Bfinder_mc_Bd_muonfilter_ext_v1/BdToJpsiKstarV2_BMuonFilter_TuneCUEP8M1_13TeV-pythia8-evtgen/crab_Bfinder_mc_Bd_muonfilter_ext_v1/170516_100548/0000/Bfinder_mc_*.root");
+		break;
 
-	  case 4:
-	    //for BMuonFilter processed with Bfinder_mc.py
-	    root->Add("/gstore/t3cms/store/user/martinsg/Bfinder_mc_Bs_muonfilter_v1/BsToJpsiPhi_BMuonFilter_TuneCUEP8M1_13TeV-pythia8-evtgen/crab_Bfinder_mc_Bs_muonfilter_v1/160812_151233/0000/Bfinder_mc_*.root");
-	    HltTree->Add("/gstore/t3cms/store/user/martinsg/Bfinder_mc_Bs_muonfilter_v1/BsToJpsiPhi_BMuonFilter_TuneCUEP8M1_13TeV-pythia8-evtgen/crab_Bfinder_mc_Bs_muonfilter_v1/160812_151233/0000/Bfinder_mc_*.root");
-	    break;
+	      case 3:
+		break;
 
-	  case 5:
-	    break;
-	  case 6:
-	    break;
+	      case 4:
+		//for BMuonFilter processed with Bfinder_mc.py
+		root->Add("/gstore/t3cms/store/user/martinsg/Bfinder_mc_Bs_muonfilter_ext_v1/BsToJpsiPhi_BMuonFilter_TuneCUEP8M1_13TeV-pythia8-evtgen/crab_Bfinder_mc_Bs_muonfilter_ext_v1/170515_155751/0000/Bfinder_mc_*.root");
+		HltTree->Add("/gstore/t3cms/store/user/martinsg/Bfinder_mc_Bs_muonfilter_ext_v1/BsToJpsiPhi_BMuonFilter_TuneCUEP8M1_13TeV-pythia8-evtgen/crab_Bfinder_mc_Bs_muonfilter_ext_v1/170515_155751/0000/Bfinder_mc_*.root");
+		break;
+
+	      case 5:
+		break;
+	    
+	      case 6:
+		break;
+	      }
+	  }
+	else
+	  { //the data contains all the B's from the different channels. 
+	    root->Add("/gstore/t3cms/store/user/martinsg/Bfinder_25ns_promptreco_v1/Charmonium/Run2015D-Bfinder-promptreco-v1/160309_114238/0000/Bfinder_25ns_*.root");
+
+	    root->Add("/gstore/t3cms/store/user/martinsg/Bfinder_25ns_promptreco_v3/Charmonium/Run2015D-Bfinder-promptreco-v3/160308_233052/0001/Bfinder_25ns_*.root");
+	    root->Add("/gstore/t3cms/store/user/martinsg/Bfinder_25ns_promptreco_v3/Charmonium/Run2015D-Bfinder-promptreco-v3/160308_233052/0000/Bfinder_25ns_*.root");
+
+	    root->Add("/gstore/t3cms/store/user/martinsg/Bfinder_25ns_promptreco_v4/Charmonium/Run2015D-Bfinder-promptreco-v4/160315_105743/0000/Bfinder_25ns_*.root");
+	    root->Add("/gstore/t3cms/store/user/martinsg/Bfinder_25ns_promptreco_v4/Charmonium/Run2015D-Bfinder-promptreco-v4/160315_105743/0001/Bfinder_25ns_*.root");
+	    root->Add("/gstore/t3cms/store/user/martinsg/Bfinder_25ns_promptreco_v4/Charmonium/Run2015D-Bfinder-promptreco-v4/160315_105743/0002/Bfinder_25ns_*.root");
+	
+	    HltTree->Add("/gstore/t3cms/store/user/martinsg/Bfinder_25ns_promptreco_v1/Charmonium/Run2015D-Bfinder-promptreco-v1/160309_114238/0000/Bfinder_25ns_*.root");
+
+	    HltTree->Add("/gstore/t3cms/store/user/martinsg/Bfinder_25ns_promptreco_v3/Charmonium/Run2015D-Bfinder-promptreco-v3/160308_233052/0001/Bfinder_25ns_*.root");
+	    HltTree->Add("/gstore/t3cms/store/user/martinsg/Bfinder_25ns_promptreco_v3/Charmonium/Run2015D-Bfinder-promptreco-v3/160308_233052/0000/Bfinder_25ns_*.root");    
+
+	    HltTree->Add("/gstore/t3cms/store/user/martinsg/Bfinder_25ns_promptreco_v4/Charmonium/Run2015D-Bfinder-promptreco-v4/160315_105743/0000/Bfinder_25ns_*.root");
+	    HltTree->Add("/gstore/t3cms/store/user/martinsg/Bfinder_25ns_promptreco_v4/Charmonium/Run2015D-Bfinder-promptreco-v4/160315_105743/0001/Bfinder_25ns_*.root");
+	    HltTree->Add("/gstore/t3cms/store/user/martinsg/Bfinder_25ns_promptreco_v4/Charmonium/Run2015D-Bfinder-promptreco-v4/160315_105743/0002/Bfinder_25ns_*.root");
 	  }
       }
-    else
-      { //the data contains all the B's from the different channels. 
-	root->Add("/gstore/t3cms/store/user/bfontana/Bfinder_Data2015_RunC/Charmonium/X/170928_091955/0000/bfinder_*.root");
-
-	HltTree->Add("/gstore/t3cms/store/user/bfontana/Bfinder_Data2015_RunC/Charmonium/X/170928_091955/0000/bfinder_*.root");
+    else //if the user chooses an input file
+      {
+	root->Add(input_file);
+	HltTree->Add(input_file);
       }
     
     //-----------------------------------------------------------------
@@ -151,7 +202,9 @@ int main(int argc, char** argv)
     TString directory = "";
     TString data = "";
     TString filter = "";
-    
+    TString tk_win = "";
+    TString tk_veto = "";
+
     if(cuts)
       filter = "with_cuts";
     else
@@ -166,8 +219,14 @@ int main(int argc, char** argv)
       }
     else
       data = "data";
+
+    if(!tk_window_cut)
+      tk_win = "_no_tk_win_cut";
+
+    if(!tk_veto_cut)
+      tk_veto = "_no_tk_veto_cut";
     
-    directory = "myloop_new_" + data + "_" + channel_to_ntuple_name(channel) + "_" + filter + ".root";
+    directory = "myloop_new_" + data + "_" + channel_to_ntuple_name(channel) + "_" + filter + tk_win + tk_veto + ".root";
 
     if(dir != "")
       directory = dir + directory;
@@ -207,7 +266,7 @@ int main(int argc, char** argv)
     std::vector<ReducedBranches> selected_bees;
 
     //debug:
-    std::vector<std::string> particle_flow_string = {"event","signal","mu1pt","mu2pt","mu1eta","mu2eta","mu1soft","mu2soft","jpsi_mass","jpsi_pt","tk1pt","tk2pt","tk1eta","tk2eta","tk1chi_ndf","tk2chi_ndf","tk1hits","tk2hits","tktk_mass","tktk_veto","HLT_selection","vtx_prob","lxy_errlxy","cos2D"};
+    std::vector<std::string> particle_flow_string = {"event","signal","HLT_selection","mu1pt","mu2pt","mu1eta","mu2eta","mu1soft","mu2soft","jpsi_mass","jpsi_pt","tk1pt","tk2pt","tk1eta","tk2eta","tk1chi_ndf","tk2chi_ndf","tk1hits","tk2hits","tktk_mass","tktk_veto","vtx_prob","lxy_errlxy","cos2D"};
     std::vector<int> particle_flow_number;
 
     for(int i=0; i < (int)particle_flow_string.size(); i++)
@@ -244,7 +303,7 @@ int main(int argc, char** argv)
 	    int b_type = BInfo->type[bidx];
 	    
 	    //the indices to run over the Binfo. These are used to identify the signal when running on MC.
-	    ujidx = BInfo->rfuj_index[bidx]; 
+	    ujidx = BInfo->rfuj_index[bidx];
 	    tk1idx = BInfo->rftk1_index[bidx];
 	    tk2idx = BInfo->rftk2_index[bidx];
 	    mu1idx = BInfo->uj_rfmu1_index[ujidx];
@@ -363,30 +422,50 @@ int main(int argc, char** argv)
 	    //the user chooses to preform the cuts or not. this is useful to calculate efficiencies. this affects both data and MC.
 	    if(cuts)
 	      {
+		//HLT selection
+		//----------------------------------------------------------------
+		if(b_type != 7) //not to use HLT filter in the jpsi pipi channel
+		  {
+		    if(run_on_mc)
+		      {
+			if (br->hltbook[HLT_DoubleMu4_JpsiTrk_Displaced_v1]!=1) continue;
+		      }
+		    else
+		      {
+			if (br->hltbook[HLT_DoubleMu4_JpsiTrk_Displaced_v1]!=1 &&
+			    br->hltbook[HLT_DoubleMu4_JpsiTrk_Displaced_v2]!=1 &&
+			    br->hltbook[HLT_DoubleMu4_JpsiTrk_Displaced_v3]!=1) //for 2016 data
+			  continue;
+		      }
+		    
+		    if(run_on_mc)	
+		      particle_flow_number[2]++;
+		  }
+
 		// Basic muon selections
 		if (MuonInfo->pt[mu1idx]<=4.) continue;
 		if(run_on_mc)
-		  particle_flow_number[2]++;
+		  particle_flow_number[3]++;
 
 		if (MuonInfo->pt[mu2idx]<=4.) continue;
 		if(run_on_mc)
-		  particle_flow_number[3]++;
+		  particle_flow_number[4]++;
 		
 		if (fabs(MuonInfo->eta[mu1idx])>=2.4) continue;
 		if(run_on_mc)
-		  particle_flow_number[4]++;
+		  particle_flow_number[5]++;
 		
 		if (fabs(MuonInfo->eta[mu2idx])>=2.4) continue;
 		if(run_on_mc)
-		  particle_flow_number[5]++;
+		  particle_flow_number[6]++;
 
 		if (!MuonInfo->SoftMuID[mu1idx]) continue;
 		if(run_on_mc)
-		  particle_flow_number[6]++;
+		  particle_flow_number[7]++;
 
 		if (!MuonInfo->SoftMuID[mu2idx]) continue;
 		if(run_on_mc)
-		  particle_flow_number[7]++;
+		  particle_flow_number[8]++;
 		
 		//-----------------------------------------------------------------
 		// J/psi cut
@@ -394,11 +473,11 @@ int main(int argc, char** argv)
 		//add the jpsi vertex prob!?
 		if (fabs(BInfo->uj_mass[ujidx]-JPSI_MASS)>=0.150) continue;
 		if(run_on_mc)
-		  particle_flow_number[8]++;
+		  particle_flow_number[9]++;
 		
 		if (BInfo->uj_pt[ujidx]<=10.0) continue; //was 8.0 before
 		if(run_on_mc)
-		  particle_flow_number[9]++;
+		  particle_flow_number[10]++;
 		
 		//-----------------------------------------------------------------
 		// Basic track selections
@@ -413,105 +492,113 @@ int main(int argc, char** argv)
 		  { // others (2 tracks)
 		    if (TrackInfo->pt[tk1idx]<=0.7) continue;
 		    if(run_on_mc)
-		      particle_flow_number[10]++;
+		      particle_flow_number[11]++;
 		    
 		    if (TrackInfo->pt[tk2idx]<=0.7) continue;
 		    if(run_on_mc)
-		      particle_flow_number[11]++;
+		      particle_flow_number[12]++;
 
 		    if (fabs(TrackInfo->eta[tk1idx])>=2.5) continue;
 		    if(run_on_mc)
-		      particle_flow_number[12]++;
+		      particle_flow_number[13]++;
 		    
 		    if (fabs(TrackInfo->eta[tk2idx])>=2.5) continue;
 		    if(run_on_mc)
-		      particle_flow_number[13]++;
+		      particle_flow_number[14]++;
 
 		    if (TrackInfo->chi2[tk1idx]/TrackInfo->ndf[tk1idx]>=5.) continue;
 		    if(run_on_mc)
-		      particle_flow_number[14]++;
+		      particle_flow_number[15]++;
 		    
 		    if (TrackInfo->chi2[tk2idx]/TrackInfo->ndf[tk2idx]>=5.) continue;
 		    if(run_on_mc)
-		      particle_flow_number[15]++;
+		      particle_flow_number[16]++;
 		    
 		    if (TrackInfo->striphit[tk1idx]+TrackInfo->pixelhit[tk1idx]<5) continue;
 		    if(run_on_mc)
-		      particle_flow_number[16]++;
+		      particle_flow_number[17]++;
 
 		    if (TrackInfo->striphit[tk2idx]+TrackInfo->pixelhit[tk2idx]<5) continue;
 		    if(run_on_mc)
-		      particle_flow_number[17]++;
+		      particle_flow_number[18]++;
 		  }
 
 		//---------------------------------------------------------------------
 		// ditrack mass window selection
+		
 		double k_short_window = 0.015; //originally was 0.060
 		double lambda_window = 0.015;  //originally was 0.010
-
+		
 		double k_star_window = 0.500;
 		double k_star_veto = 0.050;
-
+		
 		double phi_window = 0.010;
 		double phi_veto = 0.010;
-
-		switch(b_type)
-		  {
-		  case 3: // Ks mode
-		   if (fabs(BInfo->tktk_mass[bidx]-KSHORT_MASS)>=k_short_window) continue; 
-		   break;
-
-		  case 4: // Kstar mode
-		  case 5: // Kstar mode
-		    if (fabs(BInfo->tktk_mass[bidx]-KSTAR_MASS)>=k_star_window) continue;
-		    break;
-		    
-		  case 6: // phi mode
-		    if (fabs(BInfo->tktk_mass[bidx]-PHI_MASS)>=phi_window) continue;
-		    break;
-		    
-		  case 8: // Lambda mode
-		  case 9: // Lambda mode
-		    if (fabs(BInfo->tktk_mass[bidx]-LAMBDA_MASS)>=lambda_window) continue; 
-		    break;
-		  }
-
-		if(run_on_mc)
-		  particle_flow_number[18]++;
 		
-		//------------------------------------------------------------------------------------
-		// ditrack vetos
-		TLorentzVector v4_tk1, v4_tk2;
-		
-		switch(b_type)
+		if(tk_window_cut)
 		  {
-		  case 4: // Kstar mode
-		  case 5: // Kstar mode
-		    v4_tk1.SetPtEtaPhiM(TrackInfo->pt[tk1idx],TrackInfo->eta[tk1idx],TrackInfo->phi[tk1idx],KAON_MASS);
-		    v4_tk2.SetPtEtaPhiM(TrackInfo->pt[tk2idx],TrackInfo->eta[tk2idx],TrackInfo->phi[tk2idx],KAON_MASS);
-		    if (fabs((v4_tk1+v4_tk2).Mag()-PHI_MASS)<=phi_veto) continue;
-		    break;
+		    switch(b_type)
+		      {
+		      case 3: // Ks mode
+			if (fabs(BInfo->tktk_mass[bidx]-KSHORT_MASS)>=k_short_window) continue; 
+			break;
+			
+		      case 4: // Kstar mode
+		      case 5: // Kstar mode
+			if (fabs(BInfo->tktk_mass[bidx]-KSTAR_MASS)>=k_star_window) continue;
+			break;
 		    
-		  case 6: // phi mode
-		    v4_tk1.SetPtEtaPhiM(TrackInfo->pt[tk1idx],TrackInfo->eta[tk1idx],TrackInfo->phi[tk1idx],KAON_MASS);
-		    v4_tk2.SetPtEtaPhiM(TrackInfo->pt[tk2idx],TrackInfo->eta[tk2idx],TrackInfo->phi[tk2idx],PION_MASS);
-		    if (fabs((v4_tk1+v4_tk2).Mag()-KSTAR_MASS)<=k_star_veto) continue;
+		      case 6: // phi mode
+			if (fabs(BInfo->tktk_mass[bidx]-PHI_MASS)>=phi_window) continue;
+			break;
 		    
-		    v4_tk1.SetPtEtaPhiM(TrackInfo->pt[tk1idx],TrackInfo->eta[tk1idx],TrackInfo->phi[tk1idx],PION_MASS);
-		    v4_tk2.SetPtEtaPhiM(TrackInfo->pt[tk2idx],TrackInfo->eta[tk2idx],TrackInfo->phi[tk2idx],KAON_MASS);
-		    if (fabs((v4_tk1+v4_tk2).Mag()-KSTAR_MASS)<=k_star_veto) continue;
-		    break;
-		    
-		  case 8: // Lambda mode
-		  case 9: // Lambda mode
-		    v4_tk1.SetPtEtaPhiM(TrackInfo->pt[tk1idx],TrackInfo->eta[tk1idx],TrackInfo->phi[tk1idx],PION_MASS);
-		    v4_tk2.SetPtEtaPhiM(TrackInfo->pt[tk2idx],TrackInfo->eta[tk2idx],TrackInfo->phi[tk2idx],PION_MASS);
-		    if (fabs((v4_tk1+v4_tk2).Mag()-KSHORT_MASS)<=k_short_window) continue;
-		    break;
+		      case 8: // Lambda mode
+		      case 9: // Lambda mode
+			if (fabs(BInfo->tktk_mass[bidx]-LAMBDA_MASS)>=lambda_window) continue; 
+			break;
+		      }
 		  }
 		
 		if(run_on_mc)
 		  particle_flow_number[19]++;
+		
+		//------------------------------------------------------------------------------------
+		// ditrack vetos
+
+		if(tk_veto_cut)
+		  {
+		    TLorentzVector v4_tk1, v4_tk2;
+		
+		    switch(b_type)
+		      {
+		      case 4: // Kstar mode
+		      case 5: // Kstar mode
+			v4_tk1.SetPtEtaPhiM(TrackInfo->pt[tk1idx],TrackInfo->eta[tk1idx],TrackInfo->phi[tk1idx],KAON_MASS);
+			v4_tk2.SetPtEtaPhiM(TrackInfo->pt[tk2idx],TrackInfo->eta[tk2idx],TrackInfo->phi[tk2idx],KAON_MASS);
+			if (fabs((v4_tk1+v4_tk2).Mag()-PHI_MASS)<=phi_veto) continue;
+			break;
+		    
+		      case 6: // phi mode
+			v4_tk1.SetPtEtaPhiM(TrackInfo->pt[tk1idx],TrackInfo->eta[tk1idx],TrackInfo->phi[tk1idx],KAON_MASS);
+			v4_tk2.SetPtEtaPhiM(TrackInfo->pt[tk2idx],TrackInfo->eta[tk2idx],TrackInfo->phi[tk2idx],PION_MASS);
+			if (fabs((v4_tk1+v4_tk2).Mag()-KSTAR_MASS)<=k_star_veto) continue;
+		    
+			v4_tk1.SetPtEtaPhiM(TrackInfo->pt[tk1idx],TrackInfo->eta[tk1idx],TrackInfo->phi[tk1idx],PION_MASS);
+			v4_tk2.SetPtEtaPhiM(TrackInfo->pt[tk2idx],TrackInfo->eta[tk2idx],TrackInfo->phi[tk2idx],KAON_MASS);
+			if (fabs((v4_tk1+v4_tk2).Mag()-KSTAR_MASS)<=k_star_veto) continue;
+			break;
+		    
+		      case 8: // Lambda mode
+		      case 9: // Lambda mode
+			v4_tk1.SetPtEtaPhiM(TrackInfo->pt[tk1idx],TrackInfo->eta[tk1idx],TrackInfo->phi[tk1idx],PION_MASS);
+			v4_tk2.SetPtEtaPhiM(TrackInfo->pt[tk2idx],TrackInfo->eta[tk2idx],TrackInfo->phi[tk2idx],PION_MASS);
+			if (fabs((v4_tk1+v4_tk2).Mag()-KSHORT_MASS)<=k_short_window) continue;
+			break;
+		      }
+		  }
+		
+		if(run_on_mc)
+		  particle_flow_number[20]++;
 
 	      } //end of cuts, there are more cuts later in the code
 	    
@@ -694,26 +781,6 @@ int main(int argc, char** argv)
 	    if(cuts)
 	      {
 		// cuts that depend on complex variables defined above.
-		
-		//HLT selection
-		//----------------------------------------------------------------
-		if(b_type != 7) //not to use HLT filter in the jpsi pipi channel
-		  {
-		    if(run_on_mc)
-		      {
-			if (br->hltbook[HLT_DoubleMu4_JpsiTrk_Displaced_v1]!=1) continue;
-		      }
-		    else
-		      {
-			if (br->hltbook[HLT_DoubleMu4_JpsiTrk_Displaced_v1]!=1 &&
-			    br->hltbook[HLT_DoubleMu4_JpsiTrk_Displaced_v2]!=1 &&
-			    br->hltbook[HLT_DoubleMu4_JpsiTrk_Displaced_v3]!=1) //for 2016 data
-			  continue;
-		      }
-		    
-		    if(run_on_mc)
-		      particle_flow_number[20]++;
-		  }
 				
 		if(b_type==1 || b_type==2 || b_type==4 || b_type==5 || b_type==6) //for K+, pi+, K*0, phi
 		  {
@@ -830,6 +897,7 @@ int main(int argc, char** argv)
     
     if(run_on_mc)
       {
+	std::cout << "THIS VALUES ONLY MAKES SENSE FOR THE DITRACK CHANNELS!!" << std::endl;
 	std::cout << "cut  :  number  :  efficiency" << std::endl;
 	std::cout << particle_flow_string[0] << " : " << particle_flow_number[0] << " : " << ((double)particle_flow_number[0]/(double)particle_flow_number[0])*100 << std::endl;
 

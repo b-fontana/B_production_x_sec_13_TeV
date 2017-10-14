@@ -72,7 +72,7 @@ int main(int argc, char** argv)
   //to create the directories to save the files
   std::vector<std::string> dir_list;  
   
-  dir_list.push_back(static_cast<const char*>(TString::Format(VERSION) + "/signal_yield_root/syst/" + channel_to_ntuple_name(channel)));
+  dir_list.push_back(static_cast<const char*>(TString::Format(VERSION) + "/systematics_root/" + channel_to_ntuple_name(channel)));
   dir_list.push_back(static_cast<const char*>(TString::Format(VERSION) + "/mass_fits/syst/" + channel_to_ntuple_name(channel)));
   create_dir(dir_list);
 
@@ -128,7 +128,7 @@ int main(int argc, char** argv)
   //debug:
   std::cout << "nominal_yield: " << nominal_yield.getVal() << " err_lo: " << nominal_yield.getAsymErrorLo() << " err_hi: " << nominal_yield.getAsymErrorHi() << std::endl;
 
-  TString syst_dir = TString::Format(VERSION) + "/signal_yield_root/syst/" + channel_to_ntuple_name(channel) + "/";
+  TString syst_dir = TString::Format(VERSION) + "/systematics_root/" + channel_to_ntuple_name(channel) + "/";
   
   //absolute value of syst, i.e. from 0 to 1
   double absolute_syst_val = -1; //set to -1 as default, should be replaced below by a specific syst or the combined syst

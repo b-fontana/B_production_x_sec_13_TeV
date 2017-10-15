@@ -12,12 +12,13 @@
 
 double pdf_syst(RooWorkspace& ws, int channel, double pt_min, double pt_max, double y_min, double y_max, double nominal_yield, TString syst);
 double mass_window_syst(RooWorkspace& ws, int channel, double pt_min, double pt_max, double y_min, double y_max, double nominal_yield, TString input_file);
+double reweighting_syst(int channel, double pt_min, double pt_max, double y_min, double y_max, double nominal_quantity);
 
 //input example: calculate_bin_syst --channel 1 --syst signal_pdf --ptmin 30 --ptmax 35 --ymin 0.00 --ymax 2.25
 int main(int argc, char** argv)
 {
   //list to calculate the combined_syst
-  std::vector<std::string> syst_list = {"signal_pdf","cb_pdf","mass_window"};
+  std::vector<std::string> syst_list = {"signal_pdf","cb_pdf","mass_window","reweighting"};
 
   int channel = 1;
   TString syst = "";
@@ -74,6 +75,8 @@ int main(int argc, char** argv)
   
   dir_list.push_back(static_cast<const char*>(TString::Format(VERSION) + "/signal_yield_root/syst/" + channel_to_ntuple_name(channel)));
   dir_list.push_back(static_cast<const char*>(TString::Format(VERSION) + "/mass_fits/syst/" + channel_to_ntuple_name(channel)));
+  dir_list.push_back(static_cast<const char*>(TString::Format(VERSION) + "/efficiencies_root/syst/" + channel_to_ntuple_name(channel)));
+  dir_list.push_back(static_cast<const char*>(TString::Format(VERSION) + "/combined_syst/" + channel_to_ntuple_name(channel)));
   create_dir(dir_list);
 
   TString data_selection_input_file = TString::Format(BASE_DIR) + "selected_myloop_new_data_" + channel_to_ntuple_name(channel) + "_with_cuts.root";
@@ -94,9 +97,14 @@ int main(int argc, char** argv)
   /////////////////////////////
   TString bins_str = "_pt_from_" + TString::Format("%d_to_%d", (int)pt_min, (int)pt_max) + "_y_from_" + TString::Format("%.2f_to_%.2f", y_min, y_max);
 
-  TString in_file_name = TString::Format(VERSION) + "/signal_yield_root/" + channel_to_ntuple_name(channel) + "/yield_" + channel_to_ntuple_name(channel) + bins_str + ".root";
+  TString in_file_name;
+  if (syst == "signal_pdf" || syst == "cb_pdf" || syst == "mass_window")
+    in_file_name = TString::Format(VERSION) + "/signal_yield_root/" + channel_to_ntuple_name(channel) + "/yield_" + channel_to_ntuple_name(channel) + bins_str + ".root";
+  else if (syst == "reweighting" || syst == "combined_syst") //the last option can be placed in the 'if' too
+    in_file_name = TString::Format(VERSION) + "/efficiencies_root/" + channel_to_ntuple_name(channel) + "/totaleff_" + channel_to_ntuple_name(channel) + bins_str + ".root";
+  else std::cout << "The introduced systematic is not a valid option! (calculate_bin_syst.cc)" << std::endl;
 
-  std::cout << "reading nominal yield from : " << in_file_name << std::endl;
+  std::cout << "reading nominal quantity from : " << in_file_name << std::endl;
 
   TFile* fin = new TFile(in_file_name);
 
@@ -106,10 +114,15 @@ int main(int argc, char** argv)
 
   if(fin->IsZombie())
     {
-      std::cout << "The nominal yield file " << in_file_name << " was not found." << std::endl;
+      std::cout << "The nominal quantity file " << in_file_name << " was not found." << std::endl;
       std::cout << "No problem, it will be calculated" << std::endl;
 
-      command = "calculate_bin_yield";
+      if (syst == "signal_pdf" || syst == "cb_pdf" || syst == "mass_window")
+	command = "calculate_bin_yield";
+      else if (syst == "reweighting" || syst == "combined_syst") //the last option can be placed in the 'if' too
+	command = "calculate_bin_eff --eff recoeff"; //the systematic due to the reweight only affects the reco_efficiency
+      else std::cout << "The introduced systematic is not a valid option! (calculate_bin_syst.cc)" << std::endl;
+
       opt = " --channel " + TString::Format("%d", channel) + " --ptmin " + TString::Format("%d", (int)pt_min) + " --ptmax " + TString::Format("%d", (int)pt_max) + " --ymin " + TString::Format("%.2f", y_min) + " --ymax " + TString::Format("%.2f", y_max);
       command += opt;
 
@@ -122,13 +135,20 @@ int main(int argc, char** argv)
   TVectorD *in_err_hi = (TVectorD*)fin->Get("err_hi");
   delete fin;
 
-  RooRealVar nominal_yield("nominal_yield", "nominal_yield", in_val[0][0]);
-  nominal_yield.setAsymError(-in_err_lo[0][0],in_err_hi[0][0]);
+  RooRealVar nominal_quantity("nominal_quantity", "nominal_quantity", in_val[0][0]); //nominal_quantity can represent either a yield or an efficiency
+  nominal_quantity.setAsymError(-in_err_lo[0][0],in_err_hi[0][0]);
 
   //debug:
-  std::cout << "nominal_yield: " << nominal_yield.getVal() << " err_lo: " << nominal_yield.getAsymErrorLo() << " err_hi: " << nominal_yield.getAsymErrorHi() << std::endl;
+  std::cout << "nominal_quantity: " << nominal_quantity.getVal() << " err_lo: " << nominal_quantity.getAsymErrorLo() << " err_hi: " << nominal_quantity.getAsymErrorHi() << std::endl;
 
-  TString syst_dir = TString::Format(VERSION) + "/signal_yield_root/syst/" + channel_to_ntuple_name(channel) + "/";
+  TString syst_dir;
+  if (syst == "signal_pdf" || syst == "cb_pdf" || syst == "mass_window")
+    syst_dir = TString::Format(VERSION) + "/signal_yield_root/syst/" + channel_to_ntuple_name(channel) + "/";
+  else if (syst == "reweighting")
+    syst_dir = TString::Format(VERSION) + "/efficiencies_root/syst/" + channel_to_ntuple_name(channel) + "/";
+  else if (syst == "combined_syst")
+    syst_dir = TString::Format(VERSION) + "/combined_syst/" + channel_to_ntuple_name(channel) + "/";
+  else std::cout << "The introduced systematic is not a valid option! (calculate_bin_syst.cc)" << std::endl;
   
   //absolute value of syst, i.e. from 0 to 1
   double absolute_syst_val = -1; //set to -1 as default, should be replaced below by a specific syst or the combined syst
@@ -140,7 +160,15 @@ int main(int argc, char** argv)
 
       for(int k=0; k<(int)syst_list.size(); k++)
         {
-	  TString f_name = syst_dir + syst_list[k] + "_" + channel_to_ntuple_name(channel) + bins_str + ".root";
+	  //when we use 'combined_syst' one has to search for each systematic component on its respective folder; 'syst_dir' cannot be used
+	  //previously it could since 'syst_dir' was always the same independently of the source of the systematic
+	  TString f_name; 
+	  if (syst_list.at(k) == "signal_pdf" || syst_list.at(k) == "cb_pdf" || syst_list.at(k) == "mass_window")
+	    f_name = TString::Format(VERSION) + "/signal_yield_root/syst/" + channel_to_ntuple_name(channel) + "/" + syst_list[k] + "_" + channel_to_ntuple_name(channel) + bins_str + ".root";
+	  else if (syst_list.at(k) == "reweighting")
+	    f_name = TString::Format(VERSION) + "/efficiencies_root/syst/" + channel_to_ntuple_name(channel) + "/" + syst_list[k] + "_" + channel_to_ntuple_name(channel) + bins_str + ".root";
+	  else std::cout << "The introduced systematic is not a valid option! (calculate_bin_syst.cc)" << std::endl;
+
 	  TFile* f_syst = new TFile(f_name);
 	  
 	  if(f_syst->IsZombie())
@@ -166,21 +194,25 @@ int main(int argc, char** argv)
     }
   else
     {
-      //calculate syst yield
-      double signal_res = 0;
+      //calculate syst yield or syst efficiency
+      double quantity_res = 0;
       
       if(syst == "mass_window")
-	signal_res = mass_window_syst(*ws, channel, pt_min, pt_max, y_min, y_max, nominal_yield.getVal(), data_selection_input_file);
+	quantity_res = mass_window_syst(*ws, channel, pt_min, pt_max, y_min, y_max, nominal_quantity.getVal(), data_selection_input_file);
       else if(syst == "signal_pdf" || syst == "cb_pdf")
-	signal_res = pdf_syst(*ws, channel, pt_min, pt_max, y_min, y_max, nominal_yield.getVal(), syst);
-      
-      absolute_syst_val = fabs(nominal_yield.getVal() - signal_res)/nominal_yield.getVal();
+	quantity_res = pdf_syst(*ws, channel, pt_min, pt_max, y_min, y_max, nominal_quantity.getVal(), syst);
+      else if(syst == "reweighting") 
+	quantity_res = reweighting_syst(channel, pt_min, pt_max, y_min, y_max, nominal_quantity.getVal()); 
+      else std::cout << "The introduced systematic is not a valid option! (calculate_bin_syst.cc)" << std::endl;    
+
+      absolute_syst_val = fabs(nominal_quantity.getVal() - quantity_res)/nominal_quantity.getVal();
     }
   
   //debug:
   std::cout << "absolute_syst_val: " << absolute_syst_val << std::endl;
 
   //write to file with syst name
+  //when the option 'combined_syst' is selected the value is stored in an independent folder
   TString syst_file_name = syst_dir + syst + "_" + channel_to_ntuple_name(channel) + bins_str + ".root";
   
   TFile* syst_file = new TFile(syst_file_name,"recreate");
@@ -308,6 +340,32 @@ double mass_window_syst(RooWorkspace& ws, int channel, double pt_min, double pt_
 	  i_max = i;
 	}
     }
+  
+  return range_syst[i_max];
+}
+
+double reweighting_syst(int channel, double pt_min, double pt_max, double y_min, double y_max, double nominal_quantity) {
+  std::vector<double> range_syst;
+  std::vector<TString> reweight_var_names;
+  reweight_var_names.push_back("mu1pt");
+
+  RooRealVar* eff_corrected;
+  int reweight_variables_number = static_cast<int>(reweight_var_names.size());  
+
+  for (int i=0; i<reweight_variables_number; ++i) {
+    eff_corrected = reco_efficiency(channel, pt_min, pt_max, y_min, y_max, true, reweight_var_names.at(i));
+    range_syst.push_back(static_cast<double>(eff_corrected->getVal()));
+  }
+
+  int i_max = 0;
+  double max_diff = 0;
+  
+  for(int i=0; i<static_cast<int>(range_syst.size()); i++) {
+    if(fabs(range_syst[i] - nominal_quantity) > max_diff) {
+      max_diff = fabs(range_syst[i] - nominal_quantity);
+      i_max = i;
+    }
+  }
   
   return range_syst[i_max];
 }

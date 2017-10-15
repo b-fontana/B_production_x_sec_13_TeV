@@ -736,8 +736,8 @@ void histoPlot(std::vector<TH1D*> v1, std::vector<TH1D*> v2, int channel, int fl
   std::string histo_mc = "_histo_mc";
   TH1D* h_aux;
   TLine *l1; 
-  //TFile *f_weights = new TFile(("weights_nminus1_" + channel_to_ntuple_name(channel) + ".root").c_str(),"RECREATE");
-  TFile *f_weights = new TFile(("weights_" + channel_to_ntuple_name(channel) + ".root").c_str(),"RECREATE");
+  //TFile *f_weights = new TFile(("weights_nminus1_" + channel_to_ntuple_name(channel) + "_with_cuts.root").c_str(),"RECREATE");
+  TFile *f_weights = new TFile(("weights_" + channel_to_ntuple_name(channel) + "_with_cuts.root").c_str(),"RECREATE");
 
   for (int j=0; j<variables; ++j) {
     c.push_back(new TCanvas());

@@ -84,7 +84,7 @@ void plot_eff(TString measure, TString eff_name, int channel, int n_var1_bins, T
 RooRealVar* bin_mass_fit(RooWorkspace& w, int channel, double pt_min, double pt_max, double y_min, double y_max, std::string choice = "", std::string choice2 = "", double mass_min = 0.0, double mass_max = 0.0, Bool_t verb = kFALSE);
 
 RooRealVar* prefilter_efficiency(int channel, double pt_min, double pt_max, double y_min, double y_max);
-RooRealVar* reco_efficiency(int channel, double pt_min, double pt_max, double y_min, double y_max);
+RooRealVar* reco_efficiency(int channel, double pt_min, double pt_max, double y_min, double y_max,  bool syst, TString reweighting_var_str = "");
 RooRealVar* branching_fraction(int channel);
 
 //void read_vector(TString measure, int channel, TString vector, TString var1_name , TString var2_name, int n_var1_bins, int n_var2_bins,  double* var1_bins, double* var2_bins, double* array, double* err_lo = NULL, double* err_hi = NULL);
@@ -930,8 +930,12 @@ RooRealVar* prefilter_efficiency(int channel, double pt_min, double pt_max, doub
   return eff1; 
 }
 
-RooRealVar* reco_efficiency(int channel, double pt_min, double pt_max, double y_min, double y_max)
+RooRealVar* reco_efficiency(int channel, double pt_min, double pt_max, double y_min, double y_max, bool syst, TString reweighting_var_str)
 {
+  double weight_tot = 1., weight_passed = 1.; 
+  TFile* f_weights = nullptr;
+  TH1D* h_weights_tot = nullptr, *h_weights_passed = nullptr;
+
   //------------read monte carlo gen without cuts-----------------------------
   TString mc_input_no_cuts = TString::Format(BASE_DIR) + "reduced_myloop_gen_" + channel_to_ntuple_name(channel) + "_bmuonfilter.root";
   TFile *fin_no_cuts = new TFile(mc_input_no_cuts);
@@ -939,6 +943,7 @@ RooRealVar* reco_efficiency(int channel, double pt_min, double pt_max, double y_
   
   //set up the variables needed
   double pt_b, eta_b, y_b, pt_mu1, pt_mu2, eta_mu1, eta_mu2;
+  double reweighting_variable;
   
   //read the ntuple from selected_data
   tin_no_cuts->SetBranchAddress("eta", &eta_b);
@@ -949,9 +954,17 @@ RooRealVar* reco_efficiency(int channel, double pt_min, double pt_max, double y_
   tin_no_cuts->SetBranchAddress("mu1eta", &eta_mu1);
   tin_no_cuts->SetBranchAddress("mu2eta", &eta_mu2);
  
+  if(syst) tin_no_cuts->SetBranchAddress(reweighting_var_str, &reweighting_variable);
+ 
   //use histograms to count the events, and TEfficiency for efficiency, because it takes care of the errors and propagation
   TH1D* hist_tot = new TH1D("hist_tot","hist_tot",1,pt_min,pt_max);
   
+  if (syst) {
+    f_weights = new TFile("fweights_" + reweighting_var_str + ".root", "READ");
+    if (f_weights != nullptr) h_weights_tot = static_cast<TH1D*>( f_weights->Get("weights_no_cuts") );
+    else std::cout << "The file was not opened! (functions.h)" << std::endl;
+  }
+
   for (int evt=0; evt < tin_no_cuts->GetEntries(); evt++)
     {
       tin_no_cuts->GetEntry(evt);
@@ -963,7 +976,10 @@ RooRealVar* reco_efficiency(int channel, double pt_min, double pt_max, double y_
       bool muon1Filter = fabs(eta_mu1) < 2.4 && pt_mu1 > 2.8;
       bool muon2Filter = fabs(eta_mu2) < 2.4 && pt_mu2 > 2.8;
  
-      if (muon1Filter && muon2Filter) hist_tot->Fill(pt_b); //count only the events with the muon selection above
+      //with syst = false we have weight_tot = 1;
+      if (syst)	weight_tot = h_weights_tot->GetBinContent( h_weights_tot->FindBin(reweighting_variable) );
+
+      if (muon1Filter && muon2Filter) hist_tot->Fill(pt_b, weight_tot); //count only the events with the muon selection above
     }
       
     //--------------------------------read monte carlo with cuts------------------------
@@ -981,7 +997,14 @@ RooRealVar* reco_efficiency(int channel, double pt_min, double pt_max, double y_
     tin_with_cuts->SetBranchAddress("mu1eta", &eta_mu1);
     tin_with_cuts->SetBranchAddress("mu2eta", &eta_mu2);
  
+    if(syst) tin_with_cuts->SetBranchAddress(reweighting_var_str, &reweighting_variable);
+
     TH1D* hist_passed = new TH1D("hist_passed","hist_passed",1,pt_min,pt_max);
+
+    if (syst) { 
+	if (f_weights != nullptr) h_weights_passed = static_cast<TH1D*>( f_weights->Get("weights_with_cuts") );
+	else std::cout << "The file was not opened! (functions.h)" << std::endl;
+    }
 
     for (int evt=0; evt < tin_with_cuts->GetEntries(); evt++)
       {
@@ -993,8 +1016,11 @@ RooRealVar* reco_efficiency(int channel, double pt_min, double pt_max, double y_
 		
 	bool muon1Filter = fabs(eta_mu1) < 2.4 && pt_mu1 > 2.8;
 	bool muon2Filter = fabs(eta_mu2) < 2.4 && pt_mu2 > 2.8;
+
+	//with syst = false we have weight_tot = 1;
+	if (syst) weight_passed = h_weights_passed->GetBinContent( h_weights_passed->FindBin(reweighting_variable) );
 	
-	if (muon1Filter && muon2Filter) hist_passed->Fill(pt_b);//count only the events with the muon selection above
+	if (muon1Filter && muon2Filter) hist_passed->Fill(pt_b, weight_passed);//count only the events with the muon selection above
       }
     
     //calculates the efficiency by dividing the histograms
@@ -1075,13 +1101,17 @@ void read_vector(int channel, TString vector, TString var1_name , TString var2_n
   TString dir = TString::Format(VERSION) + "/";
 
   if(vector == "yield")
-      dir += "signal_yield_root/";
-  else
-    if(vector == "combined_syst" || vector == "signal_pdf" || vector == "cb_pdf" || vector == "mass_window")
-      dir += "signal_yield_root/syst/";
-    else
-      if(vector == "preeff" || vector == "recoeff" || vector == "totaleff")
-	dir += "efficiencies_root/";
+    dir += "signal_yield_root/";
+  else if(vector == "signal_pdf" || vector == "cb_pdf" || vector == "mass_window")
+    dir += "signal_yield_root/syst/";
+  else if(vector == "preeff" || vector == "recoeff" || vector == "totaleff")
+    dir += "efficiencies_root/";
+  else if(vector == "reweighting")
+    dir += "efficiencies_root/syst/";
+  else if(vector == "combined_syst")
+    dir += "combined_syst/";
+  else std::cout << "The chosen option does not exist! (functions.h)" << std::endl;
+
   
   dir += channel_to_ntuple_name(channel) + "/";
   
@@ -1150,7 +1180,7 @@ void read_vector(int channel, TString vector, TString var1_name , TString var2_n
                     line = command + opt + " --eff " + vector;
                   }
                 else
-                  if(vector == "combined_syst" || vector == "signal_pdf" || vector == "cb_pdf" || vector == "mass_window")
+                  if(vector == "combined_syst" || vector == "signal_pdf" || vector == "cb_pdf" || vector == "mass_window" || vector == "reweighting")
                     {
                       command += "syst";
                       line = command + opt + " --syst " + vector;

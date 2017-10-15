@@ -88,7 +88,7 @@ int main(int argc, char** argv)
     eff_res = prefilter_efficiency(channel, pt_min, pt_max, y_min, y_max);
   else
     if(eff_name == "recoeff")
-      eff_res = reco_efficiency(channel, pt_min, pt_max, y_min, y_max);
+      eff_res = reco_efficiency(channel, pt_min, pt_max, y_min, y_max, false);
     else
       if(eff_name == "totaleff")
 	{

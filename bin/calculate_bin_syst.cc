@@ -1,4 +1,5 @@
 #include "UserCode/B_production_x_sec_13_TeV/interface/functions.h"
+#include "UserCode/B_production_x_sec_13_TeV/interface/syst.h"
 
 //-----------------------------------------------------------------
 // Definition of channel #
@@ -16,15 +17,17 @@ double mass_window_syst(RooWorkspace& ws, int channel, double pt_min, double pt_
 //input example: calculate_bin_syst --channel 1 --syst signal_pdf --ptmin 30 --ptmax 35 --ymin 0.00 --ymax 2.25
 int main(int argc, char** argv)
 {
-  //list to calculate the combined_syst
-  std::vector<std::string> syst_list = {"signal_pdf","cb_pdf","mass_window"};
-
   int channel = 1;
   TString syst = "";
   double pt_min = -1;
   double pt_max = -1;
   double y_min = -1;
   double y_max = -1;
+
+  //list to calculate the combined_syst
+  std::vector<std::string> syst_list;
+
+  setup_syst_list(channel, &syst_list);
 
   for(int i=1 ; i<argc ; ++i)
     {
@@ -137,9 +140,13 @@ int main(int argc, char** argv)
   if(syst == "combined_syst")
     {
       double sqrt_err = 0;
+      
+      std::cout << "=== Systematics list ===" << std::endl;
 
       for(int k=0; k<(int)syst_list.size(); k++)
         {
+	  std::cout << "Syst nr " << k << " : " << syst_list[k] << std::endl;
+	  
 	  TString f_name = syst_dir + syst_list[k] + "_" + channel_to_ntuple_name(channel) + bins_str + ".root";
 	  TFile* f_syst = new TFile(f_name);
 	  
@@ -169,10 +176,10 @@ int main(int argc, char** argv)
       //calculate syst yield
       double signal_res = 0;
       
-      if(syst == "mass_window")
+      if(syst == "mass_window_syst")
 	signal_res = mass_window_syst(*ws, channel, pt_min, pt_max, y_min, y_max, nominal_yield.getVal(), data_selection_input_file);
       else
-	if(syst == "signal_pdf" || syst == "cb_pdf")
+	if(syst == "signal_pdf_syst" || syst == "cb_pdf_syst")
 	  signal_res = pdf_syst(*ws, channel, pt_min, pt_max, y_min, y_max, nominal_yield.getVal(), syst);
       
       absolute_syst_val = fabs(nominal_yield.getVal() - signal_res)/nominal_yield.getVal();
@@ -217,7 +224,7 @@ double pdf_syst(RooWorkspace& ws, int channel, double pt_min, double pt_max, dou
   std::cout << syst << std::endl;
   
   //copy the names of the pdfs into the pdf vector.
-  if(syst == "signal_pdf")
+  if(syst == "signal_pdf_syst")
     {
       pdf_name = "signal";
       pdf.reserve((int)signal.size()); 
@@ -226,7 +233,7 @@ double pdf_syst(RooWorkspace& ws, int channel, double pt_min, double pt_max, dou
 	pdf.push_back(signal[i]);
     }
   else
-    if(syst == "cb_pdf")
+    if(syst == "cb_pdf_syst")
       {
 	pdf_name = "background";
 	pdf.reserve((int)background.size()); 

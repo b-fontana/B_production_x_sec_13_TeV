@@ -1058,7 +1058,7 @@ void read_vector(int channel, TString vector, TString var1_name , TString var2_n
   if(vector == "yield")
       dir += "signal_yield_root/";
   else
-    if(vector == "combined_syst" || vector == "signal_pdf" || vector == "cb_pdf" || vector == "mass_window")
+    if(vector == "combined_syst" || vector == "signal_pdf_syst" || vector == "cb_pdf_syst" || vector == "mass_window_syst")
       dir += "signal_yield_root/syst/";
     else
       if(vector == "preeff" || vector == "recoeff" || vector == "totaleff")
@@ -1131,7 +1131,7 @@ void read_vector(int channel, TString vector, TString var1_name , TString var2_n
                     line = command + opt + " --eff " + vector;
                   }
                 else
-                  if(vector == "combined_syst" || vector == "signal_pdf" || vector == "cb_pdf" || vector == "mass_window")
+                  if(vector == "combined_syst" || vector == "signal_pdf_syst" || vector == "cb_pdf_syst" || vector == "mass_window_syst")
                     {
                       command += "syst";
                       line = command + opt + " --syst " + vector;

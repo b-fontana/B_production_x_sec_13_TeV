@@ -14,7 +14,7 @@
 double pdf_syst(RooWorkspace& ws, int channel, double pt_min, double pt_max, double y_min, double y_max, double nominal_yield, TString syst);
 double mass_window_syst(RooWorkspace& ws, int channel, double pt_min, double pt_max, double y_min, double y_max, double nominal_yield, TString input_file);
 
-//input example: calculate_bin_syst --channel 1 --syst signal_pdf --ptmin 30 --ptmax 35 --ymin 0.00 --ymax 2.25
+//input example: calculate_bin_syst --channel 1 --syst signal_pdf_syst --ptmin 30 --ptmax 35 --ymin 0.00 --ymax 2.25
 int main(int argc, char** argv)
 {
   int channel = 1;
@@ -79,74 +79,46 @@ int main(int argc, char** argv)
   dir_list.push_back(static_cast<const char*>(TString::Format(VERSION) + "/mass_fits/syst/" + channel_to_ntuple_name(channel)));
   create_dir(dir_list);
 
-  TString data_selection_input_file = TString::Format(BASE_DIR) + "/new_inputs/myloop_new_data_" + channel_to_ntuple_name(channel) + "_with_cuts.root";
-  RooWorkspace* ws = new RooWorkspace("ws","Bmass");
-  
-  //set up mass, pt and y variables inside ws  
-  set_up_workspace_variables(*ws,channel);
-  //read data from the selected data file, and import it as a dataset into the workspace.
-  read_data(*ws, data_selection_input_file,channel);
-  
+    
   ///////////////////////////////////////////////////
   //calculate the syst error for a bin of pt and y.//
   ///////////////////////////////////////////////////
   std::cout << "processing subsample: " << pt_min << " < " << "pt" << " < " << pt_max << " and " << y_min << " < " << "|y|" << " < " << y_max << std::endl;
   
-  //////////////////////////////
-  //read nominal signal yield//
-  /////////////////////////////
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    
   TString bins_str = "_pt_from_" + TString::Format("%d_to_%d", (int)pt_min, (int)pt_max) + "_y_from_" + TString::Format("%.2f_to_%.2f", y_min, y_max);
-
-  TString in_file_name = TString::Format(VERSION) + "/signal_yield_root/" + channel_to_ntuple_name(channel) + "/yield_" + channel_to_ntuple_name(channel) + bins_str + ".root";
-
-  std::cout << "reading nominal yield from : " << in_file_name << std::endl;
-
-  TFile* fin = new TFile(in_file_name);
-
-  //to be used to run commands
+  
   TString command = "";
-  TString opt = "";
+  TString opt = " --channel " + TString::Format("%d", channel) + " --ptmin " + TString::Format("%d", (int)pt_min) + " --ptmax " + TString::Format("%d", (int)pt_max) + " --ymin " + TString::Format("%.2f", y_min) + " --ymax " + TString::Format("%.2f", y_max); 
 
-  if(fin->IsZombie())
-    {
-      std::cout << "The nominal yield file " << in_file_name << " was not found." << std::endl;
-      std::cout << "No problem, it will be calculated" << std::endl;
-
-      command = "calculate_bin_yield";
-      opt = " --channel " + TString::Format("%d", channel) + " --ptmin " + TString::Format("%d", (int)pt_min) + " --ptmax " + TString::Format("%d", (int)pt_max) + " --ymin " + TString::Format("%.2f", y_min) + " --ymax " + TString::Format("%.2f", y_max);
-      command += opt;
-
-      gSystem->Exec(command);
-      fin = new TFile(in_file_name);
-    }
-
-  TVectorD *in_val = (TVectorD*)fin->Get("val");
-  TVectorD *in_err_lo = (TVectorD*)fin->Get("err_lo");
-  TVectorD *in_err_hi = (TVectorD*)fin->Get("err_hi");
-  delete fin;
-
-  RooRealVar nominal_yield("nominal_yield", "nominal_yield", in_val[0][0]);
-  nominal_yield.setAsymError(-in_err_lo[0][0],in_err_hi[0][0]);
-
-  //debug:
-  std::cout << "nominal_yield: " << nominal_yield.getVal() << " err_lo: " << nominal_yield.getAsymErrorLo() << " err_hi: " << nominal_yield.getAsymErrorHi() << std::endl;
+  TString dir = "";
+  TString val_name = "";
 
   TString syst_dir = TString::Format(VERSION) + "/systematics_root/" + channel_to_ntuple_name(channel) + "/";
   
   //absolute value of syst, i.e. from 0 to 1
   double absolute_syst_val = -1; //set to -1 as default, should be replaced below by a specific syst or the combined syst
 
+  ////////////////////////////////////////////////////////////////////////////////////////////////////////////  
+
   //cicle to calculate combined_syst
   if(syst == "combined_syst")
     {
-      double sqrt_err = 0;
-      
-      std::cout << "=== Systematics list ===" << std::endl;
+      std::vector<double> syst_list_val;
+            
+      //print syst list with names
+      std::cout << "=== Systematics list name ===" << std::endl;
 
       for(int k=0; k<(int)syst_list.size(); k++)
         {
 	  std::cout << "Syst nr " << k << " : " << syst_list[k] << std::endl;
-	  
+	}
+      
+      double sqrt_err = 0;
+
+      for(int k=0; k<(int)syst_list.size(); k++)
+        {
 	  TString f_name = syst_dir + syst_list[k] + "_" + channel_to_ntuple_name(channel) + bins_str + ".root";
 	  TFile* f_syst = new TFile(f_name);
 	  
@@ -156,37 +128,142 @@ int main(int argc, char** argv)
 	      std::cout << "No problem, it will be calculated" << std::endl;
 	      
 	      command = "calculate_bin_syst --syst " + syst_list[k];
-	      opt = " --channel " + TString::Format("%d", channel) + " --ptmin " + TString::Format("%d", (int)pt_min) + " --ptmax " + TString::Format("%d", (int)pt_max) + " --ymin " + TString::Format("%.2f", y_min) + " --ymax " + TString::Format("%.2f", y_max);
+	      
 	      command += opt;
 
+	      std::cout << "Executing command:" << std::endl;
+	      std::cout << command << std::endl;
+	      
 	      gSystem->Exec(command);
+
 	      f_syst = new TFile(f_name);
 	    }
 
 	  TVectorD *in_err_hi = (TVectorD*)f_syst->Get("err_hi");
           delete f_syst;
+
+	  syst_list_val.push_back(in_err_hi[0][0]);
 	  
 	  sqrt_err += pow(in_err_hi[0][0],2);
 	}
-
+      
       absolute_syst_val = sqrt(sqrt_err);
+
+      //print syst list with val
+      std::cout << "=== Systematics list val ===" << std::endl;
+
+      for(int k=0; k<(int)syst_list_val.size(); k++)
+        {
+	  std::cout << "Syst nr " << k << ": " << syst_list[k] << " : " << syst_list_val[k] << std::endl;
+	}
     }
   else
     {
-      //calculate syst yield
-      double signal_res = 0;
+      //////////////////////
+      //read nominal value//
+      //////////////////////
       
-      if(syst == "mass_window_syst")
-	signal_res = mass_window_syst(*ws, channel, pt_min, pt_max, y_min, y_max, nominal_yield.getVal(), data_selection_input_file);
+      if(syst.Contains("eff"))
+	{
+	  dir = "/efficiencies_root/";
+	  
+	  if(syst.Contains("preeff"))
+	    val_name = "preeff";
+	  else
+	    if(syst.Contains("recoeff"))
+	      val_name = "recoeff";
+	    else
+	      {
+		std::cout << "Error: " <<  syst << " systematic not well defined" << std::endl;
+		return 0;
+	      }
+	}
       else
-	if(syst == "signal_pdf_syst" || syst == "cb_pdf_syst")
-	  signal_res = pdf_syst(*ws, channel, pt_min, pt_max, y_min, y_max, nominal_yield.getVal(), syst);
+	{
+	  dir = "/signal_yield_root/";
+	  val_name = "yield";
+	}
       
-      absolute_syst_val = fabs(nominal_yield.getVal() - signal_res)/nominal_yield.getVal();
+      TString in_file_name = TString::Format(VERSION) + dir + channel_to_ntuple_name(channel) + "/" + val_name + "_" + channel_to_ntuple_name(channel) + bins_str + ".root";;
+      
+      std::cout << "reading nominal val from : " << std::endl;
+      std::cout << in_file_name << std::endl;
+      
+      TFile* fin = new TFile(in_file_name);
+      
+      if(fin->IsZombie())
+	{
+	  std::cout << "The nominal val file " << in_file_name << " was not found." << std::endl;
+	  std::cout << "No problem, it will be calculated" << std::endl;
+	  
+	  if(syst.Contains("eff"))
+	    command = "calculate_bin_eff --eff " + val_name;
+	  else
+	    command = "calculate_bin_yield";
+	  
+	  command += opt;
+	  
+	  std::cout << "Executing command:" << std::endl;
+	  std::cout << command << std::endl;
+
+	  gSystem->Exec(command);
+	  	  
+	  fin = new TFile(in_file_name);
+	}
+      
+      TVectorD *in_val = (TVectorD*)fin->Get("val");
+      TVectorD *in_err_lo = (TVectorD*)fin->Get("err_lo");
+      TVectorD *in_err_hi = (TVectorD*)fin->Get("err_hi");
+      delete fin;
+      
+      RooRealVar nominal_val("nominal_val", "nominal_val", in_val[0][0]);
+      nominal_val.setAsymError(-in_err_lo[0][0],in_err_hi[0][0]);
+      
+      //debug:
+      std::cout << "nominal_val: " << nominal_val.getVal() << " err_lo: " << nominal_val.getAsymErrorLo() << " err_hi: " << nominal_val.getAsymErrorHi() << std::endl;
+      
+      //calculate systematic absolute value
+      double alternative_val = 0;
+      
+      ///////////////read dataset//////////////////////
+      if(syst.Contains("eff") == false)
+	{
+	  TString data_selection_input_file = TString::Format(BASE_DIR) + "/new_inputs/myloop_new_data_" + channel_to_ntuple_name(channel) + "_with_cuts.root";
+	  RooWorkspace* ws = new RooWorkspace("ws","Bmass");
+	  
+	  //set up mass, pt and y variables inside ws  
+	  set_up_workspace_variables(*ws,channel);
+	  //read data from the selected data file, and import it as a dataset into the workspace.
+	  read_data(*ws, data_selection_input_file,channel);
+	      
+	  if(syst == "mass_window_syst")
+	    alternative_val = mass_window_syst(*ws, channel, pt_min, pt_max, y_min, y_max, nominal_val.getVal(), data_selection_input_file);
+	  else
+	    if(syst.Contains("pdf_syst"))
+	      alternative_val = pdf_syst(*ws, channel, pt_min, pt_max, y_min, y_max, nominal_val.getVal(), syst);
+	  
+	}
+      else
+	{
+	  ////////////////////////////////////////////////
+	  //JUST FOR TESTING, CHANGE THE ALTERNATIVE_VAL//
+	  ////////////////////////////////////////////////
+	  if(syst.Contains("preeff"))
+	    {
+	      alternative_val = 0.5 * nominal_val.getVal();
+	    }
+	  else
+	    if(syst.Contains("recoeff"))
+	      {
+		alternative_val = 0.7 * nominal_val.getVal();
+	      }
+	}
+      
+      absolute_syst_val = fabs(nominal_val.getVal() - alternative_val)/nominal_val.getVal();
     }
   
   //debug:
-  std::cout << "absolute_syst_val: " << absolute_syst_val << std::endl;
+  std::cout << syst << " absolute_syst_val: " << absolute_syst_val << std::endl;
 
   //write to file with syst name
   TString syst_file_name = syst_dir + syst + "_" + channel_to_ntuple_name(channel) + bins_str + ".root";
@@ -224,7 +301,7 @@ double pdf_syst(RooWorkspace& ws, int channel, double pt_min, double pt_max, dou
   std::cout << syst << std::endl;
   
   //copy the names of the pdfs into the pdf vector.
-  if(syst == "signal_pdf_syst")
+  if(syst.Contains("signal"))
     {
       pdf_name = "signal";
       pdf.reserve((int)signal.size()); 
@@ -233,7 +310,7 @@ double pdf_syst(RooWorkspace& ws, int channel, double pt_min, double pt_max, dou
 	pdf.push_back(signal[i]);
     }
   else
-    if(syst == "cb_pdf_syst")
+    if(syst.Contains("background"))
       {
 	pdf_name = "background";
 	pdf.reserve((int)background.size()); 

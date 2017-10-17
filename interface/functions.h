@@ -1058,10 +1058,10 @@ void read_vector(int channel, TString vector, TString var1_name , TString var2_n
   if(vector == "yield")
       dir += "signal_yield_root/";
   else
-    if(vector == "combined_syst" || vector == "signal_pdf_syst" || vector == "cb_pdf_syst" || vector == "mass_window_syst")
-      dir += "signal_yield_root/syst/";
+    if(vector.Contains("syst"))
+      dir += "systematics_root/";
     else
-      if(vector == "preeff" || vector == "recoeff" || vector == "totaleff")
+      if(vector.Contains("eff"))
 	dir += "efficiencies_root/";
   
   dir += channel_to_ntuple_name(channel) + "/";
@@ -1125,13 +1125,13 @@ void read_vector(int channel, TString vector, TString var1_name , TString var2_n
                   line = command + opt;
                 }
               else
-                if(vector == "preeff" || vector == "recoeff" || vector == "totaleff")
+                if(vector.Contains("eff"))
                   {
                     command += "eff";
                     line = command + opt + " --eff " + vector;
                   }
                 else
-                  if(vector == "combined_syst" || vector == "signal_pdf_syst" || vector == "cb_pdf_syst" || vector == "mass_window_syst")
+                  if(vector.Contains("syst"))
                     {
                       command += "syst";
                       line = command + opt + " --syst " + vector;

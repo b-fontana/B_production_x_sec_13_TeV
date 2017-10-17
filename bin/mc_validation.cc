@@ -135,8 +135,7 @@ int main(int argc, char **argv) {
     else
       input_mc = "/lstore/cms/brunogal/input_for_B_production_x_sec_13_TeV/no_cuts/myloop_new_mc_truth_ " + channel_to_ntuple_name(channel) + "_no_cuts.root";
   }
-  std::cout << std::endl;
-  
+    
   RooWorkspace *ws = new RooWorkspace("ws","ws");
   RooWorkspace *ws_mc = new RooWorkspace("ws_mc","ws_mc");
   set_up_workspace_variables(*ws, channel);
@@ -165,7 +164,7 @@ int main(int argc, char **argv) {
     h2 = histoScale(h1,h2);
   }
   histoPlot(h1, h2, channel, corrected_mc_flag, cuts);
- 
+
  return 0;
 }
 
@@ -769,7 +768,6 @@ void histoPlot(std::vector<TH1D*> v1, std::vector<TH1D*> v2, int channel, int fl
   TLine *l1; 
   //TFile *f_weights = new TFile(("weights_nminus1_" + channel_to_ntuple_name(channel) + ".root").c_str(),"RECREATE");
   TFile *f_weights = new TFile(("weights_" + channel_to_ntuple_name(channel) + ".root").c_str(),"UPDATE");
-
   for (int j=0; j<variables; ++j) {
     c.push_back(new TCanvas());
   }

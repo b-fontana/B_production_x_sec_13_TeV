@@ -19,7 +19,6 @@
   <bin name="plot_syst"   file="plot_syst.cc"></bin>
   <bin name="print_val"   file="print_val.cc"></bin> 
   <bin name="valid"   file="mc_validation.cc"></bin>
-
 </environment>
 
 <Flags CXXFLAGS="-g"/>

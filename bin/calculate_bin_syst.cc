@@ -101,7 +101,7 @@ int main(int argc, char** argv)
   if (syst == "signal_pdf" || syst == "cb_pdf" || syst == "mass_window")
     in_file_name = TString::Format(VERSION) + "/signal_yield_root/" + channel_to_ntuple_name(channel) + "/yield_" + channel_to_ntuple_name(channel) + bins_str + ".root";
   else if (syst == "reweighting" || syst == "combined_syst") //the last option can be placed in the 'if' too
-    in_file_name = TString::Format(VERSION) + "/efficiencies_root/" + channel_to_ntuple_name(channel) + "/totaleff_" + channel_to_ntuple_name(channel) + bins_str + ".root";
+    in_file_name = TString::Format(VERSION) + "/efficiencies_root/" + channel_to_ntuple_name(channel) + "/recoeff_" + channel_to_ntuple_name(channel) + bins_str + ".root";
   else std::cout << "The introduced systematic is not a valid option! (calculate_bin_syst.cc)" << std::endl;
 
   std::cout << "reading nominal quantity from : " << in_file_name << std::endl;
@@ -195,7 +195,7 @@ int main(int argc, char** argv)
   else
     {
       //calculate syst yield or syst efficiency
-      double quantity_res = 0;
+      double quantity_res = 0.00;
       
       if(syst == "mass_window")
 	quantity_res = mass_window_syst(*ws, channel, pt_min, pt_max, y_min, y_max, nominal_quantity.getVal(), data_selection_input_file);
@@ -348,6 +348,7 @@ double reweighting_syst(int channel, double pt_min, double pt_max, double y_min,
   std::vector<double> range_syst;
   std::vector<TString> reweight_var_names;
   reweight_var_names.push_back("mu1pt");
+  reweight_var_names.push_back("pt");
 
   RooRealVar* eff_corrected;
   int reweight_variables_number = static_cast<int>(reweight_var_names.size());  
@@ -358,7 +359,7 @@ double reweighting_syst(int channel, double pt_min, double pt_max, double y_min,
   }
 
   int i_max = 0;
-  double max_diff = 0;
+  double max_diff = 0.00;
   
   for(int i=0; i<static_cast<int>(range_syst.size()); i++) {
     if(fabs(range_syst[i] - nominal_quantity) > max_diff) {

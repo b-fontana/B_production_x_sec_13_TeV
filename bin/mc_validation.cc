@@ -1,40 +1,52 @@
+#include <RooHist.h>
+#include <TSystem.h>
 #include <sstream>
+#include <fstream>
 #include <vector>
+#include <string>
+#include <fstream>
+#include <algorithm>
 #include <TStyle.h>
 #include <TAxis.h>
 #include <TLatex.h>
 #include <TPaveText.h>
 #include <TFile.h>
 #include <TTree.h>
+#include <TLegend.h>
 #include <TString.h>
-#include <TChain.h>
 #include <TCanvas.h>
 #include <TNtupleD.h>
+#include <TChain.h>
 #include <TH1D.h>
 #include <TLorentzVector.h>
-#include <TLegend.h>
-#include <TSystem.h>
-#include <RooWorkspace.h>
 #include <RooRealVar.h>
+#include <RooProduct.h>
 #include <RooConstVar.h>
 #include <RooDataSet.h>
 #include <RooGaussian.h>
+#include <RooBifurGauss.h>
 #include <RooChebychev.h>
 #include <RooBernstein.h>
 #include <RooExponential.h>
-#include <RooCBShape.h>
+#include <RooWorkspace.h>
 #include <RooAddPdf.h>
+#include <RooGenericPdf.h>
+#include <RooCBShape.h>
+#include <RooArgusBG.h>
+#include <TGraphAsymmErrors.h>
+#include <TEfficiency.h>
+#include <RooMCStudy.h>
 #include <RooPlot.h>
+#include <RooPlotable.h>
+#include <RooThresholdCategory.h>
+#include <Roo1DTable.h>
 #include "TMath.h"
-#include "RooExtendPdf.h"
-#include "TFitResult.h"
-#include "RooPolynomial.h"
-#include "TBranch.h"
-#include "TPaveLabel.h"
-#include <iostream>
-#include <fstream>
-#include "/home/t3cms/balves/work/CMSSW_7_4_15/src/UserCode/B_production_x_sec_13_TeV/interface/myloop.h"
-#include "UserCode/B_production_x_sec_13_TeV/interface/BLooks.h"
+#include "TVectorD.h"
+#include <TLegend.h>
+#include "TF1.h"
+#include "TPaveStats.h"
+
+#include "/home/t3cms/balves/work/CMSSW_9_2_12/src/UserCode/B_production_x_sec_13_TeV/interface/BLooks.h"
 using namespace RooFit;
 
 #define VAR_NUMBER 17 //the variable 'mass' has to be the last one to be stored
@@ -43,7 +55,7 @@ using namespace RooFit;
 //void newNtuple(std::string filename_open, std::string filename_save, int channel);
 void read_data(RooWorkspace& w, std::string filename, int channel);
 void set_up_workspace_variables(RooWorkspace& w, int channel);
-void histoPlot(std::vector<TH1D*> v1, std::vector<TH1D*> v2, int channel, int flag);
+void histoPlot(std::vector<TH1D*> v1, std::vector<TH1D*> v2, int channel, int flag, int cuts);
 int getNBins(int var, int channel);
 double getMass(int channel);
 double getSigma(RooWorkspace& w, int channel);
@@ -60,11 +72,13 @@ std::string varName(int variable);
 std::string unitName(int variable);
 
 //channels: 1. B+ -> J/psi K+; 2. Bd -> J/psi K*0; 4. Bs -> J/psi phi
+//example: valid --channel 1 --cuts 0
 int main(int argc, char **argv) {
 
   int channel = 0;
   int input_data_flag = 0, input_mc_flag = 0;
   std::string input_data, input_mc;
+  int cuts = 0;
   int corrected_mc_flag = 0;
   std::string corrected_mc_str = ""; 
 
@@ -90,6 +104,11 @@ int main(int argc, char **argv) {
 	  convert >> input_mc;
 	  input_mc_flag = 1;
 	}
+      else if(argument == "--cuts")
+	{
+	  convert << argv[++i];
+	  convert >> cuts;
+	}
       else if(argument == "CORRECT_MC") {
 	corrected_mc_flag = 1;
 	corrected_mc_str = "reweighted_mc.root";
@@ -105,38 +124,48 @@ int main(int argc, char **argv) {
     }
 
   if (input_data_flag!=1) {
-    input_data = "/lstore/cms/balves/Jobs/Full_Dataset_2015/C_myloop_new_data_" + channel_to_ntuple_name(channel) + "_with_cuts.root";
+    if(cuts)
+      input_data = "/lstore/cms/brunogal/input_for_B_production_x_sec_13_TeV/new_inputs/myloop_new_data_" + channel_to_ntuple_name(channel) + "_with_cuts.root";
+    else 
+      input_data = "/lstore/cms/brunogal/input_for_B_production_x_sec_13_TeV/no_cuts/myloop_new_data_" + channel_to_ntuple_name(channel) + "_no_cuts.root";
   }
   if (input_mc_flag!=1) {
-    input_mc = "/lstore/cms/brunogal/input_for_B_production_x_sec_13_TeV/new_inputs/myloop_new_mc_truth_" +  channel_to_ntuple_name(channel) + "_with_cuts.root";
+    if(cuts)
+      input_mc = "/lstore/cms/brunogal/input_for_B_production_x_sec_13_TeV/new_inputs/myloop_new_mc_truth_" +  channel_to_ntuple_name(channel) + "_with_cuts.root";
+    else
+      input_mc = "/lstore/cms/brunogal/input_for_B_production_x_sec_13_TeV/no_cuts/myloop_new_mc_truth_ " + channel_to_ntuple_name(channel) + "_no_cuts.root";
   }
   std::cout << std::endl;
-
- RooWorkspace *ws = new RooWorkspace("ws","ws");
- RooWorkspace *ws_mc = new RooWorkspace("ws_mc","ws_mc");
- set_up_workspace_variables(*ws, channel);
- set_up_workspace_variables(*ws_mc, channel); 
- read_data(*ws, input_data, channel);
- read_data(*ws_mc, input_mc, channel);
-
- std::string extension1 = "_ssdata", extension2 = "_mc";
- std::vector<TH1D*> h1 = sideband_sub(*ws, *ws_mc, channel, extension1);
- std::vector<TH1D*> h2;
-
- if (corrected_mc_flag!=1) {
-   h2 = histoBuild(*ws_mc, channel, extension2);
-   h2 = histoScale(h1,h2); 
- }
- else {
-   TFile *f = new TFile(corrected_mc_str.c_str(),"READ");
-   for (int i=0; i<VAR_NUMBER; ++i) {
-     TH1D* h_aux = (TH1D*)f->Get(varName(i+1).c_str());
-     h2.push_back(h_aux);
-   } 
-   h2 = histoScale(h1,h2);
- }
- histoPlot(h1, h2, channel, corrected_mc_flag);
-
+  
+  RooWorkspace *ws = new RooWorkspace("ws","ws");
+  RooWorkspace *ws_mc = new RooWorkspace("ws_mc","ws_mc");
+  set_up_workspace_variables(*ws, channel);
+  std::cout << "setup1" << std::endl;
+  set_up_workspace_variables(*ws_mc, channel); 
+  std::cout << "setup2" << std::endl;
+  read_data(*ws, input_data, channel);
+  std::cout << "read1" << std::endl;
+  read_data(*ws_mc, input_mc, channel);
+  std::cout << "read2" << std::endl;
+  
+  std::string extension1 = "_ssdata", extension2 = "_mc";
+  std::vector<TH1D*> h1 = sideband_sub(*ws, *ws_mc, channel, extension1);
+  std::vector<TH1D*> h2;
+  
+  if (corrected_mc_flag!=1) {
+    h2 = histoBuild(*ws_mc, channel, extension2);
+    h2 = histoScale(h1,h2); 
+  }
+  else {
+    TFile *f = new TFile(corrected_mc_str.c_str(),"READ");
+    for (int i=0; i<VAR_NUMBER; ++i) {
+      TH1D* h_aux = (TH1D*)f->Get(varName(i+1).c_str());
+      h2.push_back(h_aux);
+    } 
+    h2 = histoScale(h1,h2);
+  }
+  histoPlot(h1, h2, channel, corrected_mc_flag, cuts);
+ 
  return 0;
 }
 
@@ -161,7 +190,9 @@ void read_data(RooWorkspace& w, std::string filename, int channel)
   arg_list1.add(*(w.var("cosalpha2d")));
   arg_list1.add(*(w.var("mass")));
 
+  std::cout << "before data" << std::endl;
   RooDataSet* data = new RooDataSet("data","data",nt1,arg_list1);
+ std::cout << "after data" << std::endl;
   RooFormulaVar lerrxyFunc("lerrxy","lerrxy","lxy/errxy", RooArgList( *(w.var("errxy")), *(w.var("lxy")) ));
   RooFormulaVar propertFunc("propert","propert","mass*lxy/pt", RooArgList( *(w.var("mass")),*(w.var("lxy")),*(w.var("pt"))));
   data->addColumn(lerrxyFunc);
@@ -729,15 +760,15 @@ std::vector<TH1D*> histoBuild(RooWorkspace& w, int channel, std::string extensio
   return histos;
 }
 
-void histoPlot(std::vector<TH1D*> v1, std::vector<TH1D*> v2, int channel, int flag) {
+void histoPlot(std::vector<TH1D*> v1, std::vector<TH1D*> v2, int channel, int flag, int cuts) {
   int variables = VAR_NUMBER;
   std::vector<TCanvas*> c;
   std::string histo_data = "_histo_data";
   std::string histo_mc = "_histo_mc";
   TH1D* h_aux;
   TLine *l1; 
-  //TFile *f_weights = new TFile(("weights_nminus1_" + channel_to_ntuple_name(channel) + "_with_cuts.root").c_str(),"RECREATE");
-  TFile *f_weights = new TFile(("weights_" + channel_to_ntuple_name(channel) + "_with_cuts.root").c_str(),"RECREATE");
+  //TFile *f_weights = new TFile(("weights_nminus1_" + channel_to_ntuple_name(channel) + ".root").c_str(),"RECREATE");
+  TFile *f_weights = new TFile(("weights_" + channel_to_ntuple_name(channel) + ".root").c_str(),"UPDATE");
 
   for (int j=0; j<variables; ++j) {
     c.push_back(new TCanvas());
@@ -795,13 +826,15 @@ void histoPlot(std::vector<TH1D*> v1, std::vector<TH1D*> v2, int channel, int fl
     TLatex* tex3 = Look.LatexEntry(xy, histoName(channel));
     tex3->Draw("same");
 
-
     c.at(i)->cd();
     TPad *pad2 = new TPad("pad2", "pad2", 0, 0.05, 1, 0.3);
     pad2->SetTopMargin(0.1);
     pad2->SetBottomMargin(0.2);
     pad2->Draw();
-    h_aux = (TH1D*)v1.at(i)->Clone( ("channel" + std::to_string(channel) + varName(i+1)).c_str() );
+    if(cuts)
+      h_aux = (TH1D*)v1.at(i)->Clone( (varName(i+1) + "_with_cuts").c_str() );
+    else
+      h_aux = (TH1D*)v1.at(i)->Clone( (varName(i+1) + "_no_cuts").c_str() ); 
     h_aux->SetTitle("");
     h_aux->SetMarkerColor(kGreen);
     h_aux->SetLineColor(kGreen);

@@ -120,10 +120,10 @@ int main(int argc, char** argv)
   data_signal->plotOn(frame1,Name("theSignal"),Binning(bins));
     
   signal.fitTo(*data_signal);
-  signal.plotOn(frame1, Name("thePdf1"), LineColor(7), LineWidth(1), LineStyle(1));
-  signal.plotOn(frame1,Components("crystball1_signal"),LineColor(8),LineWidth(1),LineStyle(2));
-  signal.plotOn(frame1,Components("crystball2_signal"),LineColor(5),LineWidth(1),LineStyle(2));  
-  signal.plotOn(frame1,Components("crystball3_signal"),LineColor(6),LineWidth(1),LineStyle(2));
+  signal.plotOn(frame1, Name("thePdf1"), LineColor(7), LineWidth(2.5), LineStyle(1));
+  signal.plotOn(frame1,Components("crystball1_signal"),LineColor(8),LineWidth(2),LineStyle(2));
+  signal.plotOn(frame1,Components("crystball2_signal"),LineColor(5),LineWidth(2),LineStyle(2));  
+  signal.plotOn(frame1,Components("crystball3_signal"),LineColor(6),LineWidth(2),LineStyle(2));
 
   TCanvas c1;
   c1.SetLogy();
@@ -201,10 +201,10 @@ int main(int argc, char** argv)
   RooPlot* frame2 = mass.frame(Title("Swapped signal fit"));
   data_swapped->plotOn(frame2,Name("theSwapped"),Binning(bins));
   swapped.fitTo(*data_swapped);
-  swapped.plotOn(frame2, Name("thePdf2"), LineColor(7), LineWidth(1), LineStyle(1));
-  swapped.plotOn(frame2,Components("crystball1_swapped"),LineColor(8),LineWidth(1),LineStyle(2));
-  swapped.plotOn(frame2,Components("crystball2_swapped"),LineColor(5),LineWidth(1),LineStyle(2));
-  swapped.plotOn(frame2,Components("crystball3_swapped"),LineColor(6),LineWidth(1),LineStyle(2));
+  swapped.plotOn(frame2, Name("thePdf2"), LineColor(7), LineWidth(2.5), LineStyle(1));
+  swapped.plotOn(frame2,Components("crystball1_swapped"),LineColor(8),LineWidth(2),LineStyle(2));
+  swapped.plotOn(frame2,Components("crystball2_swapped"),LineColor(5),LineWidth(2),LineStyle(2));
+  swapped.plotOn(frame2,Components("crystball3_swapped"),LineColor(6),LineWidth(2),LineStyle(2));
  
   TCanvas c2;
   c2.SetLogy();
@@ -266,9 +266,9 @@ int main(int argc, char** argv)
   full.fitTo(*data_full);
   full.paramOn(frame3,Layout(0.58,0.88,0.8));
   frame3->getAttText()->SetTextSize(0.027);
-  full.plotOn(frame3, Name("thePdf3"), LineColor(7), LineWidth(1), LineStyle(1));
-  full.plotOn(frame3,Components("swapped"),LineColor(8),LineWidth(1),LineStyle(2));
-  full.plotOn(frame3,Components("signal"),LineColor(5),LineWidth(1),LineStyle(2));
+  full.plotOn(frame3, Name("thePdf3"), LineColor(7), LineWidth(2.5), LineStyle(1));
+  full.plotOn(frame3,Components("swapped"),LineColor(8),LineWidth(2),LineStyle(2));
+  full.plotOn(frame3,Components("signal"),LineColor(5),LineWidth(2),LineStyle(2));
 
   TCanvas c3;
   c3.SetLogy();

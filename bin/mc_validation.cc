@@ -181,7 +181,7 @@ void read_data(RooWorkspace& w, std::string filename, int channel)
   w.import(propert);
 
   TNtupleD* nt1 =  (TNtupleD*)f1->Get( (/*"nminus1cuts_" + */channel_to_ntuple_name(channel)).c_str());
-  RooArgSet arg_list1(*(w.var("pt")) , *(w.var("y")) , *(w.var("mu1pt")) , *(w.var("mu2pt")) , *(w.var("mu1eta")) , *(w.var("mu2eta")) , *(w.var("tk1pt")) , *(w.var("tk2pt")), *(w.var("tk1eta")));
+  RooArgSet arg_list1(*(w.var("pt")), *(w.var("y")) , *(w.var("mu1pt")) , *(w.var("mu2pt")) , *(w.var("mu1eta")) , *(w.var("mu2eta")) , *(w.var("tk1pt")) , *(w.var("tk2pt")), *(w.var("tk1eta")));
   arg_list1.add(*(w.var("tk2eta")));
   arg_list1.add(*(w.var("lxy")));
   arg_list1.add(*(w.var("errxy")));
@@ -191,7 +191,7 @@ void read_data(RooWorkspace& w, std::string filename, int channel)
 
   std::cout << "before data" << std::endl;
   RooDataSet* data = new RooDataSet("data","data",nt1,arg_list1);
- std::cout << "after data" << std::endl;
+  std::cout << "after data" << std::endl;
   RooFormulaVar lerrxyFunc("lerrxy","lerrxy","lxy/errxy", RooArgList( *(w.var("errxy")), *(w.var("lxy")) ));
   RooFormulaVar propertFunc("propert","propert","mass*lxy/pt", RooArgList( *(w.var("mass")),*(w.var("lxy")),*(w.var("pt"))));
   data->addColumn(lerrxyFunc);

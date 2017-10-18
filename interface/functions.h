@@ -314,22 +314,22 @@ void build_pdf(RooWorkspace& w, int channel, std::string choice, std::string cho
   //the r1 and r2 values were obtained from the yields associated with the CB components of the fit.
   //For example, r1 was calculated with yield1/(yield1+yield2+yield3)
   //The fit was performed in non-extended mode in the k_pi_swap.cc macro
-  RooRealVar sigma_swapped1("sigma_swapped1","sigma_swapped1", 0.1098);
-  RooRealVar sigma_swapped2("sigma_swapped2","sigma_swapped2", 0.0209);
-  RooRealVar sigma_swapped3("sigma_swapped3","sigma_swapped3", 0.0500);
-  RooRealVar alpha1("alpha1","alpha1", 0.916);
-  RooRealVar alpha2("alpha2","alpha2", 0.305);
-  RooRealVar alpha3("alpha3","alpha3", -3.72);
-  RooRealVar n1_parameter("n1_parameter", "n1_parameter", 10.10);
-  RooRealVar n2_parameter("n2_parameter", "n2_parameter", 16.60);
-  RooRealVar n3_parameter("n3_parameter", "n3_parameter", 170.70);
+  RooRealVar sigma_swapped1("sigma_swapped1","sigma_swapped1", 0.1133);
+  RooRealVar sigma_swapped2("sigma_swapped2","sigma_swapped2", 0.01529);
+  RooRealVar sigma_swapped3("sigma_swapped3","sigma_swapped3", 0.0424);
+  RooRealVar alpha1("alpha1","alpha1", 1.78);
+  RooRealVar alpha2("alpha2","alpha2", 0.150);
+  RooRealVar alpha3("alpha3","alpha3", -6.802);
+  RooRealVar n1_parameter("n1_parameter", "n1_parameter", 32.);
+  RooRealVar n2_parameter("n2_parameter", "n2_parameter", 98.);
+  RooRealVar n3_parameter("n3_parameter", "n3_parameter", 179.);
 
   RooCBShape swapped1("swapped1","swapped1", mass, m_mean, sigma_swapped1, alpha1, n1_parameter);
   RooCBShape swapped2("swapped2","swapped2", mass, m_mean, sigma_swapped2, alpha2, n2_parameter);
   RooCBShape swapped3("swapped3","swapped3", mass, m_mean, sigma_swapped3, alpha3, n3_parameter);
 
-  RooRealVar r1("r1","r1", 0.2918); 
-  RooRealVar r2("r12","r12", 0.4773);
+  RooRealVar r1("r1","r1", 0.249); 
+  RooRealVar r2("r12","r12", 0.3922);
   RooAddPdf k_pi_swap("k_pi_swap","k_pi_swap", RooArgSet(swapped1,swapped2,swapped3), RooArgSet(r1,r2));
 
   //--------------------------------------------------------------------

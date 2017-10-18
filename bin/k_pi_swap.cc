@@ -187,8 +187,8 @@ int main(int argc, char** argv)
   RooRealVar alpha1("#alpha_{1}","alpha1", B0_MASS, 0.01000, B0_MASS+6.00000);
   RooRealVar alpha2("#alpha_{2}","alpha2", B0_MASS, 0.01000, B0_MASS+6.00000);
   RooRealVar alpha3("#alpha_{3}","alpha3", -B0_MASS, -4.00000*B0_MASS, 0.00000);
-  RooRealVar n1_parameter_swapped("n1_parameter_swapped", "n1_parameter_swapped", 7.00, 0.01, 25.11);
-  RooRealVar n2_parameter_swapped("n2_parameter_swapped", "n2_parameter_swapped", 12.88, 0.01, 25.00);  
+  RooRealVar n1_parameter_swapped("n1_parameter_swapped", "n1_parameter_swapped", 7.00, 0.01, 150.00);
+  RooRealVar n2_parameter_swapped("n2_parameter_swapped", "n2_parameter_swapped", 12.88, 0.01, 150.00);  
   RooRealVar n3_parameter_swapped("n3_parameter_swapped", "n3_parameter_swapped", 183.00, 50.00, 250.00);
 
   RooCBShape crystball1_swapped("crystball1_swapped","crystball1_swapped", mass, mean, sigma1_swapped, alpha1, n1_parameter_swapped);

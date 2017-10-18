@@ -79,7 +79,7 @@ int main(int argc, char** argv)
   dir_list.push_back(static_cast<const char*>(TString::Format(VERSION) + "/combined_syst/" + channel_to_ntuple_name(channel)));
   create_dir(dir_list);
 
-  TString data_selection_input_file = TString::Format(BASE_DIR) + "selected_myloop_new_data_" + channel_to_ntuple_name(channel) + "_with_cuts.root";
+  TString data_selection_input_file = TString::Format(BASE_DIR) + "/new_inputs/myloop_new_data_" + channel_to_ntuple_name(channel) + "_with_cuts.root";
   RooWorkspace* ws = new RooWorkspace("ws","Bmass");
   
   //set up mass, pt and y variables inside ws  

@@ -782,19 +782,21 @@ RooRealVar* bin_mass_fit(RooWorkspace& w, int channel, double pt_min, double pt_
    
   model_cut->fitTo(*data_cut,Verbose(verb),Minos(kTRUE),NumCPU(NUMBER_OF_CPU),Offset(kTRUE));
   
-  TString mass_info = "";
-  if(mass_min!=0.0 && mass_max!=0.0)
-    mass_info = TString::Format("_mass_from_%.2f_to_%.2f",mass_min,mass_max);
-  
-  TString base_dir = TString::Format(VERSION) + "/mass_fits/"; 
+  TString base_dir = TString::Format(VERSION) + "/mass_fits/";
+
+  if((choice != "" && choice2 != "") || (mass_min!=0.0 && mass_max!=0.0))
+    base_dir += "syst/"; 
 
   TString syst_info = "";
   
-if(choice != "" && choice2 != "")
-  {
-    base_dir += "syst/"; 
+  if(choice != "" && choice2 != "")
     syst_info = "_syst_" + choice + "_" + choice2;
-  }
+  
+  TString mass_info = "";
+ 
+  if(mass_min!=0.0 && mass_max!=0.0)
+    mass_info = TString::Format("_mass_from_%.2f_to_%.2f",mass_min,mass_max);
+    
   TString dir = "";
   
   dir = base_dir + channel_to_ntuple_name(channel) + "/" + channel_to_ntuple_name(channel) + syst_info + "_mass_fit_" + TString::Format("pt_from_%d_to_%d_y_from_%.2f_to_%.2f",(int)pt_min,(int)pt_max,y_min,y_max) + mass_info;
@@ -1183,7 +1185,10 @@ void read_vector(int channel, TString vector, TString var1_name , TString var2_n
   if(eff_name == "totaleff")
     eff_title = b_title + " Overall efficiency";
   if(eff_name == "ratioeff")
-    eff_title = b_title + " Efficiency ratio";
+    {
+      eff_title = b_title + " Efficiency ratio";
+      eff_name = b_title + "_ratioeff"; //to indicate which ratio efficiency, fsfu or fsfd or fdfu
+    }
 
   graph_pre_eff->SetTitle(eff_title);
   graph_pre_eff->GetXaxis()->SetTitle(x_axis_name);

@@ -370,7 +370,7 @@ double mass_window_syst(RooWorkspace& ws, int channel, double pt_min, double pt_
 
   //Mass Range Systematics
   for(int i=0; i<(int)mass_min.size(); i++)
-    {                                                                                                                                                                                                               
+    {
       RooWorkspace* ws1 = new RooWorkspace("ws1","Bmass");
       set_up_workspace_variables(*ws1,channel,mass_min[i],mass_max[1-i]);
       read_data(*ws1, input_file, channel);

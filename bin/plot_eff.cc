@@ -10,7 +10,7 @@
 // channel = 6: Lambda_b -> Jpsi + Lambda
 //-----------------------------------------------------------------
 
-//input example: plot_eff --measure x_sec --channel 1 --bins pt_y --eff preeff
+//input example: plot_eff --measure x_sec --channel 1 --bins pt_y --eff reweight_eff
 int main(int argc, char** argv)
 {
   TString measure = "";

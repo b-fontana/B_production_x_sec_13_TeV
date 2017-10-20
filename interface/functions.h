@@ -19,6 +19,7 @@
 #include <TChain.h>
 #include <TH1D.h>
 #include <TLorentzVector.h>
+#include <RooGlobalFunc.h>
 #include <RooRealVar.h>
 #include <RooProduct.h>
 #include <RooConstVar.h>
@@ -36,6 +37,7 @@
 #include <TGraphAsymmErrors.h>
 #include <TEfficiency.h>
 #include <RooMCStudy.h>
+#include <RooFitResult.h>
 #include <RooPlot.h>
 #include <RooPlotable.h>
 #include <RooThresholdCategory.h>
@@ -84,7 +86,7 @@ void plot_eff(TString measure, TString eff_name, int channel, int n_var1_bins, T
 RooRealVar* bin_mass_fit(RooWorkspace& w, int channel, double pt_min, double pt_max, double y_min, double y_max, std::string choice = "", std::string choice2 = "", double mass_min = 0.0, double mass_max = 0.0, Bool_t verb = kFALSE);
 
 RooRealVar* prefilter_efficiency(int channel, double pt_min, double pt_max, double y_min, double y_max);
-RooRealVar* reco_efficiency(int channel, double pt_min, double pt_max, double y_min, double y_max);
+RooRealVar* reco_efficiency(int channel, double pt_min, double pt_max, double y_min, double y_max, bool syst = false, TString reweighting_var_str = "");
 RooRealVar* branching_fraction(int channel);
 
 //void read_vector(TString measure, int channel, TString vector, TString var1_name , TString var2_name, int n_var1_bins, int n_var2_bins,  double* var1_bins, double* var2_bins, double* array, double* err_lo = NULL, double* err_hi = NULL);
@@ -304,14 +306,26 @@ void build_pdf(RooWorkspace& w, int channel, std::string choice, std::string cho
   //The components below have no systematic variation yet, they are part of the nominal fit.//
   ////////////////////////////////////////////////////////////////////////////////////////////
 
-  //K pi swap component, for channel 2. B0->jpsi K*0  
-  RooRealVar sigma_swapped1("sigma_swapped1","sigma_swapped1", 0.0419);
-  RooRealVar sigma_swapped2("sigma_swapped2","sigma_swapped2", 0.1138);
-  
-  RooGaussian swapped1("swapped1","swapped1",mass, m_mean, sigma_swapped1);
-  RooGaussian swapped2("swapped2","swapped2",mass, m_mean, sigma_swapped2);
-  RooRealVar r12("r12","r12", 0.655);
-  RooAddPdf k_pi_swap("k_pi_swap","k_pi_swap",RooArgSet(swapped1,swapped2),r12);
+  //K pi swap component, for channel 2. B0->jpsi K*0
+
+  RooRealVar sigma_swapped1("sigma_swapped1","sigma_swapped1", 0.1133);
+  RooRealVar sigma_swapped2("sigma_swapped2","sigma_swapped2", 0.01529);
+  RooRealVar sigma_swapped3("sigma_swapped3","sigma_swapped3", 0.0424);
+  RooRealVar alpha1("alpha1","alpha1", 1.78);
+  RooRealVar alpha2("alpha2","alpha2", 0.150);
+  RooRealVar alpha3("alpha3","alpha3", -6.802);
+  RooRealVar n1_parameter("n1_parameter", "n1_parameter", 32.);
+  RooRealVar n2_parameter("n2_parameter", "n2_parameter", 98.);
+  RooRealVar n3_parameter("n3_parameter", "n3_parameter", 179.);
+
+  RooCBShape swapped1("swapped1","swapped1", mass, m_mean, sigma_swapped1, alpha1, n1_parameter);
+  RooCBShape swapped2("swapped2","swapped2", mass, m_mean, sigma_swapped2, alpha2, n2_parameter);
+  RooCBShape swapped3("swapped3","swapped3", mass, m_mean, sigma_swapped3, alpha3, n3_parameter);
+
+  RooRealVar r1("r1","r1", 0.249); 
+  RooRealVar r2("r12","r12", 0.3922);
+  RooAddPdf k_pi_swap("k_pi_swap","k_pi_swap", RooArgSet(swapped1,swapped2,swapped3), RooArgSet(r1,r2));
+
   //--------------------------------------------------------------------
 
   //jpsi_pi component, for channel 1.
@@ -911,8 +925,13 @@ RooRealVar* prefilter_efficiency(int channel, double pt_min, double pt_max, doub
   return eff1; 
 }
 
-RooRealVar* reco_efficiency(int channel, double pt_min, double pt_max, double y_min, double y_max)
+//the weights are correct only for 'mu1pt', 'mu2pt' and 'pt'; for the other variables we still have to imposed weight=1 in some points
+RooRealVar* reco_efficiency(int channel, double pt_min, double pt_max, double y_min, double y_max, bool syst, TString reweighting_var_str)
 {
+  double weight_tot = 0., weight_passed = 0.; 
+  TFile* f_weights = nullptr;
+  TH1D* h_weights_tot = nullptr, *h_weights_passed = nullptr;
+
   //------------read monte carlo gen without cuts-----------------------------
   TString mc_input_no_cuts = TString::Format(BASE_DIR) + "/new_inputs/reduced_myloop_gen_" + channel_to_ntuple_name(channel) + "_bmuonfilter.root";
   TFile *fin_no_cuts = new TFile(mc_input_no_cuts);
@@ -922,6 +941,7 @@ RooRealVar* reco_efficiency(int channel, double pt_min, double pt_max, double y_
   
   //set up the variables needed
   double pt_b, eta_b, y_b, pt_mu1, pt_mu2, eta_mu1, eta_mu2;
+  double reweighting_variable;
   
   //read the ntuple from selected_data
   tin_no_cuts->SetBranchAddress("eta", &eta_b);
@@ -932,9 +952,21 @@ RooRealVar* reco_efficiency(int channel, double pt_min, double pt_max, double y_
   tin_no_cuts->SetBranchAddress("mu1eta", &eta_mu1);
   tin_no_cuts->SetBranchAddress("mu2eta", &eta_mu2);
  
+  if(syst) {
+    if (reweighting_var_str != "eta" && reweighting_var_str != "y" && reweighting_var_str != "pt" && reweighting_var_str != "mu1pt" 
+	&& reweighting_var_str != "mu2pt" && reweighting_var_str != "mu1eta" && reweighting_var_str != "mu2eta")
+      tin_no_cuts->SetBranchAddress(reweighting_var_str, &reweighting_variable);
+  }
+
   //use histograms to count the events, and TEfficiency for efficiency, because it takes care of the errors and propagation
   TH1D* hist_tot = new TH1D("hist_tot","hist_tot",1,pt_min,pt_max);
   
+  if (syst) {
+    f_weights = new TFile("weights_" + channel_to_ntuple_name(channel) + ".root", "READ");
+    if (f_weights != nullptr) h_weights_tot = static_cast<TH1D*>( f_weights->Get( reweighting_var_str + "_with_cuts") );
+    else std::cout << "The file was not opened! (functions.h)" << std::endl;
+  }
+
   for (int evt=0; evt < tin_no_cuts->GetEntries(); evt++)
     {
       tin_no_cuts->GetEntry(evt);
@@ -945,10 +977,37 @@ RooRealVar* reco_efficiency(int channel, double pt_min, double pt_max, double y_
 
       bool muon1Filter = fabs(eta_mu1) < 2.4 && pt_mu1 > 2.8;
       bool muon2Filter = fabs(eta_mu2) < 2.4 && pt_mu2 > 2.8;
- 
+
+      if (syst)	{
+	if (muon1Filter && muon2Filter) {
+	  if (reweighting_var_str != "eta" && reweighting_var_str != "y" && reweighting_var_str != "pt" && reweighting_var_str != "mu1pt" 
+	      && reweighting_var_str != "mu2pt" && reweighting_var_str != "mu1eta" && reweighting_var_str != "mu2eta") 
+	    weight_tot =+ h_weights_tot->GetBinContent( h_weights_tot->FindBin(reweighting_variable) );
+	  else if (reweighting_var_str == "eta") weight_tot += h_weights_tot->GetBinContent( h_weights_tot->FindBin(eta_b) );
+	  else if (reweighting_var_str == "y") weight_tot += h_weights_tot->GetBinContent( h_weights_tot->FindBin(y_b) );
+	  else if (reweighting_var_str == "pt") {
+	    if(pt_b >= 10. && pt_b <= 45.) weight_tot += h_weights_tot->GetBinContent( h_weights_tot->FindBin(pt_b) );
+	    else weight_tot += 1.;
+	    std::cout << "pt: " << h_weights_tot->GetBinContent( h_weights_tot->FindBin(pt_b)) << std::endl;
+	  }
+	  else if (reweighting_var_str == "mu1pt") {
+	    if(pt_mu1 >= 4. && pt_mu1 <= 15.) weight_tot += h_weights_tot->GetBinContent( h_weights_tot->FindBin(pt_mu1) );
+	    else weight_tot += 1.;
+	    std::cout << "mu1pt: " << h_weights_tot->GetBinContent( h_weights_tot->FindBin(pt_mu1)) << std::endl;
+	  }
+	  else if (reweighting_var_str == "mu2pt") {
+	    if(pt_mu2 >= 4. && pt_mu2 <= 15.) weight_tot += h_weights_tot->GetBinContent( h_weights_tot->FindBin(pt_mu2) );
+	    else weight_tot += 1.;
+	  }
+	  else if (reweighting_var_str == "mu1eta") weight_tot += h_weights_tot->GetBinContent( h_weights_tot->FindBin(eta_mu1) );
+	  else if (reweighting_var_str == "mu2eta") weight_tot += h_weights_tot->GetBinContent( h_weights_tot->FindBin(eta_mu2) );
+	}
+      }
+
       if (muon1Filter && muon2Filter) hist_tot->Fill(pt_b); //count only the events with the muon selection above
+
     }
-      
+
     //--------------------------------read monte carlo with cuts------------------------
     TString mc_input_with_cuts = TString::Format(BASE_DIR) + "/new_inputs/reduced_myloop_new_mc_truth_" + channel_to_ntuple_name(channel) + "_with_cuts.root";
     TFile *fin_with_cuts = new TFile(mc_input_with_cuts);
@@ -964,7 +1023,17 @@ RooRealVar* reco_efficiency(int channel, double pt_min, double pt_max, double y_
     tin_with_cuts->SetBranchAddress("mu1eta", &eta_mu1);
     tin_with_cuts->SetBranchAddress("mu2eta", &eta_mu2);
  
+    if(syst) {
+      if (reweighting_var_str != "eta" && reweighting_var_str != "y" && reweighting_var_str != "pt" && reweighting_var_str != "mu1pt" 
+	&& reweighting_var_str != "mu2pt" && reweighting_var_str != "mu1eta" && reweighting_var_str != "mu2eta")
+	tin_with_cuts->SetBranchAddress(reweighting_var_str, &reweighting_variable);
+    }
     TH1D* hist_passed = new TH1D("hist_passed","hist_passed",1,pt_min,pt_max);
+
+    if (syst) { 
+      if (f_weights != nullptr) h_weights_passed = static_cast<TH1D*>( f_weights->Get( reweighting_var_str + "_with_cuts") );
+      else std::cout << "The file was not opened! (functions.h)" << std::endl;
+    }
 
     for (int evt=0; evt < tin_with_cuts->GetEntries(); evt++)
       {
@@ -976,21 +1045,54 @@ RooRealVar* reco_efficiency(int channel, double pt_min, double pt_max, double y_
 		
 	bool muon1Filter = fabs(eta_mu1) < 2.4 && pt_mu1 > 2.8;
 	bool muon2Filter = fabs(eta_mu2) < 2.4 && pt_mu2 > 2.8;
+
+	if (syst) {
+	  if (muon1Filter && muon2Filter) {
+	    if (reweighting_var_str != "eta" && reweighting_var_str != "y" && reweighting_var_str != "pt" && reweighting_var_str != "mu1pt" 
+		&& reweighting_var_str != "mu2pt" && reweighting_var_str != "mu1eta" && reweighting_var_str != "mu2eta")
+	      weight_passed =+ h_weights_passed->GetBinContent( h_weights_passed->FindBin(reweighting_variable) );
+	    else if (reweighting_var_str == "eta") weight_passed += h_weights_passed->GetBinContent( h_weights_passed->FindBin(eta_b) );
+	    else if (reweighting_var_str == "y") weight_passed += h_weights_passed->GetBinContent( h_weights_passed->FindBin(y_b) );
+	    else if (reweighting_var_str == "pt") {
+	      if(pt_b >= 10. && pt_b <= 45.) weight_passed += h_weights_passed->GetBinContent( h_weights_passed->FindBin(pt_b) );
+	      else weight_passed += 1.;
+	    }
+	    else if (reweighting_var_str == "mu1pt") {
+	      if(pt_mu1 >= 4. && pt_mu1 <= 15.) weight_passed += h_weights_passed->GetBinContent( h_weights_passed->FindBin(pt_mu1) );
+	      else weight_passed += 1.;
+	  }
+	    else if (reweighting_var_str == "mu2pt") {
+	      if(pt_mu2 >= 4. && pt_mu2 <= 15.) weight_passed += h_weights_passed->GetBinContent( h_weights_passed->FindBin(pt_mu2) );
+	      else weight_passed += 1.;
+	    }
+	    else if (reweighting_var_str == "mu1eta") weight_passed += h_weights_passed->GetBinContent( h_weights_passed->FindBin(eta_mu1) );
+	    else if (reweighting_var_str == "mu2eta") weight_passed += h_weights_passed->GetBinContent( h_weights_passed->FindBin(eta_mu2) );
+	  }
+	}
+
+	if (muon1Filter && muon2Filter) hist_passed->Fill(pt_b); //count only the events with the muon selection above
 	
-	if (muon1Filter && muon2Filter) hist_passed->Fill(pt_b);//count only the events with the muon selection above
       }
     
     //calculates the efficiency by dividing the histograms
-    TEfficiency* efficiency = new TEfficiency(*hist_passed, *hist_tot);
-    
+    TEfficiency* efficiency = nullptr;
+    if (!syst) efficiency = new TEfficiency(*hist_passed, *hist_tot);
+
     double eff;
     double eff_lo;
     double eff_hi;
     
-    eff = efficiency->GetEfficiency(1);
-    eff_lo = -(efficiency->GetEfficiencyErrorLow(1));
-    eff_hi = efficiency->GetEfficiencyErrorUp(1);
-        
+    if (!syst) {
+      eff = efficiency->GetEfficiency(1);
+      eff_lo = -(efficiency->GetEfficiencyErrorLow(1));
+      eff_hi = efficiency->GetEfficiencyErrorUp(1);
+    }
+    else {
+      eff = static_cast<double>(weight_passed)/static_cast<double>(weight_tot);
+      eff_lo = 0.00; //random value
+      eff_hi = 0.00; //random value
+    }
+
     RooRealVar* eff2 = new RooRealVar("eff2","eff2",eff);
     eff2->setAsymError(eff_lo,eff_hi);
     
@@ -1184,6 +1286,8 @@ void read_vector(int channel, TString vector, TString var1_name , TString var2_n
     eff_title = b_title + " Reconstruction efficiency";
   if(eff_name == "totaleff")
     eff_title = b_title + " Overall efficiency";
+  if(eff_name == "recoeff_reweight")
+    eff_title = b_title + " MC corrected efficiency";
   if(eff_name == "ratioeff")
     {
       eff_title = b_title + " Efficiency ratio";

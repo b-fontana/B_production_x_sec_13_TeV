@@ -13,6 +13,7 @@
 
 double pdf_syst(RooWorkspace& ws, int channel, double pt_min, double pt_max, double y_min, double y_max, double nominal_yield, TString syst);
 double mass_window_syst(RooWorkspace& ws, int channel, double pt_min, double pt_max, double y_min, double y_max, double nominal_yield, TString input_file);
+double reweighting_syst(int channel, double pt_min, double pt_max, double y_min, double y_max, double nominal_quantity);
 
 //input example: calculate_bin_syst --channel 1 --syst signal_pdf_syst --ptmin 30 --ptmax 35 --ymin 0.00 --ymax 2.25
 int main(int argc, char** argv)
@@ -77,8 +78,8 @@ int main(int argc, char** argv)
   
   dir_list.push_back(static_cast<const char*>(TString::Format(VERSION) + "/systematics_root/" + channel_to_ntuple_name(channel)));
   dir_list.push_back(static_cast<const char*>(TString::Format(VERSION) + "/mass_fits/syst/" + channel_to_ntuple_name(channel)));
+  dir_list.push_back(static_cast<const char*>(TString::Format(VERSION) + "/efficiencies_root/" + channel_to_ntuple_name(channel)));
   create_dir(dir_list);
-
     
   ///////////////////////////////////////////////////
   //calculate the syst error for a bin of pt and y.//
@@ -96,11 +97,11 @@ int main(int argc, char** argv)
   TString val_name = "";
 
   TString syst_dir = TString::Format(VERSION) + "/systematics_root/" + channel_to_ntuple_name(channel) + "/";
-  
+
   //absolute value of syst, i.e. from 0 to 1
   double absolute_syst_val = -1; //set to -1 as default, should be replaced below by a specific syst or the combined syst
-
-  ////////////////////////////////////////////////////////////////////////////////////////////////////////////  
+  
+  ////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
   //cicle to calculate combined_syst
   if(syst == "combined_syst")
@@ -241,21 +242,12 @@ int main(int argc, char** argv)
 	  else
 	    if(syst.Contains("pdf_syst"))
 	      alternative_val = pdf_syst(*ws, channel, pt_min, pt_max, y_min, y_max, nominal_val.getVal(), syst);
-	  
 	}
       else
 	{
-	  ////////////////////////////////////////////////
-	  //JUST FOR TESTING, CHANGE THE ALTERNATIVE_VAL//
-	  ////////////////////////////////////////////////
-	  if(syst.Contains("preeff"))
-	    {
-	      alternative_val = 0.5 * nominal_val.getVal();
-	    }
-	  else
-	    if(syst.Contains("recoeff"))
+	  if(syst == "recoeff_reweight")
 	      {
-		alternative_val = 0.7 * nominal_val.getVal();
+		alternative_val = reweighting_syst(channel, pt_min, pt_max, y_min, y_max, nominal_val.getVal()); 
 	      }
 	}
       
@@ -266,7 +258,7 @@ int main(int argc, char** argv)
   std::cout << syst << " absolute_syst_val: " << absolute_syst_val << std::endl;
 
   //write to file with syst name
-  TString syst_file_name = syst_dir + syst + "_" + channel_to_ntuple_name(channel) + bins_str + ".root";
+    TString syst_file_name = syst_dir + syst + "_" + channel_to_ntuple_name(channel) + bins_str + ".root";
   
   TFile* syst_file = new TFile(syst_file_name,"recreate");
   
@@ -274,6 +266,8 @@ int main(int argc, char** argv)
   TVectorD err_lo(1);
   TVectorD err_hi(1);
 
+  //val[0] = quantity_res; //instead of 1.
+  
   val[0] = 1.00;
   err_lo[0] = fabs(absolute_syst_val);
   err_hi[0] = fabs(absolute_syst_val);
@@ -393,6 +387,33 @@ double mass_window_syst(RooWorkspace& ws, int channel, double pt_min, double pt_
 	  i_max = i;
 	}
     }
+  
+  return range_syst[i_max];
+}
+
+double reweighting_syst(int channel, double pt_min, double pt_max, double y_min, double y_max, double nominal_quantity) {
+  std::vector<double> range_syst;
+  std::vector<TString> reweight_var_names;
+  reweight_var_names.push_back("mu1pt");
+  reweight_var_names.push_back("pt");
+
+  RooRealVar* eff_corrected;
+  int reweight_variables_number = static_cast<int>(reweight_var_names.size());  
+
+  for (int i=0; i<reweight_variables_number; ++i) {
+    eff_corrected = reco_efficiency(channel, pt_min, pt_max, y_min, y_max, true, reweight_var_names.at(i));
+    range_syst.push_back(static_cast<double>(eff_corrected->getVal()));
+  }
+
+  int i_max = 0;
+  double max_diff = 0.00;
+  
+  for(int i=0; i<static_cast<int>(range_syst.size()); i++) {
+    if(fabs(range_syst[i] - nominal_quantity) > max_diff) {
+      max_diff = fabs(range_syst[i] - nominal_quantity);
+      i_max = i;
+    }
+  }
   
   return range_syst[i_max];
 }

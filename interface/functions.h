@@ -19,6 +19,7 @@
 #include <TChain.h>
 #include <TH1D.h>
 #include <TLorentzVector.h>
+#include <RooGlobalFunc.h>
 #include <RooRealVar.h>
 #include <RooProduct.h>
 #include <RooConstVar.h>
@@ -37,6 +38,7 @@
 #include <TGraphAsymmErrors.h>
 #include <TEfficiency.h>
 #include <RooMCStudy.h>
+#include <RooFitResult.h>
 #include <RooPlot.h>
 #include <RooPlotable.h>
 #include <RooThresholdCategory.h>
@@ -930,6 +932,7 @@ RooRealVar* prefilter_efficiency(int channel, double pt_min, double pt_max, doub
   return eff1; 
 }
 
+//the weights are correct only for 'mu1pt', 'mu2pt' and 'pt'; for the other variables we still have to imposed weight=1 in some points
 RooRealVar* reco_efficiency(int channel, double pt_min, double pt_max, double y_min, double y_max, bool syst, TString reweighting_var_str)
 {
   double weight_tot = 0., weight_passed = 0.; 
@@ -983,27 +986,34 @@ RooRealVar* reco_efficiency(int channel, double pt_min, double pt_max, double y_
       bool muon2Filter = fabs(eta_mu2) < 2.4 && pt_mu2 > 2.8;
 
       if (syst)	{
-	if (reweighting_var_str != "eta" && reweighting_var_str != "y" && reweighting_var_str != "pt" && reweighting_var_str != "mu1pt" 
-	&& reweighting_var_str != "mu2pt" && reweighting_var_str != "mu1eta" && reweighting_var_str != "mu2eta")
-	  weight_tot =+ h_weights_tot->GetBinContent( h_weights_tot->FindBin(reweighting_variable) );
-
-	else if (reweighting_var_str == "eta") weight_tot += h_weights_tot->GetBinContent( h_weights_tot->FindBin(eta_b) );
-	else if (reweighting_var_str == "y") weight_tot += h_weights_tot->GetBinContent( h_weights_tot->FindBin(y_b) );
-	else if (reweighting_var_str == "pt") weight_tot += h_weights_tot->GetBinContent( h_weights_tot->FindBin(pt_b) );
-	else if (reweighting_var_str == "mu1pt") weight_tot += h_weights_tot->GetBinContent( h_weights_tot->FindBin(pt_mu1) );
-	else if (reweighting_var_str == "mu2pt") weight_tot += h_weights_tot->GetBinContent( h_weights_tot->FindBin(pt_mu2) );
-	else if (reweighting_var_str == "mu1eta") weight_tot += h_weights_tot->GetBinContent( h_weights_tot->FindBin(eta_mu1) );
-	else if (reweighting_var_str == "mu2eta") weight_tot += h_weights_tot->GetBinContent( h_weights_tot->FindBin(eta_mu2) );
+	if (muon1Filter && muon2Filter) {
+	  if (reweighting_var_str != "eta" && reweighting_var_str != "y" && reweighting_var_str != "pt" && reweighting_var_str != "mu1pt" 
+	      && reweighting_var_str != "mu2pt" && reweighting_var_str != "mu1eta" && reweighting_var_str != "mu2eta") 
+	    weight_tot =+ h_weights_tot->GetBinContent( h_weights_tot->FindBin(reweighting_variable) );
+	  else if (reweighting_var_str == "eta") weight_tot += h_weights_tot->GetBinContent( h_weights_tot->FindBin(eta_b) );
+	  else if (reweighting_var_str == "y") weight_tot += h_weights_tot->GetBinContent( h_weights_tot->FindBin(y_b) );
+	  else if (reweighting_var_str == "pt") {
+	    if(pt_b >= 10. && pt_b <= 45.) weight_tot += h_weights_tot->GetBinContent( h_weights_tot->FindBin(pt_b) );
+	    else weight_tot += 1.;
+	    std::cout << "pt: " << h_weights_tot->GetBinContent( h_weights_tot->FindBin(pt_b)) << std::endl;
+	  }
+	  else if (reweighting_var_str == "mu1pt") {
+	    if(pt_mu1 >= 4. && pt_mu1 <= 15.) weight_tot += h_weights_tot->GetBinContent( h_weights_tot->FindBin(pt_mu1) );
+	    else weight_tot += 1.;
+	    std::cout << "mu1pt: " << h_weights_tot->GetBinContent( h_weights_tot->FindBin(pt_mu1)) << std::endl;
+	  }
+	  else if (reweighting_var_str == "mu2pt") {
+	    if(pt_mu2 >= 4. && pt_mu2 <= 15.) weight_tot += h_weights_tot->GetBinContent( h_weights_tot->FindBin(pt_mu2) );
+	    else weight_tot += 1.;
+	  }
+	  else if (reweighting_var_str == "mu1eta") weight_tot += h_weights_tot->GetBinContent( h_weights_tot->FindBin(eta_mu1) );
+	  else if (reweighting_var_str == "mu2eta") weight_tot += h_weights_tot->GetBinContent( h_weights_tot->FindBin(eta_mu2) );
+	}
       }
 
       if (muon1Filter && muon2Filter) hist_tot->Fill(pt_b); //count only the events with the muon selection above
 
     }
-
-  TCanvas ccc;
-  ccc.cd();
-  hist_tot->Draw();
-  ccc.SaveAs("HistoTot.png");
 
     //--------------------------------read monte carlo with cuts------------------------
     TString mc_input_with_cuts = TString::Format(BASE_DIR) + "/new_inputs/reduced_myloop_new_mc_truth_" + channel_to_ntuple_name(channel) + "_with_cuts.root";
@@ -1028,8 +1038,8 @@ RooRealVar* reco_efficiency(int channel, double pt_min, double pt_max, double y_
     TH1D* hist_passed = new TH1D("hist_passed","hist_passed",1,pt_min,pt_max);
 
     if (syst) { 
-	if (f_weights != nullptr) h_weights_passed = static_cast<TH1D*>( f_weights->Get( reweighting_var_str + "_with_cuts") );
-	else std::cout << "The file was not opened! (functions.h)" << std::endl;
+      if (f_weights != nullptr) h_weights_passed = static_cast<TH1D*>( f_weights->Get( reweighting_var_str + "_with_cuts") );
+      else std::cout << "The file was not opened! (functions.h)" << std::endl;
     }
 
     for (int evt=0; evt < tin_with_cuts->GetEntries(); evt++)
@@ -1043,28 +1053,33 @@ RooRealVar* reco_efficiency(int channel, double pt_min, double pt_max, double y_
 	bool muon1Filter = fabs(eta_mu1) < 2.4 && pt_mu1 > 2.8;
 	bool muon2Filter = fabs(eta_mu2) < 2.4 && pt_mu2 > 2.8;
 
-	//with syst = false we have weight_tot = 1;
 	if (syst) {
-	  if (reweighting_var_str != "eta" && reweighting_var_str != "y" && reweighting_var_str != "pt" && reweighting_var_str != "mu1pt" 
-	      && reweighting_var_str != "mu2pt" && reweighting_var_str != "mu1eta" && reweighting_var_str != "mu2eta")
-	  weight_passed =+ h_weights_passed->GetBinContent( h_weights_passed->FindBin(reweighting_variable) );
-	else if (reweighting_var_str == "eta") weight_passed += h_weights_passed->GetBinContent( h_weights_passed->FindBin(eta_b) );
-	else if (reweighting_var_str == "y") weight_passed += h_weights_passed->GetBinContent( h_weights_passed->FindBin(y_b) );
-	else if (reweighting_var_str == "pt") weight_passed += h_weights_passed->GetBinContent( h_weights_passed->FindBin(pt_b) );
-	else if (reweighting_var_str == "mu1pt") weight_passed += h_weights_passed->GetBinContent( h_weights_passed->FindBin(pt_mu1) );
-	else if (reweighting_var_str == "mu2pt") weight_passed += h_weights_passed->GetBinContent( h_weights_passed->FindBin(pt_mu2) );
-	else if (reweighting_var_str == "mu1eta") weight_passed += h_weights_passed->GetBinContent( h_weights_passed->FindBin(eta_mu1) );
-	else if (reweighting_var_str == "mu2eta") weight_passed += h_weights_passed->GetBinContent( h_weights_passed->FindBin(eta_mu2) );
-      }
+	  if (muon1Filter && muon2Filter) {
+	    if (reweighting_var_str != "eta" && reweighting_var_str != "y" && reweighting_var_str != "pt" && reweighting_var_str != "mu1pt" 
+		&& reweighting_var_str != "mu2pt" && reweighting_var_str != "mu1eta" && reweighting_var_str != "mu2eta")
+	      weight_passed =+ h_weights_passed->GetBinContent( h_weights_passed->FindBin(reweighting_variable) );
+	    else if (reweighting_var_str == "eta") weight_passed += h_weights_passed->GetBinContent( h_weights_passed->FindBin(eta_b) );
+	    else if (reweighting_var_str == "y") weight_passed += h_weights_passed->GetBinContent( h_weights_passed->FindBin(y_b) );
+	    else if (reweighting_var_str == "pt") {
+	      if(pt_b >= 10. && pt_b <= 45.) weight_passed += h_weights_passed->GetBinContent( h_weights_passed->FindBin(pt_b) );
+	      else weight_passed += 1.;
+	    }
+	    else if (reweighting_var_str == "mu1pt") {
+	      if(pt_mu1 >= 4. && pt_mu1 <= 15.) weight_passed += h_weights_passed->GetBinContent( h_weights_passed->FindBin(pt_mu1) );
+	      else weight_passed += 1.;
+	  }
+	    else if (reweighting_var_str == "mu2pt") {
+	      if(pt_mu2 >= 4. && pt_mu2 <= 15.) weight_passed += h_weights_passed->GetBinContent( h_weights_passed->FindBin(pt_mu2) );
+	      else weight_passed += 1.;
+	    }
+	    else if (reweighting_var_str == "mu1eta") weight_passed += h_weights_passed->GetBinContent( h_weights_passed->FindBin(eta_mu1) );
+	    else if (reweighting_var_str == "mu2eta") weight_passed += h_weights_passed->GetBinContent( h_weights_passed->FindBin(eta_mu2) );
+	  }
+	}
 
 	if (muon1Filter && muon2Filter) hist_passed->Fill(pt_b); //count only the events with the muon selection above
 	
       }
-
-    TCanvas ddd;
-    ddd.cd();
-    hist_passed->Draw();
-    ddd.SaveAs("HistoPassed.png");
     
     //calculates the efficiency by dividing the histograms
     TEfficiency* efficiency = nullptr;
@@ -1080,9 +1095,9 @@ RooRealVar* reco_efficiency(int channel, double pt_min, double pt_max, double y_
       eff_hi = efficiency->GetEfficiencyErrorUp(1);
     }
     else {
-      eff = weight_passed/weight_tot;
-      eff_lo = -3.; //random value
-      eff_hi = 3.; //random value
+      eff = static_cast<double>(weight_passed)/static_cast<double>(weight_tot);
+      eff_lo = 0.00; //random value
+      eff_hi = 0.00; //random value
     }
 
     RooRealVar* eff2 = new RooRealVar("eff2","eff2",eff);
@@ -1282,6 +1297,8 @@ void read_vector(int channel, TString vector, TString var1_name , TString var2_n
     eff_title = b_title + " Reconstruction efficiency";
   if(eff_name == "totaleff")
     eff_title = b_title + " Overall efficiency";
+  if(eff_name == "reweighting")
+    eff_title = b_title + " MC corrected efficiency";
   if(eff_name == "ratioeff")
     eff_title = b_title + " Efficiency ratio";
 

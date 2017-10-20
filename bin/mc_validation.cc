@@ -133,7 +133,7 @@ int main(int argc, char **argv) {
     if(cuts)
       input_mc = "/lstore/cms/brunogal/input_for_B_production_x_sec_13_TeV/new_inputs/myloop_new_mc_truth_" +  channel_to_ntuple_name(channel) + "_with_cuts.root";
     else
-      input_mc = "/lstore/cms/brunogal/input_for_B_production_x_sec_13_TeV/no_cuts/myloop_new_mc_truth_ " + channel_to_ntuple_name(channel) + "_no_cuts.root";
+      input_mc = "/lstore/cms/brunogal/input_for_B_production_x_sec_13_TeV/no_cuts/myloop_new_mc_truth_" + channel_to_ntuple_name(channel) + "_no_cuts.root";
   }
     
   RooWorkspace *ws = new RooWorkspace("ws","ws");

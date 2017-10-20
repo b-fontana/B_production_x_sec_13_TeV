@@ -152,6 +152,7 @@ int main(int argc, char** argv)
   
   //absolute value of syst, i.e. from 0 to 1
   double absolute_syst_val = -1; //set to -1 as default, should be replaced below by a specific syst or the combined syst
+  double quantity_res = 1.;
 
   //cicle to calculate combined_syst
   if(syst == "combined_syst")
@@ -195,14 +196,15 @@ int main(int argc, char** argv)
   else
     {
       //calculate syst yield or syst efficiency
-      double quantity_res = 0.00;
       
       if(syst == "mass_window")
 	quantity_res = mass_window_syst(*ws, channel, pt_min, pt_max, y_min, y_max, nominal_quantity.getVal(), data_selection_input_file);
       else if(syst == "signal_pdf" || syst == "cb_pdf")
 	quantity_res = pdf_syst(*ws, channel, pt_min, pt_max, y_min, y_max, nominal_quantity.getVal(), syst);
-      else if(syst == "reweighting") 
+      else if(syst == "reweighting") {
 	quantity_res = reweighting_syst(channel, pt_min, pt_max, y_min, y_max, nominal_quantity.getVal()); 
+	std::cout << "quantity_res: " << quantity_res << std::endl;
+      }
       else std::cout << "The introduced systematic is not a valid option! (calculate_bin_syst.cc)" << std::endl;    
 
       absolute_syst_val = fabs(nominal_quantity.getVal() - quantity_res)/nominal_quantity.getVal();
@@ -221,7 +223,10 @@ int main(int argc, char** argv)
   TVectorD err_lo(1);
   TVectorD err_hi(1);
 
-  val[0] = 1.00;
+  /////////////////////////////////////////
+  //Bruno Alves changes the following line:
+  val[0] = quantity_res; //instead of 1.
+  ////////////////////////////////////////
   err_lo[0] = fabs(absolute_syst_val);
   err_hi[0] = fabs(absolute_syst_val);
   

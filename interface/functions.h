@@ -92,7 +92,7 @@ RooRealVar* branching_fraction(int channel);
 //void read_vector(TString measure, int channel, TString vector, TString var1_name , TString var2_name, int n_var1_bins, int n_var2_bins,  double* var1_bins, double* var2_bins, double* array, double* err_lo = NULL, double* err_hi = NULL);
 void read_vector(int channel, TString vector, TString var1_name , TString var2_name, int n_var1_bins, int n_var2_bins,  double* var1_bins, double* var2_bins, double* array, double* err_lo = NULL, double* err_hi = NULL);
 void print_table(TString title, int n_var1_bins, int n_var2_bins, TString var1_name, TString var2_name, double* var1_bin_edges, double* var2_bin_edges, double* array, double* stat_err_lo, double* stat_err_hi, double* syst_err_lo = NULL, double* syst_err_hi = NULL);
-void latex_table(std::string filename, int n_col, int n_lin, std::vector<std::string> col_name, std::vector<std::string> labels, std::vector<std::vector<double> > numbers, std::string caption);
+void latex_table(std::string filename, int n_col, int n_lin, std::vector<std::string> col_name, std::vector<std::string> labels, std::vector<std::vector<double> > numbers, int* precision, std::string caption);
 
 void mc_study(RooWorkspace& w, int channel, double pt_min, double pt_max, double y_min, double y_max);
 
@@ -1329,29 +1329,32 @@ void print_table(TString title, int n_var1_bins, int n_var2_bins, TString var1_n
     }
 }
 
-void latex_table(std::string filename, int n_col, int n_lin, std::vector<std::string> col_name, std::vector<std::string> labels, std::vector<std::vector<double> > numbers, std::string caption)
+void latex_table(std::string filename, int n_col, int n_lin, std::vector<std::string> col_name, std::vector<std::string> labels, std::vector<std::vector<double> > numbers, int* precision, std::string caption)
 {
   std::ofstream file;
 
   file.open(filename + ".tex");
   
-  // Create table                                                                                                                                
+  // Create table
+  file << "\\sisetup{round-mode=places}" << std::endl;
+  file << std::endl;
+                                                   
   file << "\\begin{table}" << std::endl;
-
+  file << "\\begin{adjustbox}{width=1\\textwidth}" << std::endl;
+  
   //setup table size                                                                                                                             
-  std::string col="c";
+  TString col = "c";
 
   for(int i=1; i<n_col; i++)
-    col+="|c";
+    col+= TString::Format("|S[round-precision= %d ]", precision[i-1]); //col+="|c";
 
-  file << "\\begin{center}" << std::endl;
-  file << "\\begin{tabular}{"+col+"}" << std::endl;
+  file << "\\begin{tabular}{" + col + "}" << std::endl;
   file << "\\toprule" << std::endl;
 
   for(int c=0; c<n_col-1; c++)
-    file << col_name[c] << " & ";
+    file << "{" << col_name[c] << "}" << " & ";
 
-  file << col_name[n_col-1] << " \\\\" << std::endl;
+  file << "{" << col_name[n_col-1] << "}" << " \\\\" << std::endl;
   file << "\\midrule" << std::endl;
 
   for(int i=1; i<n_lin; i++)
@@ -1368,8 +1371,8 @@ void latex_table(std::string filename, int n_col, int n_lin, std::vector<std::st
 
   //End Table                                                                                                                                
   file << "\\end{tabular}" << std::endl;
+  file << "\\end{adjustbox}" << std::endl;
   file << "\\caption{"+caption+"}" << std::endl;
-  file << "\\end{center}" << std::endl;
   file << "\\end{table}" << std::endl;
 
   std::string line;

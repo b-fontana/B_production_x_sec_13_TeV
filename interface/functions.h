@@ -986,14 +986,12 @@ RooRealVar* reco_efficiency(int channel, double pt_min, double pt_max, double y_
 	  else if (reweighting_var_str == "eta") weight_tot += h_weights_tot->GetBinContent( h_weights_tot->FindBin(eta_b) );
 	  else if (reweighting_var_str == "y") weight_tot += h_weights_tot->GetBinContent( h_weights_tot->FindBin(y_b) );
 	  else if (reweighting_var_str == "pt") {
-	    if(pt_b >= 10. && pt_b <= 45.) weight_tot += h_weights_tot->GetBinContent( h_weights_tot->FindBin(pt_b) );
+	    if(pt_b >= 10.8 && pt_b <= 45.) weight_tot += h_weights_tot->GetBinContent( h_weights_tot->FindBin(pt_b) );
 	    else weight_tot += 1.;
-	    std::cout << "pt: " << h_weights_tot->GetBinContent( h_weights_tot->FindBin(pt_b)) << std::endl;
 	  }
 	  else if (reweighting_var_str == "mu1pt") {
 	    if(pt_mu1 >= 4. && pt_mu1 <= 15.) weight_tot += h_weights_tot->GetBinContent( h_weights_tot->FindBin(pt_mu1) );
-	    else weight_tot += 1.;
-	    std::cout << "mu1pt: " << h_weights_tot->GetBinContent( h_weights_tot->FindBin(pt_mu1)) << std::endl;
+	    else  weight_tot += 1.;
 	  }
 	  else if (reweighting_var_str == "mu2pt") {
 	    if(pt_mu2 >= 4. && pt_mu2 <= 15.) weight_tot += h_weights_tot->GetBinContent( h_weights_tot->FindBin(pt_mu2) );

@@ -1,4 +1,5 @@
 #include "UserCode/B_production_x_sec_13_TeV/interface/functions.h"
+#include "UserCode/B_production_x_sec_13_TeV/interface/syst.h"
 
 //-----------------------------------------------------------------
 // Definition of channel #
@@ -14,18 +15,20 @@ double pdf_syst(RooWorkspace& ws, int channel, double pt_min, double pt_max, dou
 double mass_window_syst(RooWorkspace& ws, int channel, double pt_min, double pt_max, double y_min, double y_max, double nominal_yield, TString input_file);
 double reweighting_syst(int channel, double pt_min, double pt_max, double y_min, double y_max, double nominal_quantity);
 
-//input example: calculate_bin_syst --channel 1 --syst signal_pdf --ptmin 30 --ptmax 35 --ymin 0.00 --ymax 2.25
+//input example: calculate_bin_syst --channel 1 --syst signal_pdf_syst --ptmin 30 --ptmax 35 --ymin 0.00 --ymax 2.25
 int main(int argc, char** argv)
 {
-  //list to calculate the combined_syst
-  std::vector<std::string> syst_list = {"signal_pdf","cb_pdf","mass_window","reweighting"};
-
   int channel = 1;
   TString syst = "";
   double pt_min = -1;
   double pt_max = -1;
   double y_min = -1;
   double y_max = -1;
+
+  //list to calculate the combined_syst
+  std::vector<std::string> syst_list;
+
+  setup_syst_list(channel, &syst_list);
 
   for(int i=1 ; i<argc ; ++i)
     {
@@ -73,103 +76,51 @@ int main(int argc, char** argv)
   //to create the directories to save the files
   std::vector<std::string> dir_list;  
   
-  dir_list.push_back(static_cast<const char*>(TString::Format(VERSION) + "/signal_yield_root/syst/" + channel_to_ntuple_name(channel)));
+  dir_list.push_back(static_cast<const char*>(TString::Format(VERSION) + "/systematics_root/" + channel_to_ntuple_name(channel)));
   dir_list.push_back(static_cast<const char*>(TString::Format(VERSION) + "/mass_fits/syst/" + channel_to_ntuple_name(channel)));
-  dir_list.push_back(static_cast<const char*>(TString::Format(VERSION) + "/efficiencies_root/syst/" + channel_to_ntuple_name(channel)));
-  dir_list.push_back(static_cast<const char*>(TString::Format(VERSION) + "/combined_syst/" + channel_to_ntuple_name(channel)));
+  dir_list.push_back(static_cast<const char*>(TString::Format(VERSION) + "/efficiencies_root/" + channel_to_ntuple_name(channel)));
   create_dir(dir_list);
-
-  TString data_selection_input_file = TString::Format(BASE_DIR) + "/new_inputs/myloop_new_data_" + channel_to_ntuple_name(channel) + "_with_cuts.root";
-  RooWorkspace* ws = new RooWorkspace("ws","Bmass");
-  
-  //set up mass, pt and y variables inside ws  
-  set_up_workspace_variables(*ws,channel);
-  //read data from the selected data file, and import it as a dataset into the workspace.
-  read_data(*ws, data_selection_input_file,channel);
-  
+    
   ///////////////////////////////////////////////////
   //calculate the syst error for a bin of pt and y.//
   ///////////////////////////////////////////////////
   std::cout << "processing subsample: " << pt_min << " < " << "pt" << " < " << pt_max << " and " << y_min << " < " << "|y|" << " < " << y_max << std::endl;
   
-  //////////////////////////////
-  //read nominal signal yield//
-  /////////////////////////////
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    
   TString bins_str = "_pt_from_" + TString::Format("%d_to_%d", (int)pt_min, (int)pt_max) + "_y_from_" + TString::Format("%.2f_to_%.2f", y_min, y_max);
-
-  TString in_file_name;
-  if (syst == "signal_pdf" || syst == "cb_pdf" || syst == "mass_window")
-    in_file_name = TString::Format(VERSION) + "/signal_yield_root/" + channel_to_ntuple_name(channel) + "/yield_" + channel_to_ntuple_name(channel) + bins_str + ".root";
-  else if (syst == "reweighting" || syst == "combined_syst") //the last option can be placed in the 'if' too
-    in_file_name = TString::Format(VERSION) + "/efficiencies_root/" + channel_to_ntuple_name(channel) + "/recoeff_" + channel_to_ntuple_name(channel) + bins_str + ".root";
-  else std::cout << "The introduced systematic is not a valid option! (calculate_bin_syst.cc)" << std::endl;
-
-  std::cout << "reading nominal quantity from : " << in_file_name << std::endl;
-
-  TFile* fin = new TFile(in_file_name);
-
-  //to be used to run commands
-  TString command = "";
-  TString opt = "";
-
-  if(fin->IsZombie())
-    {
-      std::cout << "The nominal quantity file " << in_file_name << " was not found." << std::endl;
-      std::cout << "No problem, it will be calculated" << std::endl;
-
-      if (syst == "signal_pdf" || syst == "cb_pdf" || syst == "mass_window")
-	command = "calculate_bin_yield";
-      else if (syst == "reweighting" || syst == "combined_syst") //the last option can be placed in the 'if' too
-	command = "calculate_bin_eff --eff recoeff"; //the systematic due to the reweight only affects the reco_efficiency
-      else std::cout << "The introduced systematic is not a valid option! (calculate_bin_syst.cc)" << std::endl;
-
-      opt = " --channel " + TString::Format("%d", channel) + " --ptmin " + TString::Format("%d", (int)pt_min) + " --ptmax " + TString::Format("%d", (int)pt_max) + " --ymin " + TString::Format("%.2f", y_min) + " --ymax " + TString::Format("%.2f", y_max);
-      command += opt;
-
-      gSystem->Exec(command);
-      fin = new TFile(in_file_name);
-    }
-
-  TVectorD *in_val = (TVectorD*)fin->Get("val");
-  TVectorD *in_err_lo = (TVectorD*)fin->Get("err_lo");
-  TVectorD *in_err_hi = (TVectorD*)fin->Get("err_hi");
-  delete fin;
-
-  RooRealVar nominal_quantity("nominal_quantity", "nominal_quantity", in_val[0][0]); //nominal_quantity can represent either a yield or an efficiency
-  nominal_quantity.setAsymError(-in_err_lo[0][0],in_err_hi[0][0]);
-
-  //debug:
-  std::cout << "nominal_quantity: " << nominal_quantity.getVal() << " err_lo: " << nominal_quantity.getAsymErrorLo() << " err_hi: " << nominal_quantity.getAsymErrorHi() << std::endl;
-
-  TString syst_dir;
-  if (syst == "signal_pdf" || syst == "cb_pdf" || syst == "mass_window")
-    syst_dir = TString::Format(VERSION) + "/signal_yield_root/syst/" + channel_to_ntuple_name(channel) + "/";
-  else if (syst == "reweighting")
-    syst_dir = TString::Format(VERSION) + "/efficiencies_root/syst/" + channel_to_ntuple_name(channel) + "/";
-  else if (syst == "combined_syst")
-    syst_dir = TString::Format(VERSION) + "/combined_syst/" + channel_to_ntuple_name(channel) + "/";
-  else std::cout << "The introduced systematic is not a valid option! (calculate_bin_syst.cc)" << std::endl;
   
+  TString command = "";
+  TString opt = " --channel " + TString::Format("%d", channel) + " --ptmin " + TString::Format("%d", (int)pt_min) + " --ptmax " + TString::Format("%d", (int)pt_max) + " --ymin " + TString::Format("%.2f", y_min) + " --ymax " + TString::Format("%.2f", y_max); 
+
+  TString dir = "";
+  TString val_name = "";
+
+  TString syst_dir = TString::Format(VERSION) + "/systematics_root/" + channel_to_ntuple_name(channel) + "/";
+
   //absolute value of syst, i.e. from 0 to 1
   double absolute_syst_val = -1; //set to -1 as default, should be replaced below by a specific syst or the combined syst
-  double quantity_res = 1.;
+  
+  ////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
   //cicle to calculate combined_syst
   if(syst == "combined_syst")
     {
+      std::vector<double> syst_list_val;
+            
+      //print syst list with names
+      std::cout << "=== Systematics list name ===" << std::endl;
+
+      for(int k=0; k<(int)syst_list.size(); k++)
+        {
+	  std::cout << "Syst nr " << k << " : " << syst_list[k] << std::endl;
+	}
+      
       double sqrt_err = 0;
 
       for(int k=0; k<(int)syst_list.size(); k++)
         {
-	  //when we use 'combined_syst' one has to search for each systematic component on its respective folder; 'syst_dir' cannot be used
-	  //previously it could since 'syst_dir' was always the same independently of the source of the systematic
-	  TString f_name; 
-	  if (syst_list.at(k) == "signal_pdf" || syst_list.at(k) == "cb_pdf" || syst_list.at(k) == "mass_window")
-	    f_name = TString::Format(VERSION) + "/signal_yield_root/syst/" + channel_to_ntuple_name(channel) + "/" + syst_list[k] + "_" + channel_to_ntuple_name(channel) + bins_str + ".root";
-	  else if (syst_list.at(k) == "reweighting")
-	    f_name = TString::Format(VERSION) + "/efficiencies_root/syst/" + channel_to_ntuple_name(channel) + "/" + syst_list[k] + "_" + channel_to_ntuple_name(channel) + bins_str + ".root";
-	  else std::cout << "The introduced systematic is not a valid option! (calculate_bin_syst.cc)" << std::endl;
-
+	  TString f_name = syst_dir + syst_list[k] + "_" + channel_to_ntuple_name(channel) + bins_str + ".root";
 	  TFile* f_syst = new TFile(f_name);
 	  
 	  if(f_syst->IsZombie())
@@ -178,44 +129,136 @@ int main(int argc, char** argv)
 	      std::cout << "No problem, it will be calculated" << std::endl;
 	      
 	      command = "calculate_bin_syst --syst " + syst_list[k];
-	      opt = " --channel " + TString::Format("%d", channel) + " --ptmin " + TString::Format("%d", (int)pt_min) + " --ptmax " + TString::Format("%d", (int)pt_max) + " --ymin " + TString::Format("%.2f", y_min) + " --ymax " + TString::Format("%.2f", y_max);
+	      
 	      command += opt;
 
+	      std::cout << "Executing command:" << std::endl;
+	      std::cout << command << std::endl;
+	      
 	      gSystem->Exec(command);
+
 	      f_syst = new TFile(f_name);
 	    }
 
 	  TVectorD *in_err_hi = (TVectorD*)f_syst->Get("err_hi");
           delete f_syst;
+
+	  syst_list_val.push_back(in_err_hi[0][0]);
 	  
 	  sqrt_err += pow(in_err_hi[0][0],2);
 	}
-
+      
       absolute_syst_val = sqrt(sqrt_err);
+
+      //print syst list with val
+      std::cout << "=== Systematics list val ===" << std::endl;
+
+      for(int k=0; k<(int)syst_list_val.size(); k++)
+        {
+	  std::cout << "Syst nr " << k << ": " << syst_list[k] << " : " << syst_list_val[k] << std::endl;
+	}
     }
   else
     {
-      //calculate syst yield or syst efficiency
+      //////////////////////
+      //read nominal value//
+      //////////////////////
       
-      if(syst == "mass_window")
-	quantity_res = mass_window_syst(*ws, channel, pt_min, pt_max, y_min, y_max, nominal_quantity.getVal(), data_selection_input_file);
-      else if(syst == "signal_pdf" || syst == "cb_pdf")
-	quantity_res = pdf_syst(*ws, channel, pt_min, pt_max, y_min, y_max, nominal_quantity.getVal(), syst);
-      else if(syst == "reweighting") {
-	quantity_res = reweighting_syst(channel, pt_min, pt_max, y_min, y_max, nominal_quantity.getVal()); 
-	std::cout << "quantity_res: " << quantity_res << std::endl;
-      }
-      else std::cout << "The introduced systematic is not a valid option! (calculate_bin_syst.cc)" << std::endl;    
+      if(syst.Contains("eff"))
+	{
+	  dir = "/efficiencies_root/";
+	  
+	  if(syst.Contains("preeff"))
+	    val_name = "preeff";
+	  else
+	    if(syst.Contains("recoeff"))
+	      val_name = "recoeff";
+	    else
+	      {
+		std::cout << "Error: " <<  syst << " systematic not well defined" << std::endl;
+		return 0;
+	      }
+	}
+      else
+	{
+	  dir = "/signal_yield_root/";
+	  val_name = "yield";
+	}
+      
+      TString in_file_name = TString::Format(VERSION) + dir + channel_to_ntuple_name(channel) + "/" + val_name + "_" + channel_to_ntuple_name(channel) + bins_str + ".root";;
+      
+      std::cout << "reading nominal val from : " << std::endl;
+      std::cout << in_file_name << std::endl;
+      
+      TFile* fin = new TFile(in_file_name);
+      
+      if(fin->IsZombie())
+	{
+	  std::cout << "The nominal val file " << in_file_name << " was not found." << std::endl;
+	  std::cout << "No problem, it will be calculated" << std::endl;
+	  
+	  if(syst.Contains("eff"))
+	    command = "calculate_bin_eff --eff " + val_name;
+	  else
+	    command = "calculate_bin_yield";
+	  
+	  command += opt;
+	  
+	  std::cout << "Executing command:" << std::endl;
+	  std::cout << command << std::endl;
 
-      absolute_syst_val = fabs(nominal_quantity.getVal() - quantity_res)/nominal_quantity.getVal();
+	  gSystem->Exec(command);
+	  	  
+	  fin = new TFile(in_file_name);
+	}
+      
+      TVectorD *in_val = (TVectorD*)fin->Get("val");
+      TVectorD *in_err_lo = (TVectorD*)fin->Get("err_lo");
+      TVectorD *in_err_hi = (TVectorD*)fin->Get("err_hi");
+      delete fin;
+      
+      RooRealVar nominal_val("nominal_val", "nominal_val", in_val[0][0]);
+      nominal_val.setAsymError(-in_err_lo[0][0],in_err_hi[0][0]);
+      
+      //debug:
+      std::cout << "nominal_val: " << nominal_val.getVal() << " err_lo: " << nominal_val.getAsymErrorLo() << " err_hi: " << nominal_val.getAsymErrorHi() << std::endl;
+      
+      //calculate systematic absolute value
+      double alternative_val = 0;
+      
+      ///////////////read dataset//////////////////////
+      if(syst.Contains("eff") == false)
+	{
+	  TString data_selection_input_file = TString::Format(BASE_DIR) + "/new_inputs/myloop_new_data_" + channel_to_ntuple_name(channel) + "_with_cuts.root";
+	  RooWorkspace* ws = new RooWorkspace("ws","Bmass");
+	  
+	  //set up mass, pt and y variables inside ws  
+	  set_up_workspace_variables(*ws,channel);
+	  //read data from the selected data file, and import it as a dataset into the workspace.
+	  read_data(*ws, data_selection_input_file,channel);
+	      
+	  if(syst == "mass_window_syst")
+	    alternative_val = mass_window_syst(*ws, channel, pt_min, pt_max, y_min, y_max, nominal_val.getVal(), data_selection_input_file);
+	  else
+	    if(syst.Contains("pdf_syst"))
+	      alternative_val = pdf_syst(*ws, channel, pt_min, pt_max, y_min, y_max, nominal_val.getVal(), syst);
+	}
+      else
+	{
+	  if(syst == "recoeff_reweight")
+	      {
+		alternative_val = reweighting_syst(channel, pt_min, pt_max, y_min, y_max, nominal_val.getVal()); 
+	      }
+	}
+      
+      absolute_syst_val = fabs(nominal_val.getVal() - alternative_val)/nominal_val.getVal();
     }
   
   //debug:
-  std::cout << "absolute_syst_val: " << absolute_syst_val << std::endl;
+  std::cout << syst << " absolute_syst_val: " << absolute_syst_val << std::endl;
 
   //write to file with syst name
-  //when the option 'combined_syst' is selected the value is stored in an independent folder
-  TString syst_file_name = syst_dir + syst + "_" + channel_to_ntuple_name(channel) + bins_str + ".root";
+    TString syst_file_name = syst_dir + syst + "_" + channel_to_ntuple_name(channel) + bins_str + ".root";
   
   TFile* syst_file = new TFile(syst_file_name,"recreate");
   
@@ -223,10 +266,9 @@ int main(int argc, char** argv)
   TVectorD err_lo(1);
   TVectorD err_hi(1);
 
-  /////////////////////////////////////////
-  //Bruno Alves changes the following line:
-  val[0] = quantity_res; //instead of 1.
-  ////////////////////////////////////////
+  //val[0] = quantity_res; //instead of 1.
+  
+  val[0] = 1.00;
   err_lo[0] = fabs(absolute_syst_val);
   err_hi[0] = fabs(absolute_syst_val);
   
@@ -253,7 +295,7 @@ double pdf_syst(RooWorkspace& ws, int channel, double pt_min, double pt_max, dou
   std::cout << syst << std::endl;
   
   //copy the names of the pdfs into the pdf vector.
-  if(syst == "signal_pdf")
+  if(syst.Contains("signal"))
     {
       pdf_name = "signal";
       pdf.reserve((int)signal.size()); 
@@ -262,7 +304,7 @@ double pdf_syst(RooWorkspace& ws, int channel, double pt_min, double pt_max, dou
 	pdf.push_back(signal[i]);
     }
   else
-    if(syst == "cb_pdf")
+    if(syst.Contains("background"))
       {
 	pdf_name = "background";
 	pdf.reserve((int)background.size()); 
@@ -322,7 +364,7 @@ double mass_window_syst(RooWorkspace& ws, int channel, double pt_min, double pt_
 
   //Mass Range Systematics
   for(int i=0; i<(int)mass_min.size(); i++)
-    {                                                                                                                                                                                                               
+    {
       RooWorkspace* ws1 = new RooWorkspace("ws1","Bmass");
       set_up_workspace_variables(*ws1,channel,mass_min[i],mass_max[1-i]);
       read_data(*ws1, input_file, channel);

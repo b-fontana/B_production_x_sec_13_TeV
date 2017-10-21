@@ -29,7 +29,6 @@
 #include <RooChebychev.h>
 #include <RooBernstein.h>
 #include <RooExponential.h>
-#include <RooFFTConvPdf.h>
 #include <RooWorkspace.h>
 #include <RooAddPdf.h>
 #include <RooGenericPdf.h>
@@ -72,6 +71,7 @@ using namespace RooFit;
 //////////////////////////////////////////////
 
 void create_dir(std::vector<std::string> list);
+
 void set_up_workspace_variables(RooWorkspace& w, int channel, double mass_min = 0.0 , double mass_max = 0.0);
 void read_data(RooWorkspace& w, TString filename,int channel);
 void read_data_cut(RooWorkspace& w, RooAbsData* data);
@@ -86,7 +86,7 @@ void plot_eff(TString measure, TString eff_name, int channel, int n_var1_bins, T
 RooRealVar* bin_mass_fit(RooWorkspace& w, int channel, double pt_min, double pt_max, double y_min, double y_max, std::string choice = "", std::string choice2 = "", double mass_min = 0.0, double mass_max = 0.0, Bool_t verb = kFALSE);
 
 RooRealVar* prefilter_efficiency(int channel, double pt_min, double pt_max, double y_min, double y_max);
-RooRealVar* reco_efficiency(int channel, double pt_min, double pt_max, double y_min, double y_max,  bool syst, TString reweighting_var_str = "");
+RooRealVar* reco_efficiency(int channel, double pt_min, double pt_max, double y_min, double y_max, bool syst = false, TString reweighting_var_str = "");
 RooRealVar* branching_fraction(int channel);
 
 //void read_vector(TString measure, int channel, TString vector, TString var1_name , TString var2_name, int n_var1_bins, int n_var2_bins,  double* var1_bins, double* var2_bins, double* array, double* err_lo = NULL, double* err_hi = NULL);
@@ -211,7 +211,7 @@ void build_pdf(RooWorkspace& w, int channel, std::string choice, std::string cho
   RooRealVar m_mean("m_mean","m_mean",mass_peak,mass_peak-0.09,mass_peak+0.09);
   RooRealVar m_sigma1("m_sigma1","m_sigma1",0.010,0.009,0.200);
   RooRealVar m_sigma2("m_sigma2","m_sigma2",0.005,0.004,0.100);
-  RooRealVar m_fraction("m_fraction","m_fraction", 0.4, 0., .85);
+  RooRealVar m_fraction("m_fraction","m_fraction", 0.5, 0, 1);
   RooGaussian m_gaussian1("m_gaussian1","m_gaussian1",mass,m_mean,m_sigma1);
   RooGaussian m_gaussian2("m_gaussian2","m_gaussian2",mass,m_mean,m_sigma2);
 
@@ -221,9 +221,9 @@ void build_pdf(RooWorkspace& w, int channel, std::string choice, std::string cho
   RooCBShape m_crystal("m_crystal", "m_crystal", mass, m_mean, m_sigma1, m_alpha, m_n);
 
   //Three Gaussians
-  RooRealVar m_sigma3("m_sigma3","m_sigma3",0.020,0.001,0.100);
+  RooRealVar m_sigma3("m_sigma3","m_sigma3",0.030,0.001,0.100);
   RooGaussian m_gaussian3("m_gaussian3","m_gaussian3",mass,m_mean,m_sigma3);
-  RooRealVar m_fraction2("m_fraction2","m_fraction2",0.20, 0., .5);
+  RooRealVar m_fraction2("m_fraction2","m_fraction2",0.5);
 
   RooAddPdf* pdf_m_signal;
 
@@ -248,28 +248,24 @@ void build_pdf(RooWorkspace& w, int channel, std::string choice, std::string cho
 	pdf_m_signal = new RooAddPdf("pdf_m_signal","pdf_m_signal",RooArgList(m_gaussian1,m_gaussian2),RooArgList(m_fraction));
 	m_sigma2.setConstant(kTRUE);
 	m_fraction.setVal(1.);
-	m_fraction.setConstant(kTRUE);
       }
     else
-      if(choice2=="signal" && choice=="3gauss") {
+      if(choice2=="signal" && choice=="3gauss")
 	pdf_m_signal = new RooAddPdf("pdf_m_signal","pdf_m_signal",RooArgList(m_gaussian1,m_gaussian2,m_gaussian3),RooArgList(m_fraction,m_fraction2));
-      }
-      else { //this is the nominal signal
+      else //this is the nominal signal
 	pdf_m_signal = new RooAddPdf("pdf_m_signal","pdf_m_signal",RooArgList(m_gaussian1,m_gaussian2),RooArgList(m_fraction));
-	m_fraction2.setConstant(kTRUE);
-      }
   
   //-----------------------------------------------------------------
   // combinatorial background PDF
   
   //One Exponential
-  RooRealVar m_exp("m_exp","m_exp",-1.,-4.,0.);
+  RooRealVar m_exp("m_exp","m_exp",-0.3,-4.,0.);
   RooExponential pdf_m_combinatorial_exp("pdf_m_combinatorial_exp","pdf_m_combinatorial_exp",mass,m_exp);
   
   //Two Exponentials
   RooRealVar m_exp2("m_exp2","m_exp2",-0.3,-4.,0.);
   RooExponential pdf_m_combinatorial_exp2("pdf_m_combinatorial_exp2","pdf_m_combinatorial_exp2",mass,m_exp2);
-  RooRealVar m_fraction_exp("m_fraction_exp", "m_fraction_exp", 0.33, 0., 1.);
+  RooRealVar m_fraction_exp("m_fraction_exp", "m_fraction_exp", 0.5);
 
   //Bernstein
   RooRealVar m_par1("m_par1","m_par2",1.,0,+10.);
@@ -304,18 +300,14 @@ void build_pdf(RooWorkspace& w, int channel, std::string choice, std::string cho
 	{
 	  pdf_m_combinatorial=new RooAddPdf("pdf_m_combinatorial","pdf_m_combinatorial",RooArgList(pdf_m_combinatorial_exp,pdf_m_combinatorial_exp2),RooArgList(m_fraction_exp));
 	  m_exp2.setConstant(kTRUE);
-	  m_fraction_exp.setVal(1.);
+	  m_fraction_exp.setVal(1.);    
 	}
-
   ////////////////////////////////////////////////////////////////////////////////////////////
   //The components below have no systematic variation yet, they are part of the nominal fit.//
   ////////////////////////////////////////////////////////////////////////////////////////////
 
-  //K pi swap component, for channel 2. B0->jpsi K*0  
+  //K pi swap component, for channel 2. B0->jpsi K*0
 
-  //the r1 and r2 values were obtained from the yields associated with the CB components of the fit.
-  //For example, r1 was calculated with yield1/(yield1+yield2+yield3)
-  //The fit was performed in non-extended mode in the k_pi_swap.cc macro
   RooRealVar sigma_swapped1("sigma_swapped1","sigma_swapped1", 0.1133);
   RooRealVar sigma_swapped2("sigma_swapped2","sigma_swapped2", 0.01529);
   RooRealVar sigma_swapped3("sigma_swapped3","sigma_swapped3", 0.0424);
@@ -385,7 +377,7 @@ void build_pdf(RooWorkspace& w, int channel, std::string choice, std::string cho
   RooRealVar n_combinatorial("n_combinatorial","n_combinatorial",n_combinatorial_initial,0.,data->sumEntries());
   RooRealVar n_x3872("n_x3872","n_x3872",200.,0.,data->sumEntries());
 
-  RooRealVar f_swap("f_swap","f_swap", 0.1403); //for the k pi swap component of channel 2
+  RooRealVar f_swap("f_swap","f_swap", 0.136765); //for the k pi swap component of channel 2
   //set n_swap like n_jpsipi in case we want to count the k_pi_swap component as background.
   
   RooRealVar f_jpsipi("f_jpsipi","f_jpsipi",4.1E-5/1.026E-3,0.,0.1); //BF(jpsi_pi) = (4.1+-0.4)*10^-5 / BF(jpsi K) = (1.026+-0.031)*10^-3
@@ -804,20 +796,21 @@ RooRealVar* bin_mass_fit(RooWorkspace& w, int channel, double pt_min, double pt_
    
   model_cut->fitTo(*data_cut,Verbose(verb),Minos(kTRUE),NumCPU(NUMBER_OF_CPU),Offset(kTRUE));
   
-  TString mass_info = "";
-  if(mass_min!=0.0 && mass_max!=0.0)
-    mass_info = TString::Format("_mass_from_%.2f_to_%.2f",mass_min,mass_max);
-  
-  TString base_dir = TString::Format(VERSION) + "/mass_fits/"; 
+  TString base_dir = TString::Format(VERSION) + "/mass_fits/";
+
+  if((choice != "" && choice2 != "") || (mass_min!=0.0 && mass_max!=0.0))
+    base_dir += "syst/"; 
 
   TString syst_info = "";
   
   if(choice != "" && choice2 != "")
-  {
-    //base_dir += "syst/"; 
     syst_info = "_syst_" + choice + "_" + choice2;
-  }
   
+  TString mass_info = "";
+ 
+  if(mass_min!=0.0 && mass_max!=0.0)
+    mass_info = TString::Format("_mass_from_%.2f_to_%.2f",mass_min,mass_max);
+    
   TString dir = "";
   
   dir = base_dir + channel_to_ntuple_name(channel) + "/" + channel_to_ntuple_name(channel) + syst_info + "_mass_fit_" + TString::Format("pt_from_%d_to_%d_y_from_%.2f_to_%.2f",(int)pt_min,(int)pt_max,y_min,y_max) + mass_info;
@@ -1167,17 +1160,13 @@ void read_vector(int channel, TString vector, TString var1_name , TString var2_n
   TString dir = TString::Format(VERSION) + "/";
 
   if(vector == "yield")
-    dir += "signal_yield_root/";
-  else if(vector == "signal_pdf" || vector == "cb_pdf" || vector == "mass_window")
-    dir += "signal_yield_root/syst/";
-  else if(vector == "preeff" || vector == "recoeff" || vector == "totaleff")
-    dir += "efficiencies_root/";
-  else if(vector == "reweighting")
-    dir += "efficiencies_root/syst/";
-  else if(vector == "combined_syst")
-    dir += "combined_syst/";
-  else std::cout << "The chosen option does not exist! (functions.h)" << std::endl;
-
+      dir += "signal_yield_root/";
+  else
+    if(vector.Contains("syst"))
+      dir += "systematics_root/";
+    else
+      if(vector.Contains("eff"))
+	dir += "efficiencies_root/";
   
   dir += channel_to_ntuple_name(channel) + "/";
   
@@ -1240,13 +1229,13 @@ void read_vector(int channel, TString vector, TString var1_name , TString var2_n
                   line = command + opt;
                 }
               else
-                if(vector == "preeff" || vector == "recoeff" || vector == "totaleff")
+                if(vector.Contains("eff"))
                   {
                     command += "eff";
                     line = command + opt + " --eff " + vector;
                   }
                 else
-                  if(vector == "combined_syst" || vector == "signal_pdf" || vector == "cb_pdf" || vector == "mass_window" || vector == "reweighting")
+                  if(vector.Contains("syst"))
                     {
                       command += "syst";
                       line = command + opt + " --syst " + vector;
@@ -1297,10 +1286,13 @@ void read_vector(int channel, TString vector, TString var1_name , TString var2_n
     eff_title = b_title + " Reconstruction efficiency";
   if(eff_name == "totaleff")
     eff_title = b_title + " Overall efficiency";
-  if(eff_name == "reweighting")
+  if(eff_name == "recoeff_reweight")
     eff_title = b_title + " MC corrected efficiency";
   if(eff_name == "ratioeff")
-    eff_title = b_title + " Efficiency ratio";
+    {
+      eff_title = b_title + " Efficiency ratio";
+      eff_name = b_title + "_ratioeff"; //to indicate which ratio efficiency, fsfu or fsfd or fdfu
+    }
 
   graph_pre_eff->SetTitle(eff_title);
   graph_pre_eff->GetXaxis()->SetTitle(x_axis_name);

@@ -288,18 +288,47 @@ int main(int argc, char** argv)
 	      
 	      if(poly)
                 {
-                  //fit the ratio with a polynomial function
+		  gStyle->SetOptStat();
+		  gStyle->SetOptFit();
+ 
 		  graph->Fit("pol1","W","");
                   graph->GetFunction("pol1")->SetLineColor(4);
-                  gStyle->SetOptStat(1111);
-                  gStyle->SetOptFit(11); //show p0 and p1 parameters from the pol1 fit
-                  gStyle->SetStatX(0.9);
-                  gStyle->SetStatY(0.9);
-                }
-              cz.Update();
+                  graph->Draw("ap");
+		  gPad->Update();
+
+		  TPaveStats* tps1 = (TPaveStats*) graph->FindObject("stats");
+		  tps1->SetTextColor(4);
+		  tps1->SetLineColor(4);
+		  double X1 = tps1->GetX1NDC();
+		  double Y1 = tps1->GetY1NDC();
+		  double X2 = tps1->GetX2NDC();
+		  double Y2 = tps1->GetY2NDC();
+
+		  TGraphAsymmErrors* graph2 = (TGraphAsymmErrors*)graph->Clone("graph2");
+                  graph2->Fit("pol0","W","");
+                  graph2->GetFunction("pol0")->SetLineColor(1);
+                  graph2->Draw("p same");
+		  gPad->Update();
+
+		  TPaveStats *tps2 = (TPaveStats*) graph2->FindObject("stats");
+		  tps2->SetTextColor(1);
+		  tps2->SetLineColor(1);
+		  tps2->SetX1NDC(X1);
+		  tps2->SetX2NDC(X2);
+		  tps2->SetY1NDC(Y1-(Y2-Y1));
+		  tps2->SetY2NDC(Y1);
+
+		  tps1->Draw("same");
+		  tps2->Draw("same");
+		  
+		  cz.Update();
+		}
+	      else
+		{
+		  graph->Draw("ap same");
+		  cz.Update();
+		}
 	    }
-	  
-	  graph->Draw("ap same");
 	}
       else //for the rest of the rapidity bins.
 	{     

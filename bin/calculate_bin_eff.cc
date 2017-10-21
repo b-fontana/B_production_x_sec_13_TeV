@@ -10,7 +10,7 @@
 // channel = 6: Lambda_b -> Jpsi + Lambda
 //-----------------------------------------------------------------
 
-//input example: calculate_bin_eff --channel 1 --eff preeff --ptmin 10 --ptmax 20 --ymin 0.00 --ymax 0.50
+//input example: calculate_bin_eff --channel 1 --eff preeff --ptmin 10 --ptmax 20 --ymin 0.00 --ymax 0.50 --reweight mu1pt
 int main(int argc, char** argv)
 {
   int channel = 1;
@@ -19,6 +19,7 @@ int main(int argc, char** argv)
   double pt_max = -1;
   double y_min = -1;
   double y_max = -1;
+  TString reweight_str = "";
 
   for(int i=1 ; i<argc ; ++i)
     {
@@ -55,6 +56,11 @@ int main(int argc, char** argv)
 	  convert << argv[++i];
 	  convert >> y_max;
 	}
+      if(argument == "--reweight")
+	{
+	  convert << argv[++i];
+	  convert >> reweight_str;
+	}
     }
   
   if(eff_name == "")
@@ -68,6 +74,12 @@ int main(int argc, char** argv)
       std::cout << "Error: The bin was not well defined. Please enter pt and y bin." << std::endl;
       return 0;
     }
+
+  if(reweight_str != "" && eff_name != "recoeff_reweight")
+	{
+	  std::cout << "Error: Reweighting can only be performed with recoeff_reweight." << std::endl;
+	  return 0;
+	}
   
   //to create the directories to save the files
   std::vector<std::string> dir_list;  
@@ -88,7 +100,10 @@ int main(int argc, char** argv)
     eff_res = prefilter_efficiency(channel, pt_min, pt_max, y_min, y_max);
   else
     if(eff_name == "recoeff")
-      eff_res = reco_efficiency(channel, pt_min, pt_max, y_min, y_max, false);
+      eff_res = reco_efficiency(channel, pt_min, pt_max, y_min, y_max);
+    else
+      if(eff_name == "recoeff_reweight")
+	eff_res = reco_efficiency(channel, pt_min, pt_max, y_min, y_max, true, reweight_str );
     else
       if(eff_name == "totaleff")
 	{

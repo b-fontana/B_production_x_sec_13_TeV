@@ -1,3 +1,4 @@
+#include <algorithm>
 #include "UserCode/B_production_x_sec_13_TeV/interface/functions.h"
 #include "UserCode/B_production_x_sec_13_TeV/interface/syst.h"
 
@@ -158,102 +159,162 @@ int main(int argc, char** argv)
 	  std::cout << "Syst nr " << k << ": " << syst_list[k] << " : " << syst_list_val[k] << std::endl;
 	}
     }
+
+  ////////////////////////////////////////////////////////////////////////////////
+  //calculate each syst, starting with error propagation ones. And then nominal vs alternative.
   else
     {
-      //////////////////////
-      //read nominal value//
-      //////////////////////
-      
-      if(syst.Contains("eff"))
+      if(syst == "mc_stat_syst" || syst == "b_fraction_syst" || syst == "tracking_syst")
 	{
-	  dir = "/efficiencies_root/";
+	  std::cout << "calculating " << syst << " ,This is not a comparison with nominal value, just error propagation." << std::endl;
 	  
-	  if(syst.Contains("preeff"))
-	    val_name = "preeff";
+	  if(syst == "mc_stat_syst")
+	    {
+	      TString in_eff_file = TString::Format(VERSION) + "/efficiencies_root/" + channel_to_ntuple_name(channel) + "/totaleff_" + channel_to_ntuple_name(channel) + bins_str + ".root";
+      
+	  std::cout << "reading totaleff from : " << std::endl;
+	  std::cout << in_eff_file << std::endl;
+      
+	  TFile* f = new TFile(in_eff_file);
+      
+	  if(f->IsZombie())
+	    {
+	      std::cout << "The nominal val file " << in_eff_file << " was not found." << std::endl;
+	      std::cout << "No problem, it will be calculated" << std::endl;
+	  
+	      command = "calculate_bin_eff --eff totaleff ";
+	      	  
+	      command += opt;
+	  
+	      std::cout << "Executing command:" << std::endl;
+	      std::cout << command << std::endl;
+
+	      gSystem->Exec(command);
+	  	  
+	      f = new TFile(in_eff_file);
+	    }
+      
+	  TVectorD *in_eff_val = (TVectorD*)f->Get("val");
+	  TVectorD *in_eff_err_lo = (TVectorD*)f->Get("err_lo");
+	  TVectorD *in_eff_err_hi = (TVectorD*)f->Get("err_hi");
+	  delete f;
+      
+	  RooRealVar totaleff_val("totaleff_val", "totaleff_val", in_eff_val[0][0]);
+	  totaleff_val.setAsymError(-in_eff_err_lo[0][0],in_eff_err_hi[0][0]);
+	  
+	  absolute_syst_val = std::max(fabs(totaleff_val.getAsymErrorHi()),fabs(totaleff_val.getAsymErrorLo())) /totaleff_val.getVal();
+	    }
 	  else
-	    if(syst.Contains("recoeff"))
-	      val_name = "recoeff";
-	    else
+	    if(syst == "b_fraction_syst")
 	      {
-		std::cout << "Error: " <<  syst << " systematic not well defined" << std::endl;
-		return 0;
+		RooRealVar* branch = branching_fraction(channel);
+		absolute_syst_val= branch->getError() / branch->getVal();
 	      }
+	    else 
+	      if(syst == "tracking_syst")
+		{
+		  absolute_syst_val=0.028; //2.8% tracking efficiency from the tracking POG
+		}
 	}
       else
 	{
-	  dir = "/signal_yield_root/";
-	  val_name = "yield";
-	}
-      
-      TString in_file_name = TString::Format(VERSION) + dir + channel_to_ntuple_name(channel) + "/" + val_name + "_" + channel_to_ntuple_name(channel) + bins_str + ".root";;
-      
-      std::cout << "reading nominal val from : " << std::endl;
-      std::cout << in_file_name << std::endl;
-      
-      TFile* fin = new TFile(in_file_name);
-      
-      if(fin->IsZombie())
-	{
-	  std::cout << "The nominal val file " << in_file_name << " was not found." << std::endl;
-	  std::cout << "No problem, it will be calculated" << std::endl;
+	  //////////////////////////////////////////////////
+	  //read nominal value to compare with alternative//
+	  //////////////////////////////////////////////////
 	  
 	  if(syst.Contains("eff"))
-	    command = "calculate_bin_eff --eff " + val_name;
+	    {
+	      dir = "/efficiencies_root/";
+	  
+	      if(syst.Contains("preeff"))
+		val_name = "preeff";
+	      else
+		if(syst.Contains("recoeff"))
+		  val_name = "recoeff";
+		else
+		  {
+		    std::cout << "Error: " <<  syst << " systematic not well defined" << std::endl;
+		    return 0;
+		  }
+	    }
 	  else
-	    command = "calculate_bin_yield";
+	    {
+	      dir = "/signal_yield_root/";
+	      val_name = "yield";
+	    }
+      
+	  TString in_file_name = TString::Format(VERSION) + dir + channel_to_ntuple_name(channel) + "/" + val_name + "_" + channel_to_ntuple_name(channel) + bins_str + ".root";;
+      
+	  std::cout << "reading nominal val from : " << std::endl;
+	  std::cout << in_file_name << std::endl;
+      
+	  TFile* fin = new TFile(in_file_name);
+      
+	  if(fin->IsZombie())
+	    {
+	      std::cout << "The nominal val file " << in_file_name << " was not found." << std::endl;
+	      std::cout << "No problem, it will be calculated" << std::endl;
 	  
-	  command += opt;
+	      if(syst.Contains("eff"))
+		command = "calculate_bin_eff --eff " + val_name;
+	      else
+		command = "calculate_bin_yield";
 	  
-	  std::cout << "Executing command:" << std::endl;
-	  std::cout << command << std::endl;
+	      command += opt;
+	  
+	      std::cout << "Executing command:" << std::endl;
+	      std::cout << command << std::endl;
 
-	  gSystem->Exec(command);
+	      gSystem->Exec(command);
 	  	  
-	  fin = new TFile(in_file_name);
-	}
+	      fin = new TFile(in_file_name);
+	    }
       
-      TVectorD *in_val = (TVectorD*)fin->Get("val");
-      TVectorD *in_err_lo = (TVectorD*)fin->Get("err_lo");
-      TVectorD *in_err_hi = (TVectorD*)fin->Get("err_hi");
-      delete fin;
+	  TVectorD *in_val = (TVectorD*)fin->Get("val");
+	  TVectorD *in_err_lo = (TVectorD*)fin->Get("err_lo");
+	  TVectorD *in_err_hi = (TVectorD*)fin->Get("err_hi");
+	  delete fin;
       
-      RooRealVar nominal_val("nominal_val", "nominal_val", in_val[0][0]);
-      nominal_val.setAsymError(-in_err_lo[0][0],in_err_hi[0][0]);
+	  RooRealVar nominal_val("nominal_val", "nominal_val", in_val[0][0]);
+	  nominal_val.setAsymError(-in_err_lo[0][0],in_err_hi[0][0]);
       
-      //debug:
-      std::cout << "nominal_val: " << nominal_val.getVal() << " err_lo: " << nominal_val.getAsymErrorLo() << " err_hi: " << nominal_val.getAsymErrorHi() << std::endl;
+	  //debug:
+	  std::cout << "nominal_val: " << nominal_val.getVal() << " err_lo: " << nominal_val.getAsymErrorLo() << " err_hi: " << nominal_val.getAsymErrorHi() << std::endl;
       
-      //calculate systematic absolute value
-      double alternative_val = 0;
+	  //calculate systematic absolute value
+	  double alternative_val = 0;
       
-      ///////////////read dataset//////////////////////
-      if(syst.Contains("eff") == false)
-	{
-	  TString data_selection_input_file = TString::Format(BASE_DIR) + "/new_inputs/myloop_new_data_" + channel_to_ntuple_name(channel) + "_with_cuts.root";
-	  RooWorkspace* ws = new RooWorkspace("ws","Bmass");
+	  ///////////////read dataset//////////////////////
+	  if(syst.Contains("eff") == false)
+	    {
+	      TString data_selection_input_file = TString::Format(BASE_DIR) + "/new_inputs/myloop_new_data_" + channel_to_ntuple_name(channel) + "_with_cuts.root";
+	      RooWorkspace* ws = new RooWorkspace("ws","Bmass");
 	  
-	  //set up mass, pt and y variables inside ws  
-	  set_up_workspace_variables(*ws,channel);
-	  //read data from the selected data file, and import it as a dataset into the workspace.
-	  read_data(*ws, data_selection_input_file,channel);
+	      //set up mass, pt and y variables inside ws  
+	      set_up_workspace_variables(*ws,channel);
+	      //read data from the selected data file, and import it as a dataset into the workspace.
+	      read_data(*ws, data_selection_input_file,channel);
 	      
-	  if(syst == "mass_window_syst")
-	    alternative_val = mass_window_syst(*ws, channel, pt_min, pt_max, y_min, y_max, nominal_val.getVal(), data_selection_input_file);
+	      if(syst == "mass_window_syst")
+		alternative_val = mass_window_syst(*ws, channel, pt_min, pt_max, y_min, y_max, nominal_val.getVal(), data_selection_input_file);
+	      else
+		if(syst.Contains("pdf_syst"))
+		  alternative_val = pdf_syst(*ws, channel, pt_min, pt_max, y_min, y_max, nominal_val.getVal(), syst);
+	    }
 	  else
-	    if(syst.Contains("pdf_syst"))
-	      alternative_val = pdf_syst(*ws, channel, pt_min, pt_max, y_min, y_max, nominal_val.getVal(), syst);
-	}
-      else
-	{
-	  if(syst == "recoeff_reweight")
-	      {
-		alternative_val = reweighting_syst(channel, pt_min, pt_max, y_min, y_max, nominal_val.getVal()); 
-	      }
-	}
+	    {
+	      if(syst == "recoeff_reweight_syst")
+		{
+		  alternative_val = reweighting_syst(channel, pt_min, pt_max, y_min, y_max, nominal_val.getVal()); 
+		}
+	    }
       
-      absolute_syst_val = fabs(nominal_val.getVal() - alternative_val)/nominal_val.getVal();
+	  absolute_syst_val = fabs(nominal_val.getVal() - alternative_val)/nominal_val.getVal();
+	}
     }
   
+///////////////////////////////////////////////////////////////////////////////////////////////////////////
+
   //debug:
   std::cout << syst << " absolute_syst_val: " << absolute_syst_val << std::endl;
 

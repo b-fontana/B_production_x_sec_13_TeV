@@ -78,7 +78,7 @@ int main(int argc, char** argv)
   /////////////////////////////////////////////////////
   std::cout << "processing subsample: " << pt_min << " < " << "pt" << " < " << pt_max << " and " << y_min << " < " << "|y|" << " < " << y_max << std::endl;
   
-  signal_res = bin_mass_fit(*ws, channel, pt_min, pt_max, y_min, y_max/*, "3gauss", "signal"*/);
+  signal_res = bin_mass_fit(*ws, channel, pt_min, pt_max, y_min, y_max);
 
   //write signal_yield and statistical error to file
   TString yield_file_name = TString::Format(VERSION) + "/signal_yield_root/" + channel_to_ntuple_name(channel) + "/yield_" + channel_to_ntuple_name(channel) + "_pt_from_" + TString::Format("%d_to_%d", (int)pt_min, (int)pt_max) + "_y_from_" + TString::Format("%.2f_to_%.2f", y_min, y_max) + ".root";

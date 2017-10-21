@@ -339,5 +339,4 @@ int main(int argc, char** argv)
   delete data_swapped;
   delete data_full;
   delete fin;
-  
 }

@@ -46,7 +46,7 @@
 #include "TF1.h"
 #include "TPaveStats.h"
 
-#include "/UserCode/B_production_x_sec_13_TeV/interface/BLooks.h"
+#include "/home/t3cms/balves/work/CMSSW_9_2_12/src//UserCode/B_production_x_sec_13_TeV/interface/BLooks.h"
 using namespace RooFit;
 
 #define VAR_NUMBER 17 //the variable 'mass' has to be the last one to be stored
@@ -55,7 +55,7 @@ using namespace RooFit;
 //void newNtuple(std::string filename_open, std::string filename_save, int channel);
 void read_data(RooWorkspace& w, std::string filename, int channel);
 void set_up_workspace_variables(RooWorkspace& w, int channel);
-void histoPlot(std::vector<TH1D*> v1, std::vector<TH1D*> v2, int channel, int flag, int cuts);
+void histoPlot(std::vector<TH1D*> v1, std::vector<TH1D*> v2, int channel, int flag, TString var_str, int cuts);
 int getNBins(int var, int channel);
 double getMass(int channel);
 double getSigma(RooWorkspace& w, int channel);
@@ -67,7 +67,7 @@ std::vector<double> getBorder(RooWorkspace& w, int channel, int option);
 std::vector<double> getXRange(int var, int channel);
 std::string channel_to_ntuple_name(int channel);
 std::string histoName(int channel/*, int variable*/);
-TString canvasName(int channel, int variable, int flag);
+TString canvasName(int channel, int variable, int flag, TString var_str = "");
 std::string varName(int variable);
 std::string unitName(int variable);
 
@@ -79,6 +79,7 @@ int main(int argc, char **argv) {
   int input_data_flag = 0, input_mc_flag = 0;
   std::string input_data, input_mc;
   int cuts = 0;
+  TString var_str = "";
   int corrected_mc_flag = 0;
   std::string corrected_mc_str = ""; 
 
@@ -109,9 +110,11 @@ int main(int argc, char **argv) {
 	  convert << argv[++i];
 	  convert >> cuts;
 	}
-      else if(argument == "CORRECT_MC") {
+      else if(argument == "--CORRECT_MC") {
+	convert << argv[++i];
+	convert >> var_str;
 	corrected_mc_flag = 1;
-	corrected_mc_str = "reweighted_mc.root";
+	corrected_mc_str = "reweighted_mc_" + channel_to_ntuple_name(channel) + "_" + var_str + ".root";
 	std::cout << "Using the already corrected MC..." << std::endl;
       }
       else std::cout << "ERROR: The argument provided was not recognised." << std::endl;
@@ -139,13 +142,9 @@ int main(int argc, char **argv) {
   RooWorkspace *ws = new RooWorkspace("ws","ws");
   RooWorkspace *ws_mc = new RooWorkspace("ws_mc","ws_mc");
   set_up_workspace_variables(*ws, channel);
-  std::cout << "setup1" << std::endl;
   set_up_workspace_variables(*ws_mc, channel); 
-  std::cout << "setup2" << std::endl;
   read_data(*ws, input_data, channel);
-  std::cout << "read1" << std::endl;
   read_data(*ws_mc, input_mc, channel);
-  std::cout << "read2" << std::endl;
   
   std::string extension1 = "_ssdata", extension2 = "_mc";
   std::vector<TH1D*> h1 = sideband_sub(*ws, *ws_mc, channel, extension1);
@@ -163,7 +162,7 @@ int main(int argc, char **argv) {
     } 
     h2 = histoScale(h1,h2);
   }
-  histoPlot(h1, h2, channel, corrected_mc_flag, cuts);
+  histoPlot(h1, h2, channel, corrected_mc_flag, var_str, cuts);
 
  return 0;
 }
@@ -759,7 +758,7 @@ std::vector<TH1D*> histoBuild(RooWorkspace& w, int channel, std::string extensio
   return histos;
 }
 
-void histoPlot(std::vector<TH1D*> v1, std::vector<TH1D*> v2, int channel, int flag, int cuts) {
+void histoPlot(std::vector<TH1D*> v1, std::vector<TH1D*> v2, int channel, int flag, TString var_str, int cuts) {
   int variables = VAR_NUMBER;
   std::vector<TCanvas*> c;
   std::string histo_data = "_histo_data";
@@ -767,7 +766,8 @@ void histoPlot(std::vector<TH1D*> v1, std::vector<TH1D*> v2, int channel, int fl
   TH1D* h_aux;
   TLine *l1; 
   //TFile *f_weights = new TFile(("weights_nminus1_" + channel_to_ntuple_name(channel) + ".root").c_str(),"RECREATE");
-  TFile *f_weights = new TFile(("weights_" + channel_to_ntuple_name(channel) + ".root").c_str(),"UPDATE");
+  TFile *f_weights = nullptr;
+  if(!flag) f_weights = new TFile(("weights_" + channel_to_ntuple_name(channel) + ".root").c_str(),"UPDATE");
   for (int j=0; j<variables; ++j) {
     c.push_back(new TCanvas());
   }
@@ -848,8 +848,11 @@ void histoPlot(std::vector<TH1D*> v1, std::vector<TH1D*> v2, int channel, int fl
     h_aux->GetXaxis()->SetTitle((varName(i+1) + " (" + unitName(i+1) + ")").c_str());
     h_aux->GetYaxis()->SetNdivisions(4.5);
     h_aux->Divide(v2.at(i));
-    f_weights->cd();
-    h_aux->Write();
+    if(!flag) {
+      std::cout << "Gravou mais pesos!" << std::endl;
+      f_weights->cd();
+      h_aux->Write();
+    }
     pad2->cd();
     h_aux->Draw();
 
@@ -858,7 +861,8 @@ void histoPlot(std::vector<TH1D*> v1, std::vector<TH1D*> v2, int channel, int fl
     l1->SetLineStyle(9);
     l1->Draw("same");
 
-    c.at(i)->SaveAs(canvasName(channel,i+1,flag));
+
+    c.at(i)->SaveAs(canvasName(channel,i+1,flag,var_str));
 
     delete leg;
     delete tex1;
@@ -871,7 +875,7 @@ void histoPlot(std::vector<TH1D*> v1, std::vector<TH1D*> v2, int channel, int fl
     delete c.at(k);
   }
 
-  f_weights->Close();
+  if(!flag) f_weights->Close();
 }
 
 std::string varName(int variable) {
@@ -1025,8 +1029,9 @@ std::string histoName(int channel/*, int variable*/) {
   return s;
 }
 
-TString canvasName(int channel, int variable, int flag) {
+TString canvasName(int channel, int variable, int flag, TString var_str) {
   TString s;
+
   switch (channel) {
   case 1: 
     s = "channel1";
@@ -1051,63 +1056,65 @@ TString canvasName(int channel, int variable, int flag) {
     break;
   }
 
-  if (flag == 1) s = s + "_reweighted_mc_";
-
   switch (variable) {
   case 1:
-    s = s + "pt.png";
+    s = s + "pt";
     break;
   case 2:
-    s = s + "y.png";
+    s = s + "y";
     break;
   case 3:
-    s = s + "mu1pt.png";
+    s = s + "mu1pt";
     break;
   case 4:
-    s = s + "mu2pt.png";
+    s = s + "mu2pt";
     break;
   case 5:
-    s = s + "mu1eta.png";
+    s = s + "mu1eta";
     break;
   case 6:
-    s = s + "mu2eta.png";
+    s = s + "mu2eta";
     break;
   case 7:
-    s = s + "tk1pt.png";
+    s = s + "tk1pt";
     break;
   case 8:
-    s = s + "tk2pt.png";
+    s = s + "tk2pt";
     break;
   case 9:
-    s = s + "tk1eta.png";
+    s = s + "tk1eta";
     break;
   case 10:
-    s = s + "tk2eta.png";
+    s = s + "tk2eta";
     break;
   case 11:
-    s = s + "lxy.png";
+    s = s + "lxy";
     break;
   case 12:
-    s = s + "errxy.png";
+    s = s + "errxy";
     break;
   case 13:
-    s = s + "vtxprob.png";
+    s = s + "vtxprob";
     break;
   case 14:
-    s = s + "cosalpha2d.png";
+    s = s + "cosalpha2d";
     break;
   case 15:
-    s = s + "lerrxy.png";
+    s = s + "lerrxy";
     break;
   case 16:
-    s = s + "propert.png";
+    s = s + "propert";
     break;
   case 17:
-    s = s + "mass.png";
+    s = s + "mass";
     break;
   default:
-    s = s + "ERROR.png";
+    s = s + "ERROR";
   }
+
+  if (flag == 1) s = s + "_reweighted_mc_" + var_str;
+
+  s = s + ".png";
 
   return s;
 }

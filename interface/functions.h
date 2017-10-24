@@ -979,6 +979,7 @@ RooRealVar* reco_efficiency(int channel, double pt_min, double pt_max, double y_
       bool muon2Filter = fabs(eta_mu2) < 2.4 && pt_mu2 > 2.8;
 
       if (syst)	{
+	if (evt%10000==0)std::cout << "Events: " << evt << std::endl;
 	if (muon1Filter && muon2Filter) {
 	  if (reweighting_var_str != "eta" && reweighting_var_str != "y" && reweighting_var_str != "pt" && reweighting_var_str != "mu1pt" 
 	      && reweighting_var_str != "mu2pt" && reweighting_var_str != "mu1eta" && reweighting_var_str != "mu2eta") 
@@ -1087,8 +1088,8 @@ RooRealVar* reco_efficiency(int channel, double pt_min, double pt_max, double y_
     }
     else {
       eff = static_cast<double>(weight_passed)/static_cast<double>(weight_tot);
-      eff_lo = 0.00; //random value
-      eff_hi = 0.00; //random value
+      eff_lo = 0.01; //random value
+      eff_hi = 0.01; //random value
     }
 
     RooRealVar* eff2 = new RooRealVar("eff2","eff2",eff);

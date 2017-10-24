@@ -35,6 +35,7 @@ int main(int argc, char** argv)
 	{
 	  convert << argv[++i];
 	  convert >> eff_name;
+	  std::cout << eff_name << std::endl;
 	}      
       if(argument == "--ptmin")
 	{
@@ -102,8 +103,11 @@ int main(int argc, char** argv)
     if(eff_name == "recoeff")
       eff_res = reco_efficiency(channel, pt_min, pt_max, y_min, y_max);
     else
-      if(eff_name == "recoeff_reweight")
-	eff_res = reco_efficiency(channel, pt_min, pt_max, y_min, y_max, true, reweight_str );
+      if(eff_name == "recoeff_reweight") {
+	std::cout << "Calculating the recoeff_reweight!" << std::endl;
+	eff_res = reco_efficiency(channel, pt_min, pt_max, y_min, y_max, true, reweight_str);
+	std::cout << "Calculating the recoeff_reweight (end)!" << std::endl;
+      }
     else
       if(eff_name == "totaleff")
 	{
@@ -166,7 +170,8 @@ int main(int argc, char** argv)
   TString eff_file_name = TString::Format(VERSION) + "/efficiencies_root/" + channel_to_ntuple_name(channel) + "/" + eff_name + "_" + channel_to_ntuple_name(channel) + "_pt_from_" + TString::Format("%d_to_%d", (int)pt_min, (int)pt_max) + "_y_from_" + TString::Format("%.2f_to_%.2f", y_min, y_max) + ".root";
   
   TFile* eff_file = new TFile(eff_file_name,"recreate");
-  
+  std::cout << "The information will be stored in " << eff_file_name << std::endl;
+
   TVectorD efficiency(1);
   TVectorD stat_err_lo(1);
   TVectorD stat_err_hi(1);

@@ -979,7 +979,6 @@ RooRealVar* reco_efficiency(int channel, double pt_min, double pt_max, double y_
       bool muon2Filter = fabs(eta_mu2) < 2.4 && pt_mu2 > 2.8;
 
       if (syst)	{
-	if (evt%10000==0)std::cout << "Events: " << evt << std::endl;
 	if (muon1Filter && muon2Filter) {
 	  if (reweighting_var_str != "eta" && reweighting_var_str != "y" && reweighting_var_str != "pt" && reweighting_var_str != "mu1pt" 
 	      && reweighting_var_str != "mu2pt" && reweighting_var_str != "mu1eta" && reweighting_var_str != "mu2eta") 

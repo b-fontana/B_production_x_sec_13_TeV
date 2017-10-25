@@ -91,19 +91,15 @@ int main(int argc, char** argv)
   double ratio_err_lo[n_var2_bins][n_var1_bins];
   double ratio_err_hi[n_var2_bins][n_var1_bins];
 
-  double yield_syst[2][n_var2_bins][n_var1_bins];
-  double yield_syst_lo[2][n_var2_bins][n_var1_bins];
-  double yield_syst_hi[2][n_var2_bins][n_var1_bins];
+  double combined_syst[2][n_var2_bins][n_var1_bins];
+  double combined_syst_lo[2][n_var2_bins][n_var1_bins];
+  double combined_syst_hi[2][n_var2_bins][n_var1_bins];
  
-  double ratio_syst_sqrt_lo[n_var2_bins][n_var1_bins];
-  double ratio_syst_sqrt_hi[n_var2_bins][n_var1_bins];
-  
   double ratio_syst_lo[n_var2_bins][n_var1_bins];
   double ratio_syst_hi[n_var2_bins][n_var1_bins];
     
   double b_fraction[2];
-  double b_fraction_err[2];
-
+  
   TString x_axis_name = "";
   if(var1_name =="pt")
     x_axis_name = "p_{T}(B) [GeV]";
@@ -138,8 +134,7 @@ int main(int argc, char** argv)
       
       RooRealVar* branch = branching_fraction(channel);
       b_fraction[ch] = branch->getVal();
-      b_fraction_err[ch] = branch->getError();
-
+      
       //read yield
       read_vector(channel, "yield", var1_name , var2_name, n_var1_bins, n_var2_bins, var1_bins, var2_bins, yield[ch][0], yield_err_lo[ch][0], yield_err_hi[ch][0]);
 	  
@@ -149,16 +144,16 @@ int main(int argc, char** argv)
       
       //read syst
       if(syst)
-	read_vector(channel, "combined_syst", var1_name , var2_name, n_var1_bins, n_var2_bins, var1_bins, var2_bins, yield_syst[ch][0],yield_syst_lo[ch][0],yield_syst_hi[ch][0]);
+	read_vector(channel, "combined_syst", var1_name , var2_name, n_var1_bins, n_var2_bins, var1_bins, var2_bins, combined_syst[ch][0],combined_syst_lo[ch][0],combined_syst_hi[ch][0]);
       else
 	for(int j=0; j<n_var2_bins; j++)
 	  {
 	    for(int i=0; i<n_var1_bins; i++)
 	      {
 		//syst set to zero
-		yield_syst[ch][j][i]=0;
-		yield_syst_lo[ch][j][i]=0;
-		yield_syst_hi[ch][j][i]=0;
+		combined_syst[ch][j][i]=0;
+		combined_syst_lo[ch][j][i]=0;
+		combined_syst_hi[ch][j][i]=0;
 	      }
 	  }
     }//end of ch cicle
@@ -185,22 +180,17 @@ int main(int argc, char** argv)
 	{
 	  ratio_array[j][i]  = yield[1][j][i] / yield[0][j][i];
 	  ratio_array[j][i]  *= pow(10,j);
-          
-	  ratio_syst_sqrt_lo[j][i] = pow(yield_syst_lo[0][j][i],2) + pow(yield_syst_lo[1][j][i],2);
-          ratio_syst_sqrt_hi[j][i] = pow(yield_syst_hi[0][j][i],2) + pow(yield_syst_hi[1][j][i],2);
-
+          	  
           if(eff)
-            {
+	    {
 	      ratio_array[j][i] *= ratio_eff[j][i] * (b_fraction[0]/b_fraction[1]);
-	      ratio_syst_sqrt_lo[j][i] += pow(ratio_eff_err_lo[j][i]/ratio_eff[j][i],2) + pow(b_fraction_err[0]/b_fraction[0],2) + pow(b_fraction_err[1]/b_fraction[1],2);
-              ratio_syst_sqrt_hi[j][i] += pow(ratio_eff_err_hi[j][i]/ratio_eff[j][i],2) + pow(b_fraction_err[0]/b_fraction[0],2) + pow(b_fraction_err[1]/b_fraction[1],2);
-            }
-	  
+	    }
+	    	  
 	  ratio_err_lo[j][i] = ratio_array[j][i] * sqrt(pow(yield_err_lo[0][j][i]/yield[0][j][i],2) + pow(yield_err_lo[1][j][i]/yield[1][j][i],2));
 	  ratio_err_hi[j][i] = ratio_array[j][i] * sqrt(pow(yield_err_hi[0][j][i]/yield[0][j][i],2) + pow(yield_err_hi[1][j][i]/yield[1][j][i],2));
 
-          ratio_syst_lo[j][i]  = ratio_array[j][i] * sqrt(ratio_syst_sqrt_lo[j][i]);
-          ratio_syst_hi[j][i]  = ratio_array[j][i] * sqrt(ratio_syst_sqrt_hi[j][i]);
+          ratio_syst_lo[j][i]  = ratio_array[j][i] * sqrt(pow(combined_syst_lo[0][j][i],2) + pow(combined_syst_lo[1][j][i],2));
+          ratio_syst_hi[j][i]  = ratio_array[j][i] * sqrt(pow(combined_syst_hi[0][j][i],2) + pow(combined_syst_hi[1][j][i],2));
 	}
     }
 

@@ -22,9 +22,12 @@
   <bin name="print_val"   file="print_val.cc"></bin> 
   <bin name="valid"   file="mc_validation.cc"></bin>
   <!--<bin name="weight"   file="check_weights.cc"></bin> -->
-  <!--<bin name="fitbias"   file="fitBias.cc"></bin> -->
+  <bin name="fitbias"   file="fitBias.cc"></bin>
   <bin name="mc_gen_signal_study"   file="mc_gen_signal_study.cc"></bin> 
   <bin name="mc_reco_signal_study"   file="mc_reco_signal_study.cc"></bin> 
+  <bin name="reweight"   file="reweighting.cc"></bin>
+  <bin name="res"   file="resolution.cc"></bin>
+  <bin name="effratioplot"   file="eff_ratio_plot.cc"></bin>
 </environment>
 
 <Flags CXXFLAGS="-g"/>

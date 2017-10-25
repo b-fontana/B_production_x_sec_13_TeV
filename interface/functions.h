@@ -1087,8 +1087,8 @@ RooRealVar* reco_efficiency(int channel, double pt_min, double pt_max, double y_
     }
     else {
       eff = static_cast<double>(weight_passed)/static_cast<double>(weight_tot);
-      eff_lo = 0.00; //random value
-      eff_hi = 0.00; //random value
+      eff_lo = 0.01; //random value
+      eff_hi = 0.01; //random value
     }
 
     RooRealVar* eff2 = new RooRealVar("eff2","eff2",eff);

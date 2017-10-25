@@ -50,8 +50,4 @@ TLegend* BLooks::LegendEntries(std::vector<double> pos, std::vector<TH1*> h, std
   return leg;
 }
 
-
-
-
-
 #endif

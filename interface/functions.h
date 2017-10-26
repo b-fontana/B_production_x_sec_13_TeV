@@ -9,6 +9,7 @@
 #include <TStyle.h>
 #include <TAxis.h>
 #include <TLatex.h>
+#include <TCut.h>
 #include <TPaveText.h>
 #include <TFile.h>
 #include <TTree.h>
@@ -24,6 +25,7 @@
 #include <RooProduct.h>
 #include <RooConstVar.h>
 #include <RooDataSet.h>
+#include <RooDataHist.h>
 #include <RooGaussian.h>
 #include <RooBifurGauss.h>
 #include <RooChebychev.h>
@@ -942,6 +944,7 @@ RooRealVar* reco_efficiency(int channel, double pt_min, double pt_max, double y_
   //set up the variables needed
   double pt_b, eta_b, y_b, pt_mu1, pt_mu2, eta_mu1, eta_mu2;
   double reweighting_variable;
+  double lxy, errxy;
   
   //read the ntuple from selected_data
   tin_no_cuts->SetBranchAddress("eta", &eta_b);
@@ -951,10 +954,13 @@ RooRealVar* reco_efficiency(int channel, double pt_min, double pt_max, double y_
   tin_no_cuts->SetBranchAddress("mu2pt", &pt_mu2);
   tin_no_cuts->SetBranchAddress("mu1eta", &eta_mu1);
   tin_no_cuts->SetBranchAddress("mu2eta", &eta_mu2);
- 
+  if(reweighting_var_str == "lerrxy") {
+    tin_no_cuts->SetBranchAddress("lxy", &lxy);
+    tin_no_cuts->SetBranchAddress("errxy", &errxy);
+  }
+
   if(syst) {
-    if (reweighting_var_str != "eta" && reweighting_var_str != "y" && reweighting_var_str != "pt" && reweighting_var_str != "mu1pt" 
-	&& reweighting_var_str != "mu2pt" && reweighting_var_str != "mu1eta" && reweighting_var_str != "mu2eta")
+    if (reweighting_var_str != "eta" && reweighting_var_str != "y" && reweighting_var_str != "pt" && reweighting_var_str != "mu1pt" && reweighting_var_str != "mu2pt" && reweighting_var_str != "mu1eta" && reweighting_var_str != "mu2eta" && reweighting_var_str != "lerrxy")
       tin_no_cuts->SetBranchAddress(reweighting_var_str, &reweighting_variable);
   }
 
@@ -1000,6 +1006,7 @@ RooRealVar* reco_efficiency(int channel, double pt_min, double pt_max, double y_
 	  }
 	  else if (reweighting_var_str == "mu1eta") weight_tot += h_weights_tot->GetBinContent( h_weights_tot->FindBin(eta_mu1) );
 	  else if (reweighting_var_str == "mu2eta") weight_tot += h_weights_tot->GetBinContent( h_weights_tot->FindBin(eta_mu2) );
+	  else if (reweighting_var_str == "lerrxy") weight_tot += h_weights_tot->GetBinContent( h_weights_tot->FindBin(lxy/errxy) );
 	}
       }
 
@@ -1021,10 +1028,13 @@ RooRealVar* reco_efficiency(int channel, double pt_min, double pt_max, double y_
     tin_with_cuts->SetBranchAddress("mu2pt", &pt_mu2);
     tin_with_cuts->SetBranchAddress("mu1eta", &eta_mu1);
     tin_with_cuts->SetBranchAddress("mu2eta", &eta_mu2);
+    if(reweighting_var_str == "lerrxy") {
+      tin_no_cuts->SetBranchAddress("lxy", &lxy);
+      tin_no_cuts->SetBranchAddress("errxy", &errxy);
+    }
  
     if(syst) {
-      if (reweighting_var_str != "eta" && reweighting_var_str != "y" && reweighting_var_str != "pt" && reweighting_var_str != "mu1pt" 
-	&& reweighting_var_str != "mu2pt" && reweighting_var_str != "mu1eta" && reweighting_var_str != "mu2eta")
+      if (reweighting_var_str != "eta" && reweighting_var_str != "y" && reweighting_var_str != "pt" && reweighting_var_str != "mu1pt" && reweighting_var_str != "mu2pt" && reweighting_var_str != "mu1eta" && reweighting_var_str != "mu2eta" && reweighting_var_str != "lerrxy")
 	tin_with_cuts->SetBranchAddress(reweighting_var_str, &reweighting_variable);
     }
     TH1D* hist_passed = new TH1D("hist_passed","hist_passed",1,pt_min,pt_max);
@@ -1066,6 +1076,7 @@ RooRealVar* reco_efficiency(int channel, double pt_min, double pt_max, double y_
 	    }
 	    else if (reweighting_var_str == "mu1eta") weight_passed += h_weights_passed->GetBinContent( h_weights_passed->FindBin(eta_mu1) );
 	    else if (reweighting_var_str == "mu2eta") weight_passed += h_weights_passed->GetBinContent( h_weights_passed->FindBin(eta_mu2) );
+	    else if (reweighting_var_str == "lerrxy") weight_passed += h_weights_passed->GetBinContent( h_weights_passed->FindBin(lxy/errxy) );
 	  }
 	}
 

@@ -50,7 +50,7 @@
 using namespace RooFit;
 
 #define VAR_NUMBER 17 //the variable 'mass' has to be the last one to be stored
-#define BIN_NUMBER 75 
+#define BIN_NUMBER 100 
 
 //void newNtuple(std::string filename_open, std::string filename_save, int channel);
 void read_data(RooWorkspace& w, std::string filename, int channel);

@@ -25,6 +25,7 @@
   <bin name="mc_reco_signal_study"   file="mc_reco_signal_study.cc"></bin> 
   <bin name="reweight"   file="reweighting.cc"></bin>
   <bin name="res"   file="resolution.cc"></bin>
+  <bin name="Res"   file="Resolution.cc"></bin>
   <bin name="effratioplot"   file="eff_ratio_plot.cc"></bin>
 </environment>
 

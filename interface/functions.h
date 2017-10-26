@@ -325,7 +325,7 @@ void build_pdf(RooWorkspace& w, int channel, std::string choice, std::string cho
   RooCBShape swapped3("swapped3","swapped3", mass, m_mean, sigma_swapped3, alpha3, n3_parameter);
 
   RooRealVar r1("r1","r1", 0.249); 
-  RooRealVar r2("r12","r12", 0.3922);
+  RooRealVar r2("r2","r2", 0.3922);
   RooAddPdf k_pi_swap("k_pi_swap","k_pi_swap", RooArgSet(swapped1,swapped2,swapped3), RooArgSet(r1,r2));
 
   //--------------------------------------------------------------------

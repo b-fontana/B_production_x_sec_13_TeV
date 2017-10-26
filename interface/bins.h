@@ -10,7 +10,7 @@
 
 //All functions and scripts must read the bins from here. Do not duplicate the definition of the bins.
 
-double ntkp_pt_bins[]=    {9, 13, 16, 20, 25, 30, 35, 42, 50, 60, 70, 90, 120};
+double ntkp_pt_bins[]=    {9, 13, 16, 20, 25, 30, 35, 42, 50, 60, 70, 80, 90, 120};
 double ntkstar_pt_bins[]= {9, 13, 16, 20, 25, 30, 35, 42, 50, 60, 70, 90};
 double ntks_pt_bins[]=    {9, 13, 16, 20, 25, 30, 35, 42, 50, 60, 70, 90};
 double ntphi_pt_bins[]=   {9, 13, 16, 20, 25, 30, 35, 42, 50, 60, 70, 90};

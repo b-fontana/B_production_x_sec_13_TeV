@@ -1,6 +1,6 @@
-std::vector<std::string> ntkp_syst_list    = {"signal_pdf_syst", "combinatorial_background_pdf_syst", "mass_window_syst", "b_fraction_syst", "mc_stat_syst","tracking_syst"};//, "recoeff_reweight_syst"};
-std::vector<std::string> ntkstar_syst_list = {"signal_pdf_syst", "combinatorial_background_pdf_syst", "mass_window_syst", "b_fraction_syst", "mc_stat_syst"};//, "recoeff_reweight_syst"};
-std::vector<std::string> ntphi_syst_list   = {"signal_pdf_syst", "combinatorial_background_pdf_syst", "mass_window_syst", "b_fraction_syst", "mc_stat_syst"};//, "recoeff_reweight_syst"};
+std::vector<std::string> ntkp_syst_list    = {"signal_pdf_syst", "combinatorial_background_pdf_syst", "mass_window_syst", "b_fraction_syst", "mc_stat_syst", "recoeff_reweight_syst", "tracking_syst", "jpsipi_pdf_syst"}; //"jpsiX_pdf_syst"
+std::vector<std::string> ntkstar_syst_list = {"signal_pdf_syst", "combinatorial_background_pdf_syst", "mass_window_syst", "b_fraction_syst", "mc_stat_syst", "recoeff_reweight_syst"};
+std::vector<std::string> ntphi_syst_list   = {"signal_pdf_syst", "combinatorial_background_pdf_syst", "mass_window_syst", "b_fraction_syst", "mc_stat_syst", "recoeff_reweight_syst"};
 
 void setup_syst_list(int channel, std::vector<std::string>* syst_vector)
 {
@@ -49,8 +49,17 @@ std::string syst_fancy_name(std::string syst_name)
 	    if(syst_name == "mc_stat_syst")
 	      fancy_name = "MC statistics";
 	    else
-	      if(syst_name == "tracking_syst")
-		fancy_name = "Hadron tracking";
-  
+	      if(syst_name == "recoeff_reweight_syst")
+		fancy_name = "MC reweight";
+	      else
+		if(syst_name == "tracking_syst")
+		  fancy_name = "Hadron tracking";
+		else
+		  if(syst_name == "jpsipi_pdf_syst")
+		    fancy_name = "Jpsi pi";
+		  else
+		    if(syst_name == "jpsiX_pdf_syst")
+		      fancy_name = "Jpsi X";
+
   return fancy_name; 
 }

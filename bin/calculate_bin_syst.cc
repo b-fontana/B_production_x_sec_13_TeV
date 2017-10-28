@@ -457,6 +457,7 @@ double reweighting_syst(int channel, double pt_min, double pt_max, double y_min,
   std::vector<TString> reweight_var_names;
   reweight_var_names.push_back("mu1pt");
   reweight_var_names.push_back("pt");
+  reweight_var_names.push_back("lerrxy");
 
   RooRealVar* eff_corrected;
   int reweight_variables_number = static_cast<int>(reweight_var_names.size());  

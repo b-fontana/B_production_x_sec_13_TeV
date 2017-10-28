@@ -387,11 +387,22 @@ void build_pdf(RooWorkspace& w, int channel, std::string choice, std::string cho
   
   RooRealVar f_nonprompt("f_nonprompt","f_nonprompt",2.50259e-01,0,1);
   RooProduct n_nonprompt("n_nonprompt","n_nonprompt",RooArgList(n_signal,f_nonprompt));
+  
+  if(choice2=="background" && choice=="no_jpsipi")
+    {
+      f_jpsipi = 0.0;
+      f_jpsipi.setConstant(kTRUE);
+    }
+
+  if(choice2=="background" && choice=="no_jpsiX")
+    {
+      f_nonprompt = 0.0;
+      f_nonprompt.setConstant(kTRUE);
+    }
 
   f_swap.setConstant(kTRUE);
   f_jpsipi.setConstant(kTRUE);
-  //f_nonprompt.setConstant(kTRUE);
-    
+      
   RooAddPdf* model;
   RooAddPdf* pdf_m_signal_copy;
 

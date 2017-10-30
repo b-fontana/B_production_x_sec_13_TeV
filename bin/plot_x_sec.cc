@@ -95,7 +95,7 @@ int main(int argc, char** argv)
   double x_sec_syst_lo[n_var2_bins][n_var1_bins];
   double x_sec_syst_hi[n_var2_bins][n_var1_bins];
     
-  RooRealVar* branch = branching_fraction(channel);
+  RooRealVar* branch = branching_fraction(measure, channel);
   double b_fraction = branch->getVal();
   double b_fraction_err = branch->getError();
   

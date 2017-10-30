@@ -135,7 +135,7 @@ int main(int argc, char** argv)
               return 0;
             }
       
-      RooRealVar* branch = branching_fraction(channel);
+      RooRealVar* branch = branching_fraction(measure, channel);
       b_fraction[ch] = branch->getVal();
       b_fraction_err[ch] = branch->getError();
       

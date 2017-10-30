@@ -89,7 +89,7 @@ RooRealVar* bin_mass_fit(RooWorkspace& w, int channel, double pt_min, double pt_
 
 RooRealVar* prefilter_efficiency(int channel, double pt_min, double pt_max, double y_min, double y_max);
 RooRealVar* reco_efficiency(int channel, double pt_min, double pt_max, double y_min, double y_max, bool syst = false, TString reweighting_var_str = "");
-RooRealVar* branching_fraction(int channel);
+RooRealVar* branching_fraction(TString measure, int channel);
 
 //void read_vector(TString measure, int channel, TString vector, TString var1_name , TString var2_name, int n_var1_bins, int n_var2_bins,  double* var1_bins, double* var2_bins, double* array, double* err_lo = NULL, double* err_hi = NULL);
 void read_vector(int channel, TString vector, TString var1_name , TString var2_name, int n_var1_bins, int n_var2_bins,  double* var1_bins, double* var2_bins, double* array, double* err_lo = NULL, double* err_hi = NULL);
@@ -1125,7 +1125,7 @@ RooRealVar* reco_efficiency(int channel, double pt_min, double pt_max, double y_
     return eff2;
 }
 
-RooRealVar* branching_fraction(int channel)
+RooRealVar* branching_fraction(TString measure, int channel)
 {
   RooRealVar* b_fraction = new RooRealVar("b_fraction","b_fraction",1);
   b_fraction->setError(1);
@@ -1150,23 +1150,48 @@ RooRealVar* branching_fraction(int channel)
 
   double err =1;
   
-  switch (channel) 
+  if(measure == "xsec")
     {
-    default:
-    case 1:
-      b_fraction->setVal(bu_to_jpsi_ku->getVal() * jpsi_to_mu_mu->getVal());
-      err = b_fraction->getVal()*sqrt( pow(bu_to_jpsi_ku->getError()/bu_to_jpsi_ku->getVal(),2) + pow(jpsi_to_mu_mu->getError()/jpsi_to_mu_mu->getVal(),2) );
-      break;      
-    case 2:
-      b_fraction->setVal( bd_to_jpsi_kstar->getVal() * kstar_to_k_pi->getVal() * jpsi_to_mu_mu->getVal());
-      err = b_fraction->getVal() * sqrt( pow(bd_to_jpsi_kstar->getError()/bd_to_jpsi_kstar->getVal(),2) + pow(kstar_to_k_pi->getError()/kstar_to_k_pi->getVal(),2) + pow(jpsi_to_mu_mu->getError()/jpsi_to_mu_mu->getVal(),2) );
-      break;
-    case 4:
-      b_fraction->setVal( bs_to_jpsi_phi->getVal() * phi_to_k_k->getVal() * jpsi_to_mu_mu->getVal());
-      err = b_fraction->getVal() * sqrt(pow(bs_to_jpsi_phi->getError()/bs_to_jpsi_phi->getVal(),2) + pow(phi_to_k_k->getError()/phi_to_k_k->getVal(),2) + pow(jpsi_to_mu_mu->getError()/jpsi_to_mu_mu->getVal(),2));
-      break;
+      switch (channel) 
+	{
+	default:
+	case 1:
+	  b_fraction->setVal(bu_to_jpsi_ku->getVal() * jpsi_to_mu_mu->getVal());
+	  err = b_fraction->getVal()*sqrt( pow(bu_to_jpsi_ku->getError()/bu_to_jpsi_ku->getVal(),2) + pow(jpsi_to_mu_mu->getError()/jpsi_to_mu_mu->getVal(),2) );
+	  break;      
+	case 2:
+	  b_fraction->setVal( bd_to_jpsi_kstar->getVal() * kstar_to_k_pi->getVal() * jpsi_to_mu_mu->getVal());
+	  err = b_fraction->getVal() * sqrt( pow(bd_to_jpsi_kstar->getError()/bd_to_jpsi_kstar->getVal(),2) + pow(kstar_to_k_pi->getError()/kstar_to_k_pi->getVal(),2) + pow(jpsi_to_mu_mu->getError()/jpsi_to_mu_mu->getVal(),2) );
+	  break;
+	case 4:
+	  b_fraction->setVal( bs_to_jpsi_phi->getVal() * phi_to_k_k->getVal() * jpsi_to_mu_mu->getVal());
+	  err = b_fraction->getVal() * sqrt(pow(bs_to_jpsi_phi->getError()/bs_to_jpsi_phi->getVal(),2) + pow(phi_to_k_k->getError()/phi_to_k_k->getVal(),2) + pow(jpsi_to_mu_mu->getError()/jpsi_to_mu_mu->getVal(),2));
+	  break;
+	}
     }
-
+  else
+    if(measure == "ratio")
+      {
+	switch (channel) 
+	  {
+	  default:
+	  case 1:
+	    b_fraction->setVal( bu_to_jpsi_ku->getVal() );
+	    err = b_fraction->getVal()*sqrt( pow(bu_to_jpsi_ku->getError()/bu_to_jpsi_ku->getVal(),2) );
+	    break;      
+	  case 2:
+	    b_fraction->setVal( bd_to_jpsi_kstar->getVal() * kstar_to_k_pi->getVal() );
+	    err = b_fraction->getVal() * sqrt( pow(bd_to_jpsi_kstar->getError()/bd_to_jpsi_kstar->getVal(),2) + pow(kstar_to_k_pi->getError()/kstar_to_k_pi->getVal(),2) );
+	    break;
+	  case 4:
+	    b_fraction->setVal( bs_to_jpsi_phi->getVal() * phi_to_k_k->getVal() );
+	    err = b_fraction->getVal() * sqrt(pow(bs_to_jpsi_phi->getError()/bs_to_jpsi_phi->getVal(),2) + pow(phi_to_k_k->getError()/phi_to_k_k->getVal(),2) );
+	    break;
+	  }
+      }
+    else
+      std::cout << "ERROR: strange measurement in b_fraction in functions.h" << std::endl;
+  
   b_fraction->setError(err);
   
   return b_fraction;

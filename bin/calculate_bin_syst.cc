@@ -206,7 +206,7 @@ int main(int argc, char** argv)
 	  absolute_syst_val = std::max(fabs(totaleff_val.getAsymErrorHi()),fabs(totaleff_val.getAsymErrorLo())) /totaleff_val.getVal();
 	    }
 	  else
-	    if(syst == "b_fraction_syst")
+	    if(syst == "b_fraction_syst") //not in use now b_fraction_syst is shown separately
 	      {
 		RooRealVar* branch = branching_fraction(channel);
 		absolute_syst_val= branch->getError() / branch->getVal();

@@ -99,6 +99,9 @@ int main(int argc, char** argv)
   double ratio_syst_hi[n_var2_bins][n_var1_bins];
     
   double b_fraction[2];
+  double b_fraction_err[2];
+
+  double ratio_BF_err[n_var2_bins][n_var1_bins];
   
   TString x_axis_name = "";
   if(var1_name =="pt")
@@ -134,6 +137,7 @@ int main(int argc, char** argv)
       
       RooRealVar* branch = branching_fraction(channel);
       b_fraction[ch] = branch->getVal();
+      b_fraction_err[ch] = branch->getError();
       
       //read yield
       read_vector(channel, "yield", var1_name , var2_name, n_var1_bins, n_var2_bins, var1_bins, var2_bins, yield[ch][0], yield_err_lo[ch][0], yield_err_hi[ch][0]);
@@ -189,8 +193,13 @@ int main(int argc, char** argv)
 	  ratio_err_lo[j][i] = ratio_array[j][i] * sqrt(pow(yield_err_lo[0][j][i]/yield[0][j][i],2) + pow(yield_err_lo[1][j][i]/yield[1][j][i],2));
 	  ratio_err_hi[j][i] = ratio_array[j][i] * sqrt(pow(yield_err_hi[0][j][i]/yield[0][j][i],2) + pow(yield_err_hi[1][j][i]/yield[1][j][i],2));
 
-          ratio_syst_lo[j][i]  = ratio_array[j][i] * sqrt(pow(combined_syst_lo[0][j][i],2) + pow(combined_syst_lo[1][j][i],2));
-          ratio_syst_hi[j][i]  = ratio_array[j][i] * sqrt(pow(combined_syst_hi[0][j][i],2) + pow(combined_syst_hi[1][j][i],2));
+	  if(syst)
+	    {
+	      ratio_syst_lo[j][i]  = ratio_array[j][i] * sqrt( pow(combined_syst_lo[0][j][i],2) + pow(combined_syst_lo[1][j][i],2) );
+	      ratio_syst_hi[j][i]  = ratio_array[j][i] * sqrt( pow(combined_syst_hi[0][j][i],2) + pow(combined_syst_hi[1][j][i],2) );
+	      
+	      ratio_BF_err[j][i] = ratio_array[j][i] * sqrt( pow(b_fraction_err[0]/b_fraction[0],2) + pow(b_fraction_err[1]/b_fraction[1],2) );
+	    }
 	}
     }
 
@@ -339,7 +348,7 @@ int main(int argc, char** argv)
       leg->AddEntry(graph, label, "lp");
       
       //systematic errors
-      if(eff)
+      if(eff && syst)
         {
 	  TGraphAsymmErrors* graph_syst = new TGraphAsymmErrors(n_var1_bins, var1_bin_centre, ratio_array[j], var1_bin_centre_lo, var1_bin_centre_hi, ratio_syst_lo[j], ratio_syst_hi[j]);
 	  graph_syst->SetFillColor(j+2);
@@ -369,6 +378,6 @@ int main(int argc, char** argv)
   print_table("EFFICIENCY RATIO", n_var1_bins, n_var2_bins, var1_name, var2_name, var1_bins, var2_bins, ratio_eff[0], ratio_eff_err_lo[0], ratio_eff_err_hi[0]);
 
   //Fragmentation fraction
-  print_table("FRAGMENTATION FRACTION RATIO", n_var1_bins, n_var2_bins, var1_name, var2_name, var1_bins, var2_bins, ratio_array[0], ratio_err_lo[0], ratio_err_hi[0], ratio_syst_lo[0], ratio_syst_hi[0]);
+  print_table("FRAGMENTATION FRACTION RATIO", n_var1_bins, n_var2_bins, var1_name, var2_name, var1_bins, var2_bins, ratio_array[0], ratio_err_lo[0], ratio_err_hi[0], ratio_syst_lo[0], ratio_syst_hi[0], ratio_BF_err[0]);
 
 }//end

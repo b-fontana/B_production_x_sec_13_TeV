@@ -35,13 +35,14 @@ using namespace RooFit;
 // channel = 5: Jpsi + pipi
 // channel = 6: Lambda_b -> Jpsi + Lambda
 
-//input example: reduce_tree --channel 1 --mc 1 --gen 1 --input file
+//input example: reduce_tree --channel 1 --mc 1 --gen 1 --input file --output somewhere
 int main(int argc, char** argv)
 {
   int channel = 1;
   int mc =1;
   int gen = 1;
   TString input_file = "";
+  TString output = "";
 
   for(int i=1 ; i<argc ; ++i)
     {
@@ -69,6 +70,11 @@ int main(int argc, char** argv)
           convert << argv[++i];
           convert >> input_file;
         }
+      if(argument == "--output")
+        {
+          convert << argv[++i];
+          convert >> output;
+        }
     }
   
   if(input_file == "")
@@ -94,8 +100,12 @@ int main(int argc, char** argv)
   old_tree->SetBranchStatus("pt",1);
   old_tree->SetBranchStatus("eta",1);
   old_tree->SetBranchStatus("y",1);
-  old_tree->SetBranchStatus("lxy",1);
-  old_tree->SetBranchStatus("errxy",1);
+  
+  if(!gen)
+    {
+      old_tree->SetBranchStatus("lxy",1);
+      old_tree->SetBranchStatus("errxy",1);
+    }
   
   old_tree->SetBranchStatus("mu1pt",1);
   old_tree->SetBranchStatus("mu1eta",1);
@@ -105,7 +115,7 @@ int main(int argc, char** argv)
 
   /////////////////////////////////////////////////////////////////////////////////////
   
-  TString output_file = "reduced_" + input_file;
+  TString output_file = output + "reduced_" + input_file;
   TFile *new_file = new TFile(output_file,"recreate");
   
   TTree* new_tree = old_tree->CloneTree(0);

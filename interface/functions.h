@@ -93,7 +93,7 @@ RooRealVar* branching_fraction(int channel);
 
 //void read_vector(TString measure, int channel, TString vector, TString var1_name , TString var2_name, int n_var1_bins, int n_var2_bins,  double* var1_bins, double* var2_bins, double* array, double* err_lo = NULL, double* err_hi = NULL);
 void read_vector(int channel, TString vector, TString var1_name , TString var2_name, int n_var1_bins, int n_var2_bins,  double* var1_bins, double* var2_bins, double* array, double* err_lo = NULL, double* err_hi = NULL);
-void print_table(TString title, int n_var1_bins, int n_var2_bins, TString var1_name, TString var2_name, double* var1_bin_edges, double* var2_bin_edges, double* array, double* stat_err_lo, double* stat_err_hi, double* syst_err_lo = NULL, double* syst_err_hi = NULL);
+void print_table(TString title, int n_var1_bins, int n_var2_bins, TString var1_name, TString var2_name, double* var1_bin_edges, double* var2_bin_edges, double* array, double* stat_err_lo, double* stat_err_hi, double* syst_err_lo = NULL, double* syst_err_hi = NULL, double* BF_err = NULL);
 void latex_table(std::string filename, int n_col, int n_lin, std::vector<std::string> col_name, std::vector<std::string> labels, std::vector<std::vector<double> > numbers, int* precision, std::string caption);
 
 void mc_study(RooWorkspace& w, int channel, double pt_min, double pt_max, double y_min, double y_max);
@@ -1329,7 +1329,7 @@ void read_vector(int channel, TString vector, TString var1_name , TString var2_n
   ce.SaveAs(save_eff);
 } 
 
-void print_table(TString title, int n_var1_bins, int n_var2_bins, TString var1_name, TString var2_name, double* var1_bin_edges, double* var2_bin_edges, double* array, double* stat_err_lo, double* stat_err_hi, double* syst_err_lo, double* syst_err_hi)
+void print_table(TString title, int n_var1_bins, int n_var2_bins, TString var1_name, TString var2_name, double* var1_bin_edges, double* var2_bin_edges, double* array, double* stat_err_lo, double* stat_err_hi, double* syst_err_lo, double* syst_err_hi, double* BF_err)
 {
   std::cout << title << " : " << std::endl;
   for(int j=0; j<n_var2_bins; j++)
@@ -1338,15 +1338,18 @@ void print_table(TString title, int n_var1_bins, int n_var2_bins, TString var1_n
 
       for(int i=0; i<n_var1_bins; i++)
         {
-	  if(syst_err_lo == NULL || syst_err_hi == NULL)
+	  if(syst_err_lo == NULL || syst_err_hi == NULL || BF_err == NULL)
 	    {
 	      std::cout << "BIN: " << var1_name << " " << var1_bin_edges[i] << " to " << var1_bin_edges[i+1] << " : " << *(array + j*n_var1_bins + i) << " +" << *(stat_err_hi + j*n_var1_bins + i) << " -" << *(stat_err_lo + j*n_var1_bins + i) << " (stat)" << std::endl;
 	    }
 	  else
-	    {
-	      std::cout << "BIN: " << var1_name << " " << var1_bin_edges[i] << " to " << var1_bin_edges[i+1] << " : " << *(array + j*n_var1_bins + i) << " +" << *(stat_err_hi + j*n_var1_bins + i) << " -" << *(stat_err_lo + j*n_var1_bins + i) << " (stat) +" << *(syst_err_hi + j*n_var1_bins + i) << " -" << *(syst_err_lo + j*n_var1_bins + i) << " (syst)" << std::endl;
-	    }
-        }
+	    if(BF_err == NULL)
+	      {
+		std::cout << "BIN: " << var1_name << " " << var1_bin_edges[i] << " to " << var1_bin_edges[i+1] << " : " << *(array + j*n_var1_bins + i) << " +" << *(stat_err_hi + j*n_var1_bins + i) << " -" << *(stat_err_lo + j*n_var1_bins + i) << " (stat) +" << *(syst_err_hi + j*n_var1_bins + i) << " -" << *(syst_err_lo + j*n_var1_bins + i) << " (syst)" << std::endl;
+	      }
+	    else
+	      std::cout << "BIN: " << var1_name << " " << var1_bin_edges[i] << " to " << var1_bin_edges[i+1] << " : " << *(array + j*n_var1_bins + i) << " +" << *(stat_err_hi + j*n_var1_bins + i) << " -" << *(stat_err_lo + j*n_var1_bins + i) << " (stat) +" << *(syst_err_hi + j*n_var1_bins + i) << " -" << *(syst_err_lo + j*n_var1_bins + i) << " (syst) +-" << *(BF_err + j*n_var1_bins + i) << " (BF)" << std::endl;
+	}
       std::cout << std::endl;
     }
 }

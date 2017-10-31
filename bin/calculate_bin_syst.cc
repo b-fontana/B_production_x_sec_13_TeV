@@ -208,8 +208,8 @@ int main(int argc, char** argv)
 	  else
 	    if(syst == "b_fraction_syst") //not in use now b_fraction_syst is shown separately
 	      {
-		RooRealVar* branch = branching_fraction(channel);
-		absolute_syst_val= branch->getError() / branch->getVal();
+		//RooRealVar* branch = branching_fraction(measure, channel);
+		//absolute_syst_val= branch->getError() / branch->getVal();
 	      }
 	    else 
 	      if(syst == "tracking_syst")

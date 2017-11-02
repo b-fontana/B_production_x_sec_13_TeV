@@ -16,7 +16,8 @@
 int main(int argc, char** argv)
 {
   TString input_file = "";
-
+  int entries = 0;
+  
   for(int i=1 ; i<argc ; ++i)
     {
       std::string argument = argv[i];
@@ -27,9 +28,17 @@ int main(int argc, char** argv)
           convert << argv[++i];
           convert >> input_file;
         }
+      if(argument == "--n")
+        {
+          convert << argv[++i];
+          convert >> entries;
+        }
     }
     
-  TChain *root = new TChain("analysis/root");
+  if(entries < 0)
+    entries = 0;
+
+  TChain *root = new TChain("demo/root");
   
   root->Add(input_file);
   
@@ -41,8 +50,10 @@ int main(int argc, char** argv)
   // create new output trees
   
   GenInfoBranches *GenInfo = new GenInfoBranches;
+  VtxInfoBranches *VtxInfo = new VtxInfoBranches;
   
   GenInfo->setbranchadd(root);
+  VtxInfo->setbranchadd(root);
   
   int idx_b    = -1;
   int idx_jpsi = -1;
@@ -52,7 +63,10 @@ int main(int argc, char** argv)
   int idx_mu1  = -1;
   int idx_mu2  = -1;
   
-  for (int evt=0; evt<n_entries; evt++) 
+  if(entries == 0)
+    entries = n_entries;
+  
+  for (int evt=0; evt<entries; evt++) 
     {
       if (evt%1000==0 || evt==n_entries-1) printf("processing %d/%d (%.2f%%).\n",evt,n_entries-1,(double)evt/(double)(n_entries-1)*100.);
       
@@ -70,21 +84,23 @@ int main(int argc, char** argv)
 	  idx_mu1  = GenInfo->da1[idx_jpsi];
 	  idx_mu2  = GenInfo->da2[idx_jpsi];
 	  	  	  
-	  if(fabs(GenInfo->pdgId[idx_b]) != 521 && fabs(GenInfo->pdgId[idx_b]) != 511 && fabs(GenInfo->pdgId[idx_b]) != 531 && fabs(GenInfo->pdgId[idx_b]) != 541) continue;
+	  if(fabs(GenInfo->pdgId[idx_b]) != 511 && fabs(GenInfo->pdgId[idx_b]) != 521 && fabs(GenInfo->pdgId[idx_b]) != 531 && fabs(GenInfo->pdgId[idx_b]) != 541) continue;
 
-	  //if(fabs(GenInfo->pdgId[idx_b]) != 541) continue;
-	  //if(fabs(GenInfo->pdgId[idx_jpsi]) != 443) continue;
-	  //if(fabs(GenInfo->pdgId[idx_tktk]) != 211) continue;
+	  if(fabs(GenInfo->pdgId[idx_jpsi]) != 443) continue;
+	  if(fabs(GenInfo->pdgId[idx_tk1]) != 211 && fabs(GenInfo->pdgId[idx_tk1]) != 321 ) continue;
+	  if(fabs(GenInfo->pdgId[idx_tk2]) != 211 && fabs(GenInfo->pdgId[idx_tk2]) != 321 ) continue;
 
-	  std::cout << "B pdgID : " << GenInfo->pdgId[idx_b] << std::endl;
 
-	  std::cout << "da1 or JPSI pdgID : " << GenInfo->pdgId[idx_jpsi] << std::endl;
-	  std::cout << "da1->da1 or mu1  pdgID : " << GenInfo->pdgId[idx_mu1] << std::endl;
-	  std::cout << "da1->da2 or mu2  pdgID : " << GenInfo->pdgId[idx_mu2] << std::endl;
+	  std::cout << "B("<< GenInfo->pdgId[idx_b] <<") -> J/Y("<< GenInfo->pdgId[idx_jpsi] <<") + tktk("<< GenInfo->pdgId[idx_tktk] <<") -> mu1("<< GenInfo->pdgId[idx_mu1] <<") + mu2("<< GenInfo->pdgId[idx_mu2] <<") + tk1("<< GenInfo->pdgId[idx_tk1] <<") + tk2("<< GenInfo->pdgId[idx_tk2] <<")" <<std::endl;
 
-	  std::cout << "da2 or tktk  pdgID : " << GenInfo->pdgId[idx_tktk] << std::endl;
-	  std::cout << "da2->da1 or tk1  pdgID : " << GenInfo->pdgId[idx_tk1] << std::endl;
-	  std::cout << "da2->da2 or tk2  pdgID : " << GenInfo->pdgId[idx_tk2] << std::endl;
+
+	  //std::cout << "da1 or JPSI pdgID : " << GenInfo->pdgId[idx_jpsi] << std::endl;
+	  //std::cout << "da1->da1 or mu1  pdgID : " << GenInfo->pdgId[idx_mu1] << std::endl;
+	  //std::cout << "da1->da2 or mu2  pdgID : " << GenInfo->pdgId[idx_mu2] << std::endl;
+
+	  //std::cout << "da2 or tktk  pdgID : " << GenInfo->pdgId[idx_tktk] << std::endl;
+	  //std::cout << "da2->da1 or tk1  pdgID : " << GenInfo->pdgId[idx_tk1] << std::endl;
+	  //std::cout << "da2->da2 or tk2  pdgID : " << GenInfo->pdgId[idx_tk2] << std::endl;
 	  
 	} //end of GenInfo loop
     } // end of evt loop

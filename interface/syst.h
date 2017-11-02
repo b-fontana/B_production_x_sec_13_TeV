@@ -1,6 +1,6 @@
-std::vector<std::string> ntkp_syst_list    = {"signal_pdf_syst", "combinatorial_background_pdf_syst", "mass_window_syst", "mc_stat_syst", "recoeff_reweight_syst", "tracking_syst", "jpsipi_pdf_syst"}; //"jpsiX_pdf_syst", "b_fraction_syst"
-std::vector<std::string> ntkstar_syst_list = {"signal_pdf_syst", "combinatorial_background_pdf_syst", "mass_window_syst", "mc_stat_syst", "recoeff_reweight_syst"}; // "b_fraction_syst"
-std::vector<std::string> ntphi_syst_list   = {"signal_pdf_syst", "combinatorial_background_pdf_syst", "mass_window_syst", "mc_stat_syst", "recoeff_reweight_syst"}; // "b_fraction_syst"
+std::vector<std::string> ntkp_syst_list    = {"signal_pdf_syst", "combinatorial_background_pdf_syst", "mass_window_syst", "mc_stat_syst"/*, "recoeff_reweight_syst"*/, "tracking_syst", "jpsipi_pdf_syst"}; //"jpsiX_pdf_syst", "b_fraction_syst"
+std::vector<std::string> ntkstar_syst_list = {"signal_pdf_syst", "combinatorial_background_pdf_syst", "mass_window_syst", "mc_stat_syst"/*, "recoeff_reweight_syst"*/}; // "b_fraction_syst"
+std::vector<std::string> ntphi_syst_list   = {"signal_pdf_syst", "combinatorial_background_pdf_syst", "mass_window_syst", "mc_stat_syst"/*, "recoeff_reweight_syst"*/}; // "b_fraction_syst"
 
 void setup_syst_list(int channel, std::vector<std::string>* syst_vector)
 {

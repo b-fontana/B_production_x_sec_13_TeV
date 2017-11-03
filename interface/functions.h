@@ -785,9 +785,10 @@ RooRealVar* bin_mass_fit(RooWorkspace& w, int channel, double pt_min, double pt_
 
   RooAbsData* data_original;
   RooAbsData* data_cut;
-  RooWorkspace ws_cut;
+  RooWorkspace ws_cut("ws_bin","ws_bin");
   RooAbsPdf* model_cut;
   RooRealVar* signal_res;
+  RooFitResult* fit_res = new RooFitResult("fit_result","fit_result");
 
   data_original = w.data("data");
   
@@ -807,8 +808,12 @@ RooRealVar* bin_mass_fit(RooWorkspace& w, int channel, double pt_min, double pt_
   
   model_cut = ws_cut.pdf("model");
    
-  model_cut->fitTo(*data_cut,Verbose(verb),Minos(kTRUE),NumCPU(NUMBER_OF_CPU),Offset(kTRUE));
+  fit_res = model_cut->fitTo(*data_cut,Save(),Verbose(verb),Minos(kTRUE),NumCPU(NUMBER_OF_CPU),Offset(kTRUE));
   
+  signal_res = ws_cut.var("n_signal");
+
+  ws_cut.import(*fit_res);
+
   TString base_dir = TString::Format(VERSION) + "/mass_fits/";
 
   if((choice != "" && choice2 != "") || (mass_min!=0.0 && mass_max!=0.0))
@@ -824,13 +829,21 @@ RooRealVar* bin_mass_fit(RooWorkspace& w, int channel, double pt_min, double pt_
   if(mass_min!=0.0 && mass_max!=0.0)
     mass_info = TString::Format("_mass_from_%.2f_to_%.2f",mass_min,mass_max);
     
-  TString dir = "";
+  TString plot_dir = base_dir + channel_to_ntuple_name(channel) + "/" + channel_to_ntuple_name(channel) + syst_info + "_mass_fit_" + TString::Format("pt_from_%d_to_%d_y_from_%.2f_to_%.2f",(int)pt_min,(int)pt_max,y_min,y_max) + mass_info;
   
-  dir = base_dir + channel_to_ntuple_name(channel) + "/" + channel_to_ntuple_name(channel) + syst_info + "_mass_fit_" + TString::Format("pt_from_%d_to_%d_y_from_%.2f_to_%.2f",(int)pt_min,(int)pt_max,y_min,y_max) + mass_info;
-  
-  plot_mass_fit(ws_cut, channel, dir, (int) pt_max, (int) pt_min, y_min, y_max);
+  plot_mass_fit(ws_cut, channel, plot_dir, (int) pt_max, (int) pt_min, y_min, y_max);
 
-  signal_res = ws_cut.var("n_signal");
+  
+  //to save workspace with model and fitresult
+  TString ws_dir = base_dir + channel_to_ntuple_name(channel) + "/workspace/";
+    
+  TString fout_name = ws_dir + channel_to_ntuple_name(channel) + syst_info + "_mass_fit_" + TString::Format("pt_from_%d_to_%d_y_from_%.2f_to_%.2f",(int)pt_min,(int)pt_max,y_min,y_max) + mass_info + ".root";
+
+  TFile* fout = new TFile(fout_name,"RECREATE");
+  
+  ws_cut.Write();
+  fout->Close();
+  delete fout;
   
   return signal_res;
 }

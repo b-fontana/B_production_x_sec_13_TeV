@@ -26,11 +26,6 @@ int main(int argc, char** argv)
   double y_min = -1;
   double y_max = -1;
 
-  //list to calculate the combined_syst
-  std::vector<std::string> syst_list;
-
-  setup_syst_list(channel, &syst_list);
-
   for(int i=1 ; i<argc ; ++i)
     {
       std::string argument = argv[i];
@@ -68,6 +63,12 @@ int main(int argc, char** argv)
 	}
     }
   
+    //list to calculate the combined_syst
+  std::vector<std::string> syst_list;
+
+  setup_syst_list(channel, &syst_list);
+
+
   if(pt_min == -1 || pt_max == -1 ||y_min == -1 ||y_max == -1)
     {
       std::cout << "Error: The bin was not well defined. Please enter pt and y bin." << std::endl;
@@ -79,6 +80,7 @@ int main(int argc, char** argv)
   
   dir_list.push_back(static_cast<const char*>(TString::Format(VERSION) + "/systematics_root/" + channel_to_ntuple_name(channel)));
   dir_list.push_back(static_cast<const char*>(TString::Format(VERSION) + "/mass_fits/syst/" + channel_to_ntuple_name(channel)));
+  dir_list.push_back(static_cast<const char*>(TString::Format(VERSION) + "/mass_fits/syst/" + channel_to_ntuple_name(channel) + "/workspace/"));
   dir_list.push_back(static_cast<const char*>(TString::Format(VERSION) + "/efficiencies_root/" + channel_to_ntuple_name(channel)));
   create_dir(dir_list);
     
@@ -205,10 +207,10 @@ int main(int argc, char** argv)
 	  absolute_syst_val = std::max(fabs(totaleff_val.getAsymErrorHi()),fabs(totaleff_val.getAsymErrorLo())) /totaleff_val.getVal();
 	    }
 	  else
-	    if(syst == "b_fraction_syst")
+	    if(syst == "b_fraction_syst") //not in use now b_fraction_syst is shown separately
 	      {
-		RooRealVar* branch = branching_fraction(channel);
-		absolute_syst_val= branch->getError() / branch->getVal();
+		//RooRealVar* branch = branching_fraction(measure, channel);
+		//absolute_syst_val= branch->getError() / branch->getVal();
 	      }
 	    else 
 	      if(syst == "tracking_syst")
@@ -348,8 +350,10 @@ double pdf_syst(RooWorkspace& ws, int channel, double pt_min, double pt_max, dou
   RooRealVar* fit_res;
   
   std::vector<std::string> signal = {"1gauss"}; //,"crystal", "3gauss"};
-  std::vector<std::string> background = {"bern"}; //, "2exp", "power"};
-  
+  std::vector<std::string> combinatorial = {"bern"}; //, "2exp", "power"};
+  std::vector<std::string> jpsipi = {"no_jpsipi"};
+  std::vector<std::string> jpsiX = {"no_jpsiX"};
+
   std::vector<std::string> pdf;
   TString pdf_name = "";
   
@@ -365,23 +369,50 @@ double pdf_syst(RooWorkspace& ws, int channel, double pt_min, double pt_max, dou
 	pdf.push_back(signal[i]);
     }
   else
-    if(syst.Contains("background"))
+    if(syst.Contains("combinatorial"))
       {
 	pdf_name = "background";
-	pdf.reserve((int)background.size()); 
+	pdf.reserve((int)combinatorial.size()); 
 	
-	for(int i=0; i<(int)background.size(); i++)
-	  pdf.push_back(background[i]);
+	for(int i=0; i<(int)combinatorial.size(); i++)
+	  pdf.push_back(combinatorial[i]);
       }
+    else
+      if(syst.Contains("jpsipi"))
+	{
+	  pdf_name = "background";
+	  pdf.reserve((int)jpsipi.size()); 
+	  
+	  for(int i=0; i<(int)jpsipi.size(); i++)
+	    pdf.push_back(jpsipi[i]);
+	}
+      else
+	if(syst.Contains("jpsiX"))
+	  {
+	    pdf_name = "background";
+	    pdf.reserve((int)jpsiX.size()); 
+	    
+	    for(int i=0; i<(int)jpsiX.size(); i++)
+	      pdf.push_back(jpsiX[i]);
+	  }
   
   //to save the various yield results
   std::vector<double> yield_syst;
   yield_syst.reserve((int)pdf.size());
   
+  double mass_min = 0.0;
+  double mass_max = 0.0;
+  
   //calculate systematics
   for(int i=0; i<(int)pdf.size(); i++)
     {
-      fit_res = bin_mass_fit(ws, channel, pt_min, pt_max, y_min, y_max, pdf[i], pdf_name.Data());
+      if(syst.Contains("jpsiX") && pdf[i] == "no_jpsiX")
+	{
+	  mass_min = 5.14;
+	  mass_max = (ws.var("mass"))->getMax();
+	}
+
+      fit_res = bin_mass_fit(ws, channel, pt_min, pt_max, y_min, y_max, pdf[i], pdf_name.Data(), mass_min, mass_max);
       yield_syst.push_back((double)fit_res->getVal());
     }
   

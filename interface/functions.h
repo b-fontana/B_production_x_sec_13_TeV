@@ -89,11 +89,11 @@ RooRealVar* bin_mass_fit(RooWorkspace& w, int channel, double pt_min, double pt_
 
 RooRealVar* prefilter_efficiency(int channel, double pt_min, double pt_max, double y_min, double y_max);
 RooRealVar* reco_efficiency(int channel, double pt_min, double pt_max, double y_min, double y_max, bool syst = false, TString reweighting_var_str = "");
-RooRealVar* branching_fraction(int channel);
+RooRealVar* branching_fraction(TString measure, int channel);
 
 //void read_vector(TString measure, int channel, TString vector, TString var1_name , TString var2_name, int n_var1_bins, int n_var2_bins,  double* var1_bins, double* var2_bins, double* array, double* err_lo = NULL, double* err_hi = NULL);
 void read_vector(int channel, TString vector, TString var1_name , TString var2_name, int n_var1_bins, int n_var2_bins,  double* var1_bins, double* var2_bins, double* array, double* err_lo = NULL, double* err_hi = NULL);
-void print_table(TString title, int n_var1_bins, int n_var2_bins, TString var1_name, TString var2_name, double* var1_bin_edges, double* var2_bin_edges, double* array, double* stat_err_lo, double* stat_err_hi, double* syst_err_lo = NULL, double* syst_err_hi = NULL);
+void print_table(TString title, int n_var1_bins, int n_var2_bins, TString var1_name, TString var2_name, double* var1_bin_edges, double* var2_bin_edges, double* array, double* stat_err_lo, double* stat_err_hi, double* syst_err_lo = NULL, double* syst_err_hi = NULL, double* BF_err = NULL);
 void latex_table(std::string filename, int n_col, int n_lin, std::vector<std::string> col_name, std::vector<std::string> labels, std::vector<std::vector<double> > numbers, int* precision, std::string caption);
 
 void mc_study(RooWorkspace& w, int channel, double pt_min, double pt_max, double y_min, double y_max);
@@ -387,11 +387,22 @@ void build_pdf(RooWorkspace& w, int channel, std::string choice, std::string cho
   
   RooRealVar f_nonprompt("f_nonprompt","f_nonprompt",2.50259e-01,0,1);
   RooProduct n_nonprompt("n_nonprompt","n_nonprompt",RooArgList(n_signal,f_nonprompt));
+  
+  if(choice2=="background" && choice=="no_jpsipi")
+    {
+      f_jpsipi = 0.0;
+      f_jpsipi.setConstant(kTRUE);
+    }
+
+  if(choice2=="background" && choice=="no_jpsiX")
+    {
+      f_nonprompt = 0.0;
+      f_nonprompt.setConstant(kTRUE);
+    }
 
   f_swap.setConstant(kTRUE);
   f_jpsipi.setConstant(kTRUE);
-  //f_nonprompt.setConstant(kTRUE);
-    
+      
   RooAddPdf* model;
   RooAddPdf* pdf_m_signal_copy;
 
@@ -774,9 +785,10 @@ RooRealVar* bin_mass_fit(RooWorkspace& w, int channel, double pt_min, double pt_
 
   RooAbsData* data_original;
   RooAbsData* data_cut;
-  RooWorkspace ws_cut;
+  RooWorkspace ws_cut("ws_bin","ws_bin");
   RooAbsPdf* model_cut;
   RooRealVar* signal_res;
+  RooFitResult* fit_res = new RooFitResult("fit_result","fit_result");
 
   data_original = w.data("data");
   
@@ -796,8 +808,12 @@ RooRealVar* bin_mass_fit(RooWorkspace& w, int channel, double pt_min, double pt_
   
   model_cut = ws_cut.pdf("model");
    
-  model_cut->fitTo(*data_cut,Verbose(verb),Minos(kTRUE),NumCPU(NUMBER_OF_CPU),Offset(kTRUE));
+  fit_res = model_cut->fitTo(*data_cut,Save(),Verbose(verb),Minos(kTRUE),NumCPU(NUMBER_OF_CPU),Offset(kTRUE));
   
+  signal_res = ws_cut.var("n_signal");
+
+  ws_cut.import(*fit_res);
+
   TString base_dir = TString::Format(VERSION) + "/mass_fits/";
 
   if((choice != "" && choice2 != "") || (mass_min!=0.0 && mass_max!=0.0))
@@ -813,13 +829,21 @@ RooRealVar* bin_mass_fit(RooWorkspace& w, int channel, double pt_min, double pt_
   if(mass_min!=0.0 && mass_max!=0.0)
     mass_info = TString::Format("_mass_from_%.2f_to_%.2f",mass_min,mass_max);
     
-  TString dir = "";
+  TString plot_dir = base_dir + channel_to_ntuple_name(channel) + "/" + channel_to_ntuple_name(channel) + syst_info + "_mass_fit_" + TString::Format("pt_from_%d_to_%d_y_from_%.2f_to_%.2f",(int)pt_min,(int)pt_max,y_min,y_max) + mass_info;
   
-  dir = base_dir + channel_to_ntuple_name(channel) + "/" + channel_to_ntuple_name(channel) + syst_info + "_mass_fit_" + TString::Format("pt_from_%d_to_%d_y_from_%.2f_to_%.2f",(int)pt_min,(int)pt_max,y_min,y_max) + mass_info;
-  
-  plot_mass_fit(ws_cut, channel, dir, (int) pt_max, (int) pt_min, y_min, y_max);
+  plot_mass_fit(ws_cut, channel, plot_dir, (int) pt_max, (int) pt_min, y_min, y_max);
 
-  signal_res = ws_cut.var("n_signal");
+  
+  //to save workspace with model and fitresult
+  TString ws_dir = base_dir + channel_to_ntuple_name(channel) + "/workspace/";
+    
+  TString fout_name = ws_dir + channel_to_ntuple_name(channel) + syst_info + "_mass_fit_" + TString::Format("pt_from_%d_to_%d_y_from_%.2f_to_%.2f",(int)pt_min,(int)pt_max,y_min,y_max) + mass_info + ".root";
+
+  TFile* fout = new TFile(fout_name,"RECREATE");
+  
+  ws_cut.Write();
+  fout->Close();
+  delete fout;
   
   return signal_res;
 }
@@ -1114,7 +1138,7 @@ RooRealVar* reco_efficiency(int channel, double pt_min, double pt_max, double y_
     return eff2;
 }
 
-RooRealVar* branching_fraction(int channel)
+RooRealVar* branching_fraction(TString measure, int channel)
 {
   RooRealVar* b_fraction = new RooRealVar("b_fraction","b_fraction",1);
   b_fraction->setError(1);
@@ -1139,23 +1163,48 @@ RooRealVar* branching_fraction(int channel)
 
   double err =1;
   
-  switch (channel) 
+  if(measure == "xsec")
     {
-    default:
-    case 1:
-      b_fraction->setVal(bu_to_jpsi_ku->getVal() * jpsi_to_mu_mu->getVal());
-      err = b_fraction->getVal()*sqrt( pow(bu_to_jpsi_ku->getError()/bu_to_jpsi_ku->getVal(),2) + pow(jpsi_to_mu_mu->getError()/jpsi_to_mu_mu->getVal(),2) );
-      break;      
-    case 2:
-      b_fraction->setVal( bd_to_jpsi_kstar->getVal() * kstar_to_k_pi->getVal() * jpsi_to_mu_mu->getVal());
-      err = b_fraction->getVal() * sqrt( pow(bd_to_jpsi_kstar->getError()/bd_to_jpsi_kstar->getVal(),2) + pow(kstar_to_k_pi->getError()/kstar_to_k_pi->getVal(),2) + pow(jpsi_to_mu_mu->getError()/jpsi_to_mu_mu->getVal(),2) );
-      break;
-    case 4:
-      b_fraction->setVal( bs_to_jpsi_phi->getVal() * phi_to_k_k->getVal() * jpsi_to_mu_mu->getVal());
-      err = b_fraction->getVal() * sqrt(pow(bs_to_jpsi_phi->getError()/bs_to_jpsi_phi->getVal(),2) + pow(phi_to_k_k->getError()/phi_to_k_k->getVal(),2) + pow(jpsi_to_mu_mu->getError()/jpsi_to_mu_mu->getVal(),2));
-      break;
+      switch (channel) 
+	{
+	default:
+	case 1:
+	  b_fraction->setVal(bu_to_jpsi_ku->getVal() * jpsi_to_mu_mu->getVal());
+	  err = b_fraction->getVal()*sqrt( pow(bu_to_jpsi_ku->getError()/bu_to_jpsi_ku->getVal(),2) + pow(jpsi_to_mu_mu->getError()/jpsi_to_mu_mu->getVal(),2) );
+	  break;      
+	case 2:
+	  b_fraction->setVal( bd_to_jpsi_kstar->getVal() * kstar_to_k_pi->getVal() * jpsi_to_mu_mu->getVal());
+	  err = b_fraction->getVal() * sqrt( pow(bd_to_jpsi_kstar->getError()/bd_to_jpsi_kstar->getVal(),2) + pow(kstar_to_k_pi->getError()/kstar_to_k_pi->getVal(),2) + pow(jpsi_to_mu_mu->getError()/jpsi_to_mu_mu->getVal(),2) );
+	  break;
+	case 4:
+	  b_fraction->setVal( bs_to_jpsi_phi->getVal() * phi_to_k_k->getVal() * jpsi_to_mu_mu->getVal());
+	  err = b_fraction->getVal() * sqrt(pow(bs_to_jpsi_phi->getError()/bs_to_jpsi_phi->getVal(),2) + pow(phi_to_k_k->getError()/phi_to_k_k->getVal(),2) + pow(jpsi_to_mu_mu->getError()/jpsi_to_mu_mu->getVal(),2));
+	  break;
+	}
     }
-
+  else
+    if(measure == "ratio")
+      {
+	switch (channel) 
+	  {
+	  default:
+	  case 1:
+	    b_fraction->setVal( bu_to_jpsi_ku->getVal() );
+	    err = b_fraction->getVal()*sqrt( pow(bu_to_jpsi_ku->getError()/bu_to_jpsi_ku->getVal(),2) );
+	    break;      
+	  case 2:
+	    b_fraction->setVal( bd_to_jpsi_kstar->getVal() * kstar_to_k_pi->getVal() );
+	    err = b_fraction->getVal() * sqrt( pow(bd_to_jpsi_kstar->getError()/bd_to_jpsi_kstar->getVal(),2) + pow(kstar_to_k_pi->getError()/kstar_to_k_pi->getVal(),2) );
+	    break;
+	  case 4:
+	    b_fraction->setVal( bs_to_jpsi_phi->getVal() * phi_to_k_k->getVal() );
+	    err = b_fraction->getVal() * sqrt(pow(bs_to_jpsi_phi->getError()/bs_to_jpsi_phi->getVal(),2) + pow(phi_to_k_k->getError()/phi_to_k_k->getVal(),2) );
+	    break;
+	  }
+      }
+    else
+      std::cout << "ERROR: strange measurement in b_fraction in functions.h" << std::endl;
+  
   b_fraction->setError(err);
   
   return b_fraction;
@@ -1318,7 +1367,7 @@ void read_vector(int channel, TString vector, TString var1_name , TString var2_n
   ce.SaveAs(save_eff);
 } 
 
-void print_table(TString title, int n_var1_bins, int n_var2_bins, TString var1_name, TString var2_name, double* var1_bin_edges, double* var2_bin_edges, double* array, double* stat_err_lo, double* stat_err_hi, double* syst_err_lo, double* syst_err_hi)
+void print_table(TString title, int n_var1_bins, int n_var2_bins, TString var1_name, TString var2_name, double* var1_bin_edges, double* var2_bin_edges, double* array, double* stat_err_lo, double* stat_err_hi, double* syst_err_lo, double* syst_err_hi, double* BF_err)
 {
   std::cout << title << " : " << std::endl;
   for(int j=0; j<n_var2_bins; j++)
@@ -1327,15 +1376,18 @@ void print_table(TString title, int n_var1_bins, int n_var2_bins, TString var1_n
 
       for(int i=0; i<n_var1_bins; i++)
         {
-	  if(syst_err_lo == NULL || syst_err_hi == NULL)
+	  if(syst_err_lo == NULL || syst_err_hi == NULL || BF_err == NULL)
 	    {
 	      std::cout << "BIN: " << var1_name << " " << var1_bin_edges[i] << " to " << var1_bin_edges[i+1] << " : " << *(array + j*n_var1_bins + i) << " +" << *(stat_err_hi + j*n_var1_bins + i) << " -" << *(stat_err_lo + j*n_var1_bins + i) << " (stat)" << std::endl;
 	    }
 	  else
-	    {
-	      std::cout << "BIN: " << var1_name << " " << var1_bin_edges[i] << " to " << var1_bin_edges[i+1] << " : " << *(array + j*n_var1_bins + i) << " +" << *(stat_err_hi + j*n_var1_bins + i) << " -" << *(stat_err_lo + j*n_var1_bins + i) << " (stat) +" << *(syst_err_hi + j*n_var1_bins + i) << " -" << *(syst_err_lo + j*n_var1_bins + i) << " (syst)" << std::endl;
-	    }
-        }
+	    if(BF_err == NULL)
+	      {
+		std::cout << "BIN: " << var1_name << " " << var1_bin_edges[i] << " to " << var1_bin_edges[i+1] << " : " << *(array + j*n_var1_bins + i) << " +" << *(stat_err_hi + j*n_var1_bins + i) << " -" << *(stat_err_lo + j*n_var1_bins + i) << " (stat) +" << *(syst_err_hi + j*n_var1_bins + i) << " -" << *(syst_err_lo + j*n_var1_bins + i) << " (syst)" << std::endl;
+	      }
+	    else
+	      std::cout << "BIN: " << var1_name << " " << var1_bin_edges[i] << " to " << var1_bin_edges[i+1] << " : " << *(array + j*n_var1_bins + i) << " +" << *(stat_err_hi + j*n_var1_bins + i) << " -" << *(stat_err_lo + j*n_var1_bins + i) << " (stat) +" << *(syst_err_hi + j*n_var1_bins + i) << " -" << *(syst_err_lo + j*n_var1_bins + i) << " (syst) +-" << *(BF_err + j*n_var1_bins + i) << " (BF)" << std::endl;
+	}
       std::cout << std::endl;
     }
 }

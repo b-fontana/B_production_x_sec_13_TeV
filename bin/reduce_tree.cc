@@ -35,13 +35,14 @@ using namespace RooFit;
 // channel = 5: Jpsi + pipi
 // channel = 6: Lambda_b -> Jpsi + Lambda
 
-//input example: reduce_tree --channel 1 --mc 1 --gen 1 --input file
+//input example: reduce_tree --channel 1 --mc 1 --gen 1 --input file --output somewhere
 int main(int argc, char** argv)
 {
   int channel = 1;
   int mc =1;
   int gen = 1;
   TString input_file = "";
+  TString output = "";
 
   for(int i=1 ; i<argc ; ++i)
     {
@@ -69,6 +70,11 @@ int main(int argc, char** argv)
           convert << argv[++i];
           convert >> input_file;
         }
+      if(argument == "--output")
+        {
+          convert << argv[++i];
+          convert >> output;
+        }
     }
   
   if(input_file == "")
@@ -88,18 +94,28 @@ int main(int argc, char** argv)
   TTree* old_tree = (TTree*)old_file->Get(ntuple_name);
 
   old_tree->SetBranchStatus("*",0);
+
+  //add here the branchs to save in the output file
   old_tree->SetBranchStatus("mass",1);
   old_tree->SetBranchStatus("pt",1);
   old_tree->SetBranchStatus("eta",1);
   old_tree->SetBranchStatus("y",1);
+  
+  if(!gen)
+    {
+      old_tree->SetBranchStatus("lxy",1);
+      old_tree->SetBranchStatus("errxy",1);
+    }
+  
   old_tree->SetBranchStatus("mu1pt",1);
   old_tree->SetBranchStatus("mu1eta",1);
+
   old_tree->SetBranchStatus("mu2pt",1);
   old_tree->SetBranchStatus("mu2eta",1);
 
   /////////////////////////////////////////////////////////////////////////////////////
   
-  TString output_file = "reduced_" + input_file;
+  TString output_file = output + "reduced_" + input_file;
   TFile *new_file = new TFile(output_file,"recreate");
   
   TTree* new_tree = old_tree->CloneTree(0);
@@ -111,71 +127,3 @@ int main(int argc, char** argv)
   delete old_file;
   delete new_file;
 }
-
-/*
-  TString data_selection_output_file = "reduced_" + input_file;
-  
-  TFile *fout = new TFile(data_selection_output_file,"recreate");
-  
-  TNtupleD *_nt1 = new TNtupleD("ntkp","ntkp","mass:pt:eta:y:mu1pt:mu1eta:mu2pt:mu2eta");
-  TNtupleD *_nt2 = new TNtupleD("ntkstar","ntkstar","mass:pt:eta:y:mu1pt:mu1eta:mu2pt:mu2eta");
-  TNtupleD *_nt3 = new TNtupleD("ntks","ntks","mass:pt:eta:y:mu1pt:mu1eta:mu2pt:mu2eta");
-  TNtupleD *_nt4 = new TNtupleD("ntphi","ntphi","mass:pt:eta:y:mu1pt:mu1eta:mu2pt:mu2eta");
-  TNtupleD *_nt5 = new TNtupleD("ntmix","ntmix","mass:pt:eta:y:mu1pt:mu1eta:mu2pt:mu2eta");
-  TNtupleD *_nt6 = new TNtupleD("ntlambda","ntlambda","mass:pt:eta:y:mu1pt:mu1eta:mu2pt:mu2eta");
-  
-  ReducedGenBranches br;
-  TChain* tin;
-
-  std::cout << "Reducing the size of channel " << channel << std::endl;
-
-  TString ntuple_name = channel_to_ntuple_name(channel);
-    
-  if(mc && gen)
-    ntuple_name += "_gen";
-  
-  //if(channel == 2 && mc && !gen) //to get the correctly assigned signal, and not include the swapped component.
-      //ntuple_name += "_true";
-  
-  tin = new TChain(ntuple_name);
-
-  tin->Add(input_file);
-
-  br.setbranchadd(tin);
-
-  int n_entries = tin->GetEntries();
-
-  for (int evt=0; evt<n_entries; evt++)
-    {
-      if (evt%1000==0 || evt==n_entries-1) printf("processing %d/%d (%.2f%%).\n",evt,n_entries-1,(double)evt/(double)(n_entries-1)*100.);
-
-      tin->GetEntry(evt);
-    
-      switch(channel)
-	{
-	default:
-	case 1:
-	  _nt1->Fill(br.mass,br.pt,br.eta,br.y,br.mu1pt,br.mu1eta,br.mu2pt,br.mu2eta);
-	  break;
-	case 2:
-	  _nt2->Fill(br.mass,br.pt,br.eta,br.y,br.mu1pt,br.mu1eta,br.mu2pt,br.mu2eta);
-	  break;
-	case 3:
-	  _nt3->Fill(br.mass,br.pt,br.eta,br.y,br.mu1pt,br.mu1eta,br.mu2pt,br.mu2eta);
-	  break;
-	case 4:
-	  _nt4->Fill(br.mass,br.pt,br.eta,br.y,br.mu1pt,br.mu1eta,br.mu2pt,br.mu2eta);
-	  break;
-	case 5:
-	  _nt5->Fill(br.mass,br.pt,br.eta,br.y,br.mu1pt,br.mu1eta,br.mu2pt,br.mu2eta);
-	  break;
-	case 6:
-	  _nt6->Fill(br.mass,br.pt,br.eta,br.y,br.mu1pt,br.mu1eta,br.mu2pt,br.mu2eta);
-	  break;
-	}
-    }
-
-  fout->Write();
-  fout->Close();
-}
-*/

@@ -28,3 +28,8 @@ plot_ratio --ratio fdfu --bins pt --eff 1 --syst 1 --poly 1
 
 plot_ratio --ratio fdfu --bins y --eff 1  --syst 0 --poly 1
 plot_ratio --ratio fdfu --bins y --eff 1  --syst 1 --poly 1
+
+
+plot_ratio --ratio fsfu --bins full --eff 1  --syst 1 --poly 0
+plot_ratio --ratio fsfd --bins full --eff 1  --syst 1 --poly 0
+plot_ratio --ratio fdfu --bins full --eff 1  --syst 1 --poly 0

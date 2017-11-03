@@ -199,8 +199,11 @@ void build_pdf(RooWorkspace& w, int channel, std::string choice, std::string cho
     break;
   }
   
-  double n_signal_initial = data->sumEntries(TString::Format("abs(mass-%g)<0.015",mass_peak)) - data->sumEntries(TString::Format("abs(mass-%g)<0.030&&abs(mass-%g)>0.015",mass_peak,mass_peak));
+  //double n_signal_initial = data->sumEntries(TString::Format("abs(mass-%g)<0.015",mass_peak)) - data->sumEntries(TString::Format("abs(mass-%g)<0.030&&abs(mass-%g)>0.015",mass_peak,mass_peak));
+  double n_signal_initial = data->sumEntries(TString::Format("abs(mass-%g)<0.05",mass_peak)) - data->sumEntries(TString::Format("abs(mass-%g)<0.10&&abs(mass-%g)>0.05",mass_peak,mass_peak));
   
+  std::cout << "debug: n_signal_initial = " << n_signal_initial << std::endl;
+
   if(n_signal_initial<0)
     n_signal_initial=1;
 
@@ -230,12 +233,15 @@ void build_pdf(RooWorkspace& w, int channel, std::string choice, std::string cho
   RooAddPdf* pdf_m_signal;
 
   // use single Gaussian for low statistics
-  if(n_signal_initial < 500)
+  if(n_signal_initial < 1000)
   {
-    //m_sigma2.setConstant(kTRUE);
-    //m_sigma3.setConstant(kTRUE);
     m_fraction.setVal(1.);
+    m_fraction.setConstant(kTRUE);
+    m_sigma2.setConstant(kTRUE);
+
     m_fraction2.setVal(1.);
+    m_fraction2.setConstant(kTRUE);
+    m_sigma3.setConstant(kTRUE);
   }
   
   if(choice2=="signal" && choice=="crystal")

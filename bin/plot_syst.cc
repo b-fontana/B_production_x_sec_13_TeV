@@ -12,7 +12,7 @@
 
 void plot_syst(TString measure, TString syst, int channel, int n_var1_bins, TString var2_name, double var2_min, double var2_max, TString x_axis_name, TString b_title, double* var1_bin_centre, double* var1_bin_centre_lo, double* var1_bin_centre_hi, double* syst_array);
 
-//input example: plot_syst --measure x_sec --channel 1 --bins pt_y --syst signal_pdf
+//input example: plot_syst --measure x_sec --channel 1 --bins pt_y --syst signal_pdf_syst
 int main(int argc, char** argv)
 {
   TString measure = "";

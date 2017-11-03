@@ -196,6 +196,9 @@ int main(int argc, char** argv)
 	  ratio_err_lo[j][i] = ratio_array[j][i] * sqrt(pow(yield_err_lo[0][j][i]/yield[0][j][i],2) + pow(yield_err_lo[1][j][i]/yield[1][j][i],2));
 	  ratio_err_hi[j][i] = ratio_array[j][i] * sqrt(pow(yield_err_hi[0][j][i]/yield[0][j][i],2) + pow(yield_err_hi[1][j][i]/yield[1][j][i],2));
 
+	  ratio_total_err_lo[j][i] = ratio_err_lo[j][i];
+	  ratio_total_err_hi[j][i] = ratio_err_hi[j][i];	      
+
 	  if(syst)
 	    {
 	      ratio_syst_lo[j][i]  = ratio_array[j][i] * sqrt( pow(combined_syst_lo[0][j][i],2) + pow(combined_syst_lo[1][j][i],2) );

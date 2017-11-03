@@ -59,7 +59,7 @@ using namespace RooFit;
 
 #define LUMINOSITY          2.71
 #define NUMBER_OF_CPU       1
-#define VERSION             "v16"
+#define VERSION             "v17"
 #define BASE_DIR            "/lstore/cms/brunogal/input_for_B_production_x_sec_13_TeV/"
 
 //////////////////////////////////////////////

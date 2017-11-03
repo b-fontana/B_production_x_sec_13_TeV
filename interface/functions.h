@@ -706,10 +706,10 @@ void plot_mass_fit(RooWorkspace& w, int channel, TString directory, int pt_high,
   ///////////////////
   //legend position//
   ///////////////////
-  double x_1 = 0.60;
-  double x_2 = 0.95;
+  double x_1 = 0.82;
+  double x_2 = 0.99;
+  double y_2 = 0.99;
   double y_1;
-  double y_2= 0.88;
   double y_space = 0.05;
 
   int nitems = 6;
@@ -717,14 +717,16 @@ void plot_mass_fit(RooWorkspace& w, int channel, TString directory, int pt_high,
 
   p1->cd();
 
-  model->paramOn(frame_m,Layout(x_1,x_2,y_1));
+  model->paramOn(frame_m,Layout(x_1,x_2,y_2));
+  frame_m->getAttFill()->SetFillStyle(4100);
+  frame_m->getAttText()->SetTextSize(0.02);
   frame_m->Draw();
 
   histo_data->Draw("Esame");
   Legend(channel, pt_low, pt_high, y_low, y_high, 1); //to show the bin size and other common elements
 
-  TLegend *leg = new TLegend(x_1, y_1, x_2, y_2);
-  leg->SetTextSize(0.04);
+  TLegend *leg = new TLegend(x_1, y_1-0.43, x_2, y_2-0.43);
+  leg->SetTextSize(0.023);
   leg->AddEntry(histo_data,"Data", "EPL");
   leg->AddEntry("thePdf","Total Fit", "L");
   
@@ -968,7 +970,7 @@ RooRealVar* reco_efficiency(int channel, double pt_min, double pt_max, double y_
   TH1D* hist_tot = new TH1D("hist_tot","hist_tot",1,pt_min,pt_max);
   
   if (syst) {
-    f_weights = new TFile("weights_" + channel_to_ntuple_name(channel) + ".root", "READ");
+    f_weights = new TFile("weights/weights_" + channel_to_ntuple_name(channel) + ".root", "READ");
     if (f_weights != nullptr) h_weights_tot = static_cast<TH1D*>( f_weights->Get( reweighting_var_str + "_with_cuts") );
     else std::cout << "The file was not opened! (functions.h)" << std::endl;
   }

@@ -665,13 +665,6 @@ void plot_mass_fit(RooWorkspace& w, int channel, TString directory, int pt_high,
   
   RooPlot* pull_plot = mass.frame();
   
-  RooGenericPdf* line_ref = new RooGenericPdf("ref_0", "ref_0", RooConst(0.));
-  line_ref->plotOn(pull_plot, LineStyle(7), LineColor(13), LineWidth(2));
-
-  TLine *line = new TLine(mass.getMin(),0,mass.getMax(),0);
-  line->SetLineColor(kBlack);
-  line->Draw();
-
   pull_plot->addPlotable(static_cast<RooPlotable*>(pull_hist),"P");
   pull_plot->SetTitle("");
   pull_plot->GetXaxis()->SetTitle(channel_to_xaxis_title(channel));
@@ -697,7 +690,7 @@ void plot_mass_fit(RooWorkspace& w, int channel, TString directory, int pt_high,
   
   TCanvas *c1 = canvasDressing("c1"); c1->cd();
   
-  TPad *p1 = new TPad("p1","p1",0.0,0.27,0.99,0.99);
+  TPad *p1 = new TPad("p1","p1",0.0,0.27,0.82,0.99);
   //p1->SetLogy();
   p1->SetBorderMode(0); 
   p1->SetFrameBorderMode(0); 
@@ -705,7 +698,7 @@ void plot_mass_fit(RooWorkspace& w, int channel, TString directory, int pt_high,
   p1->SetBottomMargin(0.0);
   p1->Draw(); 
      
-  TPad *p2 = new TPad("p2","p2",0.0,0.065,0.99,0.24);
+  TPad *p2 = new TPad("p2","p2",0.0,0.065,0.82,0.24);
   p2->SetTopMargin(0.);    
   p2->SetBorderMode(0);
   p2->SetBorderSize(2); 
@@ -723,27 +716,38 @@ void plot_mass_fit(RooWorkspace& w, int channel, TString directory, int pt_high,
   ///////////////////
   //legend position//
   ///////////////////
-  double x_1 = 0.82;
-  double x_2 = 0.99;
-  double y_2 = 0.99;
+  double x_1 = 0.74;
+  double x_2 = 0.975;
+  double y_2 = 0.92;
   double y_1;
-  double y_space = 0.05;
+  double y_space = 0.04;
+  double displace = 0.17;
 
   int nitems = 6;
   y_1 = y_2 - y_space*nitems;
 
   p1->cd();
 
-  model->paramOn(frame_m,Layout(x_1,x_2,y_2));
-  frame_m->getAttFill()->SetFillStyle(4100);
-  frame_m->getAttText()->SetTextSize(0.02);
+  model->paramOn(frame_m,Layout(x_1 + displace, x_2 + displace, y_1 - 0.15));
+  frame_m->getAttText()->SetTextSize(0.025);
   frame_m->Draw();
 
   histo_data->Draw("Esame");
-  Legend(channel, pt_low, pt_high, y_low, y_high, 1); //to show the bin size and other common elements
+  Legend(channel, pt_low, pt_high, y_low, y_high, 1);
 
-  TLegend *leg = new TLegend(x_1, y_1-0.43, x_2, y_2-0.43);
-  leg->SetTextSize(0.023);
+  p2->cd();
+  pull_plot->Draw();
+  
+  TLine *line = new TLine(mass.getMin(),0,mass.getMax(),0);
+  line->SetLineColor(kBlack);
+  line->SetLineStyle(2);
+  line->Draw();
+
+  c1->cd();
+  
+  /////////////////////////////////////////
+  TLegend *leg = new TLegend(x_1, y_1, x_2, y_2);
+  leg->SetTextSize(0.02);
   leg->AddEntry(histo_data,"Data", "EPL");
   leg->AddEntry("thePdf","Total Fit", "L");
   
@@ -774,9 +778,6 @@ void plot_mass_fit(RooWorkspace& w, int channel, TString directory, int pt_high,
 
   leg->Draw();
   //////////////////////////////////////////
-  
-  p2->cd();
-  pull_plot->Draw();
   
   c1->SaveAs(directory + ".png");
 }

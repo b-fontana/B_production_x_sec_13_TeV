@@ -27,5 +27,5 @@ double ntlambda_y_bins[]={0.00, 0.50, 1.00, 1.50, 2.25};
 double ratio_pt_bins[]={5, 13, 16, 20, 25, 30, 35, 42, 50, 60, 70, 90}; //{9, 13, 16, 20, 25, 30, 35, 42, 50, 60, 70, 90};
 double ratio_y_bins[]={0.00, 0.25, 0.50, 0.75, 1.00, 1.25, 1.50, 1.75, 2.00, 2.25};
 
-double total_pt_bin_edges[]={10, 150};
+double total_pt_bin_edges[]={9, 150};
 double total_y_bin_edges[]={0.00, 2.25};

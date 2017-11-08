@@ -529,7 +529,7 @@ int main(int argc, char** argv)
 		double k_short_window = 0.015; //originally was 0.060
 		double lambda_window = 0.015;  //originally was 0.010
 		
-		double k_star_window = 0.500;
+		double k_star_window = 0.050;
 		double k_star_veto = 0.050;
 		
 		double phi_window = 0.010;

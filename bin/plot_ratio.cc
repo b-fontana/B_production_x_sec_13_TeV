@@ -1,4 +1,4 @@
-#include "UserCode/B_production_x_sec_13_TeV/interface/functions.h"
+#include "UserCode/B_production_x_sec_13_TeV/interface/syst.h"
 
 //-----------------------------------------------------------------
 // Definition of channel #
@@ -106,6 +106,13 @@ int main(int argc, char** argv)
 
   double ratio_BF_err[n_var2_bins][n_var1_bins];
   
+  //double global_syst_err = 0.0;
+  std::vector<std::string> global_syst_list;
+  std::vector<double> global_syst_val;
+
+  setup_global_syst_list(&global_syst_list, measure, ratio);
+  setup_global_syst_val(&global_syst_val, measure, ratio);
+  
   TString x_axis_name = "";
   if(var1_name =="pt")
     x_axis_name = "p_{T}(B) [GeV]";
@@ -203,14 +210,40 @@ int main(int argc, char** argv)
 	    {
 	      ratio_syst_lo[j][i]  = ratio_array[j][i] * sqrt( pow(combined_syst_lo[0][j][i],2) + pow(combined_syst_lo[1][j][i],2) );
 	      ratio_syst_hi[j][i]  = ratio_array[j][i] * sqrt( pow(combined_syst_hi[0][j][i],2) + pow(combined_syst_hi[1][j][i],2) );
-	      
-	      ratio_BF_err[j][i] = ratio_array[j][i] * sqrt( pow(b_fraction_err[0]/b_fraction[0],2) + pow(b_fraction_err[1]/b_fraction[1],2) );
-
+	      	      
 	      //total error for fitting the ratio in the plot later
 	      ratio_total_err_lo[j][i] = sqrt( pow(ratio_err_lo[j][i],2) + pow(ratio_syst_lo[j][i],2) );
 	      ratio_total_err_hi[j][i] = sqrt( pow(ratio_err_hi[j][i],2) + pow(ratio_syst_hi[j][i],2) );	      
 	    }
+	}//var1 cicle
+    }//var2 cicle
+
+  //to calculate the BF err for each bin, not ideal for now
+  for(int j=0; j<n_var2_bins; j++)
+    {
+      for(int i=0; i<n_var1_bins; i++)
+	{
+	  if(syst)
+	    ratio_BF_err[j][i] = ratio_array[j][i] * sqrt( pow(b_fraction_err[0]/b_fraction[0],2) + pow(b_fraction_err[1]/b_fraction[1],2) );
 	}
+    }
+
+  //adding the global uncertainties
+  if(syst)
+    {
+      std::cout << "debug: calculating global systematic uncertainties of " << ratio << std::endl;
+      std::cout << "debug: global systematics list:" << std::endl;
+      
+      for(int k=0 ; k < (int)global_syst_list.size() ; k++)
+	std::cout << "debug: global " << k+1 << " : " << global_syst_list[k] << " : " << global_syst_val[k] << std::endl;
+      
+      //global_syst_err = sqrt( pow(b_fraction_err[0]/b_fraction[0],2) + pow(b_fraction_err[1]/b_fraction[1],2) );
+      
+      //if(ratio == "fsfd")
+      //global_syst_err = sqrt( pow(global_syst_err,2) + pow( 0, 2) ); //tktk width systematic, set to zero for now
+      
+      //if(ratio == "fsfu" || ratio == "fdfu")
+      //global_syst_err = sqrt( pow(global_syst_err,2) + pow( 0.028, 2) ); //tracking efficiency
     }
 
   //plot the ratio
@@ -376,18 +409,22 @@ int main(int argc, char** argv)
     cz.SetLogy();
   
   TString systematic = "";
+  TString poly_fit = "";
 
   if(syst)
     systematic = "_syst";
+ 
+  if(poly)
+    poly_fit = "_poly";
   
-  cz.SaveAs(TString::Format(VERSION) + "/ratio/" + ratio_name + "_" + bins + "_bins" + systematic + ".png");
+  cz.SaveAs(TString::Format(VERSION) + "/ratio/" + ratio_name + "_" + bins + "_bins" + systematic + poly_fit + ".png");
   
   /////////////////////////////////////////////////////////////
   //To show the values and the errors at the end, like a table/
   /////////////////////////////////////////////////////////////
 
   //ratio eff
-  print_table("EFFICIENCY RATIO", n_var1_bins, n_var2_bins, var1_name, var2_name, var1_bins, var2_bins, ratio_eff[0], ratio_eff_err_lo[0], ratio_eff_err_hi[0]);
+  //print_table("EFFICIENCY RATIO", n_var1_bins, n_var2_bins, var1_name, var2_name, var1_bins, var2_bins, ratio_eff[0], ratio_eff_err_lo[0], ratio_eff_err_hi[0]);
 
   //Fragmentation fraction
   print_table("FRAGMENTATION FRACTION RATIO", n_var1_bins, n_var2_bins, var1_name, var2_name, var1_bins, var2_bins, ratio_array[0], ratio_err_lo[0], ratio_err_hi[0], ratio_syst_lo[0], ratio_syst_hi[0], ratio_BF_err[0]);

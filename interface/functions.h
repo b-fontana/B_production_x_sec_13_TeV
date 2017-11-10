@@ -59,7 +59,7 @@ using namespace RooFit;
 
 #define LUMINOSITY          2.71
 #define NUMBER_OF_CPU       1
-#define VERSION             "v17"
+#define VERSION             "v18"
 #define BASE_DIR            "/lstore/cms/brunogal/input_for_B_production_x_sec_13_TeV/"
 
 //////////////////////////////////////////////
@@ -214,8 +214,8 @@ void build_pdf(RooWorkspace& w, int channel, std::string choice, std::string cho
 
   //Two Gaussians
   RooRealVar m_mean("m_mean","m_mean",mass_peak,mass_peak-0.09,mass_peak+0.09);
-  RooRealVar m_sigma1("m_sigma1","m_sigma1",0.010,0.009,0.200);
-  RooRealVar m_sigma2("m_sigma2","m_sigma2",0.005,0.004,0.100);
+  RooRealVar m_sigma1("m_sigma1","m_sigma1",0.020,0.010,0.050); //0.010,0.009,0.200);
+  RooRealVar m_sigma2("m_sigma2","m_sigma2",0.010,0.005,0.025); //0.005,0.004,0.100);
   RooRealVar m_fraction("m_fraction","m_fraction", 0.5, 0, 1);
   RooGaussian m_gaussian1("m_gaussian1","m_gaussian1",mass,m_mean,m_sigma1);
   RooGaussian m_gaussian2("m_gaussian2","m_gaussian2",mass,m_mean,m_sigma2);

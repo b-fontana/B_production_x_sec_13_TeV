@@ -1,4 +1,3 @@
-#include "UserCode/B_production_x_sec_13_TeV/interface/functions.h"
 #include "UserCode/B_production_x_sec_13_TeV/interface/syst.h"
 
 //-----------------------------------------------------------------

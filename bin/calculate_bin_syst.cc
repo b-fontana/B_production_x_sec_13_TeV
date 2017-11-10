@@ -1,5 +1,4 @@
 #include <algorithm>
-#include "UserCode/B_production_x_sec_13_TeV/interface/functions.h"
 #include "UserCode/B_production_x_sec_13_TeV/interface/syst.h"
 
 //-----------------------------------------------------------------
@@ -166,7 +165,7 @@ int main(int argc, char** argv)
   //calculate each syst, starting with error propagation ones. And then nominal vs alternative.
   else
     {
-      if(syst == "mc_stat_syst" || syst == "b_fraction_syst" || syst == "tracking_syst")
+      if(syst == "mc_stat_syst")// || syst == "b_fraction_syst" || syst == "tracking_syst")
 	{
 	  std::cout << "calculating " << syst << " ,This is not a comparison with nominal value, just error propagation." << std::endl;
 	  
@@ -207,7 +206,7 @@ int main(int argc, char** argv)
 	  absolute_syst_val = std::max(fabs(totaleff_val.getAsymErrorHi()),fabs(totaleff_val.getAsymErrorLo())) /totaleff_val.getVal();
 	    }
 	  else
-	    if(syst == "b_fraction_syst") //not in use now b_fraction_syst is shown separately
+	    if(syst == "b_fraction_syst") //not in use now, included in global uncertainty
 	      {
 		//RooRealVar* branch = branching_fraction(measure, channel);
 		//absolute_syst_val= branch->getError() / branch->getVal();
@@ -215,7 +214,7 @@ int main(int argc, char** argv)
 	    else 
 	      if(syst == "tracking_syst")
 		{
-		  absolute_syst_val=0.028; //2.8% tracking efficiency from the tracking POG
+		  //absolute_syst_val=0.028; //2.8% tracking efficiency from the tracking POG. not in use now, incuded in global uncertainty
 		}
 	}
       else

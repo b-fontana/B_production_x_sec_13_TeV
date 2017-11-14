@@ -293,6 +293,7 @@ int main(int argc, char** argv)
 	  
 	      //set up mass, pt and y variables inside ws  
 	      set_up_workspace_variables(*ws,channel);
+	      
 	      //read data from the selected data file, and import it as a dataset into the workspace.
 	      read_data(*ws, data_selection_input_file,channel);
 	      
@@ -351,7 +352,7 @@ double pdf_syst(RooWorkspace& ws, int channel, double pt_min, double pt_max, dou
   std::vector<std::string> signal = {"1gauss"}; //,"crystal", "3gauss"};
   std::vector<std::string> combinatorial = {"bern"}; //, "2exp", "power"};
   std::vector<std::string> jpsipi = {"no_jpsipi"};
-  std::vector<std::string> jpsiX = {"no_jpsiX"};
+  std::vector<std::string> jpsiX = {"jpsiX_gauss"};
 
   std::vector<std::string> pdf;
   TString pdf_name = "";
@@ -405,10 +406,10 @@ double pdf_syst(RooWorkspace& ws, int channel, double pt_min, double pt_max, dou
   //calculate systematics
   for(int i=0; i<(int)pdf.size(); i++)
     {
-      if(syst.Contains("jpsiX") && pdf[i] == "no_jpsiX")
+      if(syst.Contains("jpsiX") && pdf[i] == "jpsiX_gauss")
 	{
-	  mass_min = 5.14;
-	  mass_max = (ws.var("mass"))->getMax();
+	  //mass_min = 5.15;
+	  //mass_max = 5.4; //(ws.var("mass"))->getMax();
 	}
 
       fit_res = bin_mass_fit(ws, channel, pt_min, pt_max, y_min, y_max, pdf[i], pdf_name.Data(), mass_min, mass_max);

@@ -426,6 +426,8 @@ int main(int argc, char** argv)
   //ratio eff
   //print_table("EFFICIENCY RATIO", n_var1_bins, n_var2_bins, var1_name, var2_name, var1_bins, var2_bins, ratio_eff[0], ratio_eff_err_lo[0], ratio_eff_err_hi[0]);
 
+  std::cout << "=== " << ratio_name << " ===" << std::endl;
+
   //Fragmentation fraction
   print_table("FRAGMENTATION FRACTION RATIO", n_var1_bins, n_var2_bins, var1_name, var2_name, var1_bins, var2_bins, ratio_array[0], ratio_err_lo[0], ratio_err_hi[0], ratio_syst_lo[0], ratio_syst_hi[0], ratio_BF_err[0]);
 

@@ -311,7 +311,7 @@ int main(int argc, char** argv)
 		}
 	    }
       
-	  absolute_syst_val = fabs(nominal_val.getVal() - alternative_val)/nominal_val.getVal();
+	  absolute_syst_val = fabs(nominal_val.getVal() - alternative_val)/nominal_val.getVal(); 
 	}
     }
   

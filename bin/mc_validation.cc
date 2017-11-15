@@ -118,6 +118,7 @@ int main(int argc, char **argv) {
 	corrected_mc_str = "reweighted_mc_" + channel_to_ntuple_name(channel) + "_" + var_str + ".root";
 	std::cout << "Using the already corrected MC..." << std::endl;
       }
+
       else std::cout << "ERROR: The argument provided was not recognised." << std::endl;
     }
 
@@ -465,16 +466,20 @@ std::vector<double> getBorder(RooWorkspace& w, int channel, int option) {
       mass_max = 6.55;
     }
     else if (option==2) {
-      mass_min = getMass(channel)-2*getSigma(w,channel);  
-      mass_max = getMass(channel)+2*getSigma(w,channel); 
+      mass_min = 5.2;
+      mass_max = 5.35;
+      //mass_min = getMass(channel)-2*getSigma(w,channel);  
+      //mass_max = getMass(channel)+2*getSigma(w,channel); 
     }
     else if (option==3) {
       mass_min = getMass(channel)-8*getSigma(w,channel);
       mass_max = getMass(channel)-4*getSigma(w,channel);
     }
     else if (option==4) {
-      mass_min = getMass(channel)+4*getSigma(w,channel);
-      mass_max = getMass(channel)+8*getSigma(w,channel);
+      mass_min = 5.5;
+      mass_max = 5.9;
+      //mass_min = getMass(channel)+4*getSigma(w,channel);
+      //mass_max = getMass(channel)+8*getSigma(w,channel);
     }
     break;
   case 2: //nkstar
@@ -483,16 +488,22 @@ std::vector<double> getBorder(RooWorkspace& w, int channel, int option) {
       mass_max = 6.55;
     }
     else if (option==2) {
-      mass_min = getMass(channel)-2*getSigma(w,channel); 
-      mass_max = getMass(channel)+2*getSigma(w,channel);
+      mass_min = 5.2;
+      mass_max = 5.35;
+      //mass_min = getMass(channel)-2*getSigma(w,channel); 
+      //mass_max = getMass(channel)+2*getSigma(w,channel);
     }
    else if (option==3) {
-      mass_min = getMass(channel)-6*getSigma(w,channel);
-      mass_max = getMass(channel)-4*getSigma(w,channel);
+     mass_min = 4.85;
+     mass_max = 5.05;
+     //mass_min = getMass(channel)-6*getSigma(w,channel);
+     // mass_max = getMass(channel)-4*getSigma(w,channel);
     }
     else if (option==4) {
-      mass_min = getMass(channel)+4*getSigma(w,channel);
-      mass_max = getMass(channel)+6*getSigma(w,channel);
+      mass_min = 5.6;
+      mass_max = 5.8;
+      //mass_min = getMass(channel)+4*getSigma(w,channel);
+      //mass_max = getMass(channel)+6*getSigma(w,channel);
     }
     break;
   case 3:
@@ -511,16 +522,22 @@ std::vector<double> getBorder(RooWorkspace& w, int channel, int option) {
       mass_max = 6.55;
     }
     else if (option==2) {
-      mass_min = getMass(channel)-2*getSigma(w,channel); 
-      mass_max = getMass(channel)+2*getSigma(w,channel);
+      mass_min = 5.3;
+      mass_max = 5.45;
+      //mass_min = getMass(channel)-2*getSigma(w,channel); 
+      //mass_max = getMass(channel)+2*getSigma(w,channel);
     }
    else if (option==3) {
-      mass_min = getMass(channel)-6*getSigma(w,channel);
-      mass_max = getMass(channel)-4*getSigma(w,channel);
+     mass_min = 5.0;
+     mass_max = 5.2;
+     //mass_min = getMass(channel)-6*getSigma(w,channel);
+     // mass_max = getMass(channel)-4*getSigma(w,channel);
     }
     else if (option==4) {
-      mass_min = getMass(channel)+4*getSigma(w,channel);
-      mass_max = getMass(channel)+6*getSigma(w,channel);
+      mass_min = 5.55;
+      mass_max = 5.75;
+      //mass_min = getMass(channel)+4*getSigma(w,channel);
+      //mass_max = getMass(channel)+6*getSigma(w,channel);
     }
     break;
   case 5:
@@ -714,7 +731,7 @@ std::vector<TH1D*> sideband_sub(RooWorkspace& w, RooWorkspace& w_mc, int channel
   for (int i=0; i<variables; ++i) {
     aux1 = (TH1D*) reduceddata_central->createHistogram((varName(i+1)+extension).c_str(),*(vars.at(i)),Binning(BIN_NUMBER,getXRange(i+1,channel).at(0),getXRange(i+1,channel).at(1)));
     aux2 = (TH1D*) reduceddata_side2->createHistogram("",*(vars.at(i)),Binning(BIN_NUMBER,getXRange(i+1,channel).at(0),getXRange(i+1,channel).at(1)));
-
+    
     /*f_side->cd();
     aux2->SetName( (channel_to_ntuple_name(channel)+varName(i+1)+"_6_10").c_str() );
     aux2->Draw();
@@ -750,8 +767,18 @@ std::vector<TH1D*> histoBuild(RooWorkspace& w, int channel, std::string extensio
   TH1D* h_aux;
   RooDataSet *data =(RooDataSet*) w.data("data");
 
+  TH1D* aux_errxy = new TH1D("aux_errxy", "aux_errxy", BIN_NUMBER, getXRange(12,channel).at(0),getXRange(12,channel).at(1));
   for (int k=0; k<variables; ++k) {
     h_aux = (TH1D*)data->createHistogram((varName(k+1)+extension).c_str(),*(vars.at(k)),Binning(BIN_NUMBER,getXRange(k+1,channel).at(0),getXRange(k+1,channel).at(1)));
+    if (k==11) { //shift the errxy MC distribution 
+      std::cout << "Errxy corrected!" << std::endl;
+      for (int ii=1; ii<=h_aux->GetNbinsX(); ++ii) {
+        for (int jj=1; jj<=h_aux->GetBinContent(ii); ++jj)
+          aux_errxy->Fill(1.14*h_aux->GetBinCenter(ii));
+      }
+      h_aux = aux_errxy;
+    }
+
     h_aux->SetTitle((varName(k+1)+extension).c_str());
     histos.push_back(h_aux);
   }
@@ -977,7 +1004,7 @@ std::string unitName(int variable) {
     s = "cm";
     break;
   case 12:
-    s = "";
+    s = "cm";
     break;
   case 13:
     s = "";

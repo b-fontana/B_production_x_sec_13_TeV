@@ -16,7 +16,7 @@ using namespace RooFit;
 // channel = 5: Jpsi + pipi
 // channel = 6: Lambda_b -> Jpsi + Lambda
 
-//input example: tktk_study --channel 2 --signal true --input file --output /some/place
+//input example: tktk_study --channel 2 --input file --output /some/place
 int main(int argc, char** argv)
 {
   /////////////////////////////////////////
@@ -58,7 +58,7 @@ int main(int argc, char** argv)
   
   //////////////////////////////////////////////////////////////////////////    
   TString signal = "";
-  TString tree_name = "";
+  TString tree_name = channel_to_ntuple_name(channel);
     
   TChain* tin;
   ReducedBranches br;
@@ -88,19 +88,38 @@ int main(int argc, char** argv)
       if(i==0)
 	{
 	signal = "true";
-	tree_name = channel_to_ntuple_name(channel);
 	
-	ditrack_mass = &ditrack_mass_true;
-	ditrack_veto = &ditrack_veto_true;
+	if(channel == 2)
+	  {
+	    ditrack_mass = &ditrack_mass_true;
+	    ditrack_veto = &ditrack_veto_true;
+	  }
+	else
+	  if(channel == 4)
+	  {
+	    ditrack_veto = &ditrack_mass_true;
+	    ditrack_mass = &ditrack_veto_true;
+	  }
 	}
       else
 	if(i==1)
 	  {
 	  signal = "swap";
-	  tree_name = channel_to_ntuple_name(channel) + "_swap";
 	  
-	  ditrack_mass = &ditrack_mass_swap;
-	  ditrack_veto = &ditrack_veto_swap;
+	  if(channel == 2)
+	    tree_name += "_swap";
+	  
+	  if(channel == 2)
+	    {
+	      ditrack_mass = &ditrack_mass_swap;
+	      ditrack_veto = &ditrack_veto_swap;
+	    }
+	  else
+	    if(channel == 4)
+	      {
+		ditrack_veto = &ditrack_mass_swap;
+		ditrack_mass = &ditrack_veto_swap;
+	      }
 	  }
 
       std::cout << "Processing " << signal << " component"<< std::endl;
@@ -108,9 +127,18 @@ int main(int argc, char** argv)
       tin = new TChain(tree_name);
       tin->Add(input_file);
       br.setbranchadd(tin);
-      
-      *ditrack_mass = new TH1D("ditrack_mass_" + signal,"tktk_mass_" + channel_to_ntuple_name(channel), 100, 0.7, 1.2);  
-      *ditrack_veto = new TH1D("ditrack_veto_" + signal,"tktk_veto_" + channel_to_ntuple_name(channel), 100, 0.7, 1.2);
+
+      if(channel == 2)
+	{
+	  *ditrack_mass = new TH1D("ditrack_mass_" + signal,"K #pi invariant mass", 100, 0.7, 1.2);  
+	  *ditrack_veto = new TH1D("ditrack_veto_" + signal,"KK invariant mass", 100, 0.7, 1.2);
+	}
+      else
+	if(channel == 4)
+	  {
+	    *ditrack_mass = new TH1D("ditrack_mass_" + signal,"KK invariant mass", 100, 0.7, 1.2);  
+	    *ditrack_veto = new TH1D("ditrack_veto_" + signal,"K #pi invariant mass", 100, 0.7, 1.2);
+	  }
       
       int n_entries = (int) tin->GetEntries();
       int percent = (int)(0.01*n_entries);
@@ -138,15 +166,21 @@ int main(int argc, char** argv)
 	    case 4:
 	      (*ditrack_mass)->Fill(br.tktkmass);
 	      
-	      v4_tk1.SetPtEtaPhiM(br.tk1pt,br.tk1eta,br.tk1phi,KAON_MASS);
-	      v4_tk2.SetPtEtaPhiM(br.tk2pt,br.tk2eta,br.tk2phi,PION_MASS);
-	      
-	      (*ditrack_veto)->Fill(fabs((v4_tk1+v4_tk2).Mag()));
-	      
-	      v4_tk1.SetPtEtaPhiM(br.tk1pt,br.tk1eta,br.tk1phi,PION_MASS);
-	      v4_tk2.SetPtEtaPhiM(br.tk2pt,br.tk2eta,br.tk2phi,KAON_MASS);
-	      
-	      (*ditrack_veto)->Fill(fabs((v4_tk1+v4_tk2).Mag()));
+	      if(i==0) //one version of the signal
+		{
+		  v4_tk1.SetPtEtaPhiM(br.tk1pt,br.tk1eta,br.tk1phi,KAON_MASS);
+		  v4_tk2.SetPtEtaPhiM(br.tk2pt,br.tk2eta,br.tk2phi,PION_MASS);
+		  
+		  (*ditrack_veto)->Fill(fabs((v4_tk1+v4_tk2).Mag()));
+		}
+	      else
+		if(i==1) //another version of the signal
+		  {
+		    v4_tk1.SetPtEtaPhiM(br.tk1pt,br.tk1eta,br.tk1phi,PION_MASS);
+		    v4_tk2.SetPtEtaPhiM(br.tk2pt,br.tk2eta,br.tk2phi,KAON_MASS);
+		    
+		    (*ditrack_veto)->Fill(fabs((v4_tk1+v4_tk2).Mag()));
+		  }
 	      break;
 	    }
 	}//end of event cicle
@@ -158,10 +192,10 @@ int main(int argc, char** argv)
   cv1->Divide(2,1);
   cv1->cd(1);
   ditrack_mass_true->SetLineWidth(3);
+  ditrack_mass_true->SetLineColor(kOrange);
   ditrack_mass_true->Draw();
 
   cv1->Update();
-  ditrack_mass_swap->SetLineColor(kGreen);
   ditrack_mass_swap->SetLineWidth(3);
   ditrack_mass_swap->Draw("same");
   
@@ -178,11 +212,11 @@ int main(int argc, char** argv)
   /////////////////////////
   
   cv1->cd(2);
+  ditrack_veto_true->SetLineColor(kOrange);
   ditrack_veto_true->SetLineWidth(3);
   ditrack_veto_true->Draw();
     
   cv1->Update();
-  ditrack_veto_swap->SetLineColor(kGreen);
   ditrack_veto_swap->SetLineWidth(3);
   ditrack_veto_swap->Draw("same");
 

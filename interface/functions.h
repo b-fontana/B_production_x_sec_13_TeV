@@ -59,7 +59,7 @@ using namespace RooFit;
 
 #define LUMINOSITY          2.71
 #define NUMBER_OF_CPU       1
-#define VERSION             "v17"
+#define VERSION             "v18"
 #define BASE_DIR            "/lstore/cms/brunogal/input_for_B_production_x_sec_13_TeV/"
 
 //////////////////////////////////////////////
@@ -214,8 +214,8 @@ void build_pdf(RooWorkspace& w, int channel, std::string choice, std::string cho
 
   //Two Gaussians
   RooRealVar m_mean("m_mean","m_mean",mass_peak,mass_peak-0.09,mass_peak+0.09);
-  RooRealVar m_sigma1("m_sigma1","m_sigma1",0.010,0.009,0.200);
-  RooRealVar m_sigma2("m_sigma2","m_sigma2",0.005,0.004,0.100);
+  RooRealVar m_sigma1("m_sigma1","m_sigma1",0.020,0.010,0.050); //0.010,0.009,0.200);
+  RooRealVar m_sigma2("m_sigma2","m_sigma2",0.010,0.005,0.025); //0.005,0.004,0.100);
   RooRealVar m_fraction("m_fraction","m_fraction", 0.5, 0, 1);
   RooGaussian m_gaussian1("m_gaussian1","m_gaussian1",mass,m_mean,m_sigma1);
   RooGaussian m_gaussian2("m_gaussian2","m_gaussian2",mass,m_mean,m_sigma2);
@@ -267,9 +267,9 @@ void build_pdf(RooWorkspace& w, int channel, std::string choice, std::string cho
   // combinatorial background PDF
   
   //One Exponential
-  RooRealVar m_exp("m_exp","m_exp",-0.3,-4.,0.);
+  RooRealVar m_exp("m_exp","m_exp",-0.,-4.,0.); //,-0.3,-4.,0.);
   RooExponential pdf_m_combinatorial_exp("pdf_m_combinatorial_exp","pdf_m_combinatorial_exp",mass,m_exp);
-  
+
   //Two Exponentials
   RooRealVar m_exp2("m_exp2","m_exp2",-0.3,-4.,0.);
   RooExponential pdf_m_combinatorial_exp2("pdf_m_combinatorial_exp2","pdf_m_combinatorial_exp2",mass,m_exp2);
@@ -364,7 +364,7 @@ void build_pdf(RooWorkspace& w, int channel, std::string choice, std::string cho
   RooAddPdf pdf_m_jpsipi("pdf_m_jpsipi","pdf_m_jpsipi",RooArgList(m_jpsipi_gaussian3,m_jpsipi_gaussian2,m_jpsipi_gaussian1),RooArgList(m_jpsipi_fraction3,m_jpsipi_fraction2));
   //--------------------------------------------------------------------
 
-  //erfc component on channel 1 and 3
+  //jpsiX component, erfc model for channel 1 and 3
   RooRealVar m_nonprompt_scale("m_nonprompt_scale","m_nonprompt_scale",4.74168e-02, 0, 1); //1.93204e-02, 0.001, 0.3);
   RooRealVar m_nonprompt_shift("m_nonprompt_shift","m_nonprompt_shift",5.14425); //5.14357e+00,5.12,5.16);
   RooGenericPdf pdf_m_nonprompt_erf("pdf_m_nonprompt_erf","pdf_m_nonprompt_erf","TMath::Erfc((mass-m_nonprompt_shift)/m_nonprompt_scale)", RooArgList(mass,m_nonprompt_scale,m_nonprompt_shift));
@@ -372,6 +372,31 @@ void build_pdf(RooWorkspace& w, int channel, std::string choice, std::string cho
   m_nonprompt_shift.setConstant(kTRUE);
   m_nonprompt_scale.setConstant(kTRUE);
 
+  //jpsiX component, gaussian model for systematics
+  RooRealVar m_nonprompt_mean("m_nonprompt_mean","m_nonprompt_mean",5.05259e+00,4.9,5.3);
+  RooRealVar m_nonprompt_sigma("m_nonprompt_sigma","m_nonprompt_sigma",7.25801e-02,0.005,0.300);
+  RooGaussian pdf_m_nonprompt_gauss("pdf_m_nonprompt_gauss","pdf_m_nonprompt_gauss",mass,m_nonprompt_mean,m_nonprompt_sigma);
+  
+  m_nonprompt_mean.setConstant(kTRUE);
+  m_nonprompt_sigma.setConstant(kTRUE);
+
+  RooRealVar m_jpsiX_fraction("m_jpsiX_fraction","m_jpsiX_fraction",1);
+
+  RooAddPdf* pdf_m_jpsiX;
+  
+  pdf_m_jpsiX = new RooAddPdf("pdf_m_jpsiX","pdf_m_jpsiX",RooArgList(pdf_m_nonprompt_erf, pdf_m_nonprompt_gauss),RooArgList(m_jpsiX_fraction));
+
+  if(choice2=="background" && choice=="jpsiX_gauss")
+    {
+      m_jpsiX_fraction.setVal(0.);
+      m_jpsiX_fraction.setConstant(kTRUE);
+    }
+  else //this is the nominal model
+    {
+      m_jpsiX_fraction.setVal(1.);
+      m_jpsiX_fraction.setConstant(kTRUE);
+    }
+  
   //-------------------------------------------------------------------
 
   // X(3872) PDF, only for J/psi pipi fit
@@ -416,7 +441,7 @@ void build_pdf(RooWorkspace& w, int channel, std::string choice, std::string cho
     {
     default:
     case 1:// B+ -> J/psi K+
-      model = new RooAddPdf("model","model", RooArgList(*pdf_m_signal, *pdf_m_combinatorial, pdf_m_nonprompt_erf, pdf_m_jpsipi),RooArgList(n_signal, n_combinatorial, n_nonprompt, n_jpsipi));
+      model = new RooAddPdf("model","model", RooArgList(*pdf_m_signal, *pdf_m_combinatorial, *pdf_m_jpsiX, pdf_m_jpsipi),RooArgList(n_signal, n_combinatorial, n_nonprompt, n_jpsipi));
       break;
     case 2:// B0 -> J/psi K*
       pdf_m_signal_copy = new RooAddPdf(*pdf_m_signal, "pdf_m_signal_copy");
@@ -424,7 +449,7 @@ void build_pdf(RooWorkspace& w, int channel, std::string choice, std::string cho
       model = new RooAddPdf("model","model", RooArgList(*pdf_m_signal, *pdf_m_combinatorial), RooArgList(n_signal, n_combinatorial));
       break;
     case 3://B0 -> J/psi Ks
-      model = new RooAddPdf("model","model", RooArgList(*pdf_m_signal, *pdf_m_combinatorial, pdf_m_nonprompt_erf),RooArgList(n_signal, n_combinatorial, n_nonprompt));
+      model = new RooAddPdf("model","model", RooArgList(*pdf_m_signal, *pdf_m_combinatorial, *pdf_m_jpsiX),RooArgList(n_signal, n_combinatorial, n_nonprompt));
       break;
     case 4://Bs -> J/psi phi
     case 6://Lambda_b -> J/psi Lambda
@@ -643,7 +668,7 @@ void plot_mass_fit(RooWorkspace& w, int channel, TString directory, int pt_high,
     model->plotOn(frame_m,Name("kpiswap"),Precision(2E-4),Components("k_pi_swap"),LineColor(kOrange),LineWidth(2),LineStyle(7),FillStyle(3008),FillColor(kOrange), VLines(), DrawOption("F"));
 
   if(channel==1 || channel==3)
-    model->plotOn(frame_m,Name("nonprompt"),Precision(2E-4),Components("pdf_m_nonprompt_erf"),LineColor(kViolet),LineWidth(2),LineStyle(2));
+    model->plotOn(frame_m,Name("nonprompt"),Precision(2E-4),Components("pdf_m_jpsiX"),LineColor(kViolet),LineWidth(2),LineStyle(2));
   
   if(channel==1)
     model->plotOn(frame_m,Name("jpsipi"),Precision(2E-4),Components("pdf_m_jpsipi"),LineColor(kRed),LineWidth(2),LineStyle(7),FillStyle(3008),FillColor(kRed), VLines(), DrawOption("F"));

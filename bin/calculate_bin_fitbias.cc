@@ -42,12 +42,13 @@ int main(int argc, char** argv)
     }
 
   std::vector<TString> params_names;
+  params_names.push_back("n_signal");
+  /*params_names.push_back("n_combinatorial");
   params_names.push_back("m_sigma2");
   params_names.push_back("m_fraction");
   params_names.push_back("m_exp");
-  params_names.push_back("n_combinatorial");
   params_names.push_back("m_sigma1");
-  params_names.push_back("n_signal");
+  */
   int params_size = params_names.size();
 
   //here I will use the ptmin and ptmax according to the bin I am reading
@@ -64,16 +65,17 @@ int main(int argc, char** argv)
   RooAbsPdf *model_open = w_open->pdf("model");
   RooDataSet *data_open = static_cast<RooDataSet*>(w_open->data("data"));
 
-  RooMCStudy* mcstudy = new RooMCStudy(*model_open,mass_open,Binned(kTRUE),Silence(),FitOptions(Save(kTRUE),PrintEvalErrors(0)));
+  RooMCStudy* mcstudy = new RooMCStudy(*model_open,mass_open,Binned(kTRUE),Silence(),Extended(),FitOptions(Save(kTRUE),PrintEvalErrors(0)));
 
-  mcstudy->generateAndFit(20000,data_open->numEntries());
+  mcstudy->generateAndFit(4000/*,gRandom->Poisson(data_open->numEntries())*/);
 
   std::cout << data_open->numEntries() << std::endl;
 
   // Make plots of the distributions of the pull of each parameter
-  std::vector<RooPlot*> frames;
+  std::vector<RooPlot*> frames, framesParam;
   for (int i=0; i<params_size; ++i) {
-    frames.push_back(mcstudy->plotPull(params.at(i),FrameBins(50),FrameRange(-4.5,4.5),FitGauss(kTRUE)));
+    frames.push_back(mcstudy->plotPull(params.at(i),FrameBins(50),FitGauss(kTRUE)));
+    framesParam.push_back(mcstudy->plotParam(params.at(i),FrameBins(50)));
   }
 
   // Draw all plots on a canvas
@@ -81,11 +83,14 @@ int main(int argc, char** argv)
   gStyle->SetOptStat(0);
   TCanvas* c = new TCanvas("pulls","pulls",900,800);
   gPad->SetLeftMargin(0.15);
-  c->Divide(3,params_size/3);
+  c->Divide(2,1/*params_size/3*/);
   for(int i=0; i<params_size; ++i) {
     c->cd(i+1);
     frames.at(i)->GetYaxis()->SetTitleOffset(1.4);
     frames.at(i)->Draw();
+    c->cd(i+2);
+    framesParam.at(i)->GetYaxis()->SetTitleOffset(1.4);
+    framesParam.at(i)->Draw();
   }
-  c->SaveAs("pulls_" + channel_to_ntuple_name(channel) + "_pt_from_" + TString::Format("%d_to_%d", (int)pt_min, (int)pt_max) + "_y_from_" + TString::Format("%.2f_to_%.2f", y_min, y_max) + ".png");
+  c->SaveAs("pulls_poisson_" + channel_to_ntuple_name(channel) + "_pt_from_" + TString::Format("%d_to_%d", (int)pt_min, (int)pt_max) + "_y_from_" + TString::Format("%.2f_to_%.2f", y_min, y_max) + ".png");
 }

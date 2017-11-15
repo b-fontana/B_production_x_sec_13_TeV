@@ -9,10 +9,9 @@ TH1D* sideband_sub(RooWorkspace& w, RooWorkspace& w_mc, int channel, double m1, 
 std::vector<double> getBorder(int channel, int option);
 double getSigma(RooWorkspace& w, int channel);
 
-
 //Example: ResSyst --channel 4
 int main(int argc, char **argv) {
-
+  
   int channel = 0;
 
   for(int i=1; i<argc ; ++i)
@@ -34,10 +33,11 @@ int main(int argc, char **argv) {
     }
 
   TString file_data = "myloop_new_notktkmasscut_data_" + channel_to_ntuple_name(channel) + "_with_cuts.root";
-  TString file_mc = "/lstore/cms/brunogal/input_for_B_production_x_sec_13_TeV/no_cuts/myloop_new_mc_truth_" + 
-    channel_to_ntuple_name(channel) + "_no_cuts.root";
+  TString file_mc = "notktkmasscut_myloop_new_mc_truth_" + channel_to_ntuple_name(channel) + 
+    "_with_cuts_no_tk_win_cut.root";
 
   std::pair<double,double> cuts = mass_cuts(channel);
+  std::pair<double,double> limits = histo_limits(channel);
 
   //////////////////////////////////////////////////
   //////////////MC tktkmass cuts efficiency/////////
@@ -47,12 +47,38 @@ int main(int argc, char **argv) {
   create_dataset(*ws_mc, file_mc, channel);
 
   RooDataSet *d_mc = static_cast<RooDataSet*>(ws_mc->data("data"));
-  RooDataSet *d_mc_reduced = static_cast<RooDataSet*>( d_mc->reduce(Form("tktkmass>%lf", cuts.first)) );
-  d_mc_reduced->reduce(Form("tktkmass<%lf", cuts.second));
-  
+  RooDataSet *d_mc_reduced = static_cast<RooDataSet*>( d_mc->reduce(Form("tktkmass>%lf && tktkmass<%lf", cuts.first, cuts.second)) );
+
   std::cout << "MC:" << std::endl;
   std::cout << "Nominal tktkmass cuts efficiency: " << static_cast<double>(d_mc_reduced->numEntries())/static_cast<double>(d_mc->numEntries()) << 
     " (Numerator: " << d_mc_reduced->numEntries() << ", Denominator: " << d_mc->numEntries() << ")" << std::endl;
+
+  TH1D* h_mc = static_cast<TH1D*>( d_mc->createHistogram("MC Tktkmass Distribution", *(ws_mc->var("tktkmass")),Binning(200,limits.first,limits.second)) );
+  TCanvas *c_h_mc = new TCanvas("c_h_mc", "c_h_mc", 900, 800);
+  gStyle->SetOptStat(0);
+  h_mc->SetTitle(" ");
+  TString xlabel = "";
+  switch(channel) {
+  case 2:
+    xlabel = "K* mass (GeV)";
+    break;
+  case 4:
+    xlabel = "#phi mass (GeV)";
+    break;
+  }
+  h_mc->GetXaxis()->SetTitle(xlabel);
+  h_mc->GetYaxis()->SetTitleOffset(1.4);
+  h_mc->Draw();
+  double maximum = h_mc->GetMaximum();
+  TLine *line1_mc = new TLine(cuts.first,0,cuts.first,maximum);
+  line1_mc->SetLineStyle(7);
+  line1_mc->SetLineColor(2);
+  TLine *line2_mc = new TLine(cuts.second,0,cuts.second,maximum);
+  line2_mc->SetLineStyle(7);
+  line2_mc->SetLineColor(2);
+  line1_mc->Draw();
+  line2_mc->Draw();
+  c_h_mc->SaveAs("c_h_mc_"+channel_to_ntuple_name(channel)+".png"); 
 
   //////////////////////////////////////////////////
   //////////SS Data tktkmass cuts efficiency////////
@@ -60,8 +86,6 @@ int main(int argc, char **argv) {
   RooWorkspace *ws_data = new RooWorkspace("ws_data","ws_data");
   set_up_vars(*ws_data, channel);
   create_dataset(*ws_data, file_data, channel);
-
-  std::pair<double,double> limits = histo_limits(channel);
 
   TFile *f = new TFile("ss_histograms_ResolutionSyst.root","OPEN");
   TH1D* h;
@@ -73,8 +97,29 @@ int main(int argc, char **argv) {
 
   TCanvas *c_h = new TCanvas("c_h", "c_h", 900, 800);
   c_h->cd();
+  gStyle->SetOptStat(0);
+  h->SetTitle(" ");
+  switch(channel) {
+  case 2:
+    xlabel = "K* mass (GeV)";
+    break;
+  case 4:
+    xlabel = "#phi mass (GeV)";
+    break;
+  }
+  h->GetXaxis()->SetTitle(xlabel);
+  h->GetYaxis()->SetTitleOffset(1.4);
   h->Draw();
-  c_h->SaveAs("c_h.png");
+  maximum = h->GetMaximum();
+  TLine *line1_data = new TLine(cuts.first,0,cuts.first,maximum);
+  line1_data->SetLineStyle(7);
+  line1_data->SetLineColor(2);
+  TLine *line2_data = new TLine(cuts.second,0,cuts.second,maximum);
+  line2_data->SetLineStyle(7);
+  line2_data->SetLineColor(2);
+  line1_data->Draw();
+  line2_data->Draw();
+  c_h->SaveAs("c_h_"+channel_to_ntuple_name(channel)+".png");
   delete c_h;
 
   int nbins = h->GetNbinsX();
@@ -88,6 +133,7 @@ int main(int argc, char **argv) {
   std::cout << "Data:" << std::endl;
   std::cout << "Nominal tktkmass cuts efficiency: " << static_cast<double>(nentries_withcuts)/static_cast<double>(nentries) << 
     " (Numerator: " << nentries_withcuts << ", Denominator: " << nentries << ")" << std::endl;
+  
 }
 
 void create_dataset(RooWorkspace& w, TString filename, int channel)

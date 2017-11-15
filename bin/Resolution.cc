@@ -126,7 +126,7 @@ std::pair<double,double> DoubleTrackRes(RooWorkspace& w, RooWorkspace& w_mc, int
 
    RooRealVar mean("mean", "mean", mass_fix);
    //RooRealVar r("r", "r", 0.700, 0.010, 0.990);
-   RooRealVar sigma1("sigma1", "sigma1", 0.02, 0.001, 0.100);
+   RooRealVar sigma1("sigma", "sigma", 0.02, 0.001, 0.100);
    //   RooRealVar sigma2("sigma2", "sigma2", 0.006, 0.001, 0.100);
    // RooRealVar alpha1("alpha1","alpha1", 0.5, -6., 6.);
    // RooRealVar alpha2("alpha2","alpha2", -0.5, -6., 6.);
@@ -150,12 +150,12 @@ std::pair<double,double> DoubleTrackRes(RooWorkspace& w, RooWorkspace& w_mc, int
    }
 
    RooDataHist dh("dh", "dh", tktkmass_data, Import(*h));
-   RooPlot* frame_data = tktkmass_data.frame(Title("Double Track Resolution (Data)"), Range(frame_lo,frame_hi));
+   RooPlot* frame_data = tktkmass_data.frame(Title(" "), Range(frame_lo,frame_hi));
    dh.plotOn(frame_data);
    tktkmass_data.setRange("centre_tktkmass_data", fit_lo_data, fit_hi_data);
    g11.fitTo(dh, Range("centre_tktkmass_data"));
-   g11.paramOn(frame_data, Layout(0.7,0.91,0.95));
-   frame_data->getAttText()->SetTextSize(0.029);
+   g11.paramOn(frame_data, Layout(0.65,0.995,0.90));
+   frame_data->getAttText()->SetTextSize(0.035);
    //g11.plotOn(frame_data);
    g11.plotOn(frame_data, LineColor(2), LineWidth(3.5), LineStyle(1));
    //g11.plotOn(frame_data,Components("g11"),LineColor(2),LineWidth(1),LineStyle(2));
@@ -163,20 +163,31 @@ std::pair<double,double> DoubleTrackRes(RooWorkspace& w, RooWorkspace& w_mc, int
    double resolution_data = TMath::Sqrt(TMath::Power(sigma1.getVal(),2)/* *r.getVal() + TMath::Power(sigma2.getVal(),2)*(1-r.getVal())*/);
 
    RooDataSet *d = static_cast<RooDataSet*>(w_mc.data("data"));
-   RooPlot* frame_mc = tktkmass_mc.frame(Title("Double Track Resolution (MC)"), Range(frame_lo,frame_hi));
+   RooPlot* frame_mc = tktkmass_mc.frame(Title(" "), Range(frame_lo,frame_hi));
    d->plotOn(frame_mc);
    tktkmass_mc.setRange("centre_tktkmass_mc", fit_lo_mc, fit_hi_mc);
    g21.fitTo(*d, Range("centre_tktkmass_mc"));
-   g21.paramOn(frame_mc, Layout(0.7,0.91,0.95));
-   frame_mc->getAttText()->SetTextSize(0.029);
+   g21.paramOn(frame_mc, Layout(0.65,0.995,0.9));
+   frame_mc->getAttText()->SetTextSize(0.035);
    //g21.plotOn(frame_mc);
    g21.plotOn(frame_mc, LineColor(4), LineWidth(3.5), LineStyle(1));
    //g21.plotOn(frame_mc,Components("g21"),LineColor(4),LineWidth(1),LineStyle(2));
    //g21.plotOn(frame_mc,Components("g22"),LineColor(4),LineWidth(1),LineStyle(2));
    double resolution_mc = TMath::Sqrt(TMath::Power(sigma1.getVal(),2)/* *r.getVal() + TMath::Power(sigma2.getVal(),2)*(1-r.getVal())*/);
    
-   TCanvas c1("c1", "c1", 800, 400); c1.cd(); frame_data->Draw(); 
-   TCanvas c2("c2", "c2", 800, 400); c2.cd(); frame_mc->Draw();
+   TString xlabel = "";
+   switch(channel) {
+   case 2: 
+     xlabel = "K^{*} mass (GeV)";
+     break;
+   case 4:
+     xlabel = "#phi mass (GeV)";
+     break;
+   }
+   frame_mc->GetXaxis()->SetTitle(xlabel);
+   frame_data->GetXaxis()->SetTitle(xlabel);
+   TCanvas c1("c1", "c1", 1200, 900); c1.cd(); frame_data->GetYaxis()->SetTitleOffset(1.4); frame_data->Draw(); 
+   TCanvas c2("c2", "c2", 1200, 900); c2.cd(); frame_mc->GetYaxis()->SetTitleOffset(1.4); frame_mc->Draw();
    c1.SaveAs("tktkmass_fit_" + channel_to_ntuple_name(channel) + "_data.png");
    c2.SaveAs("tktkmass_fit_" + channel_to_ntuple_name(channel) + "_mc.png");
 
@@ -186,10 +197,10 @@ std::pair<double,double> DoubleTrackRes(RooWorkspace& w, RooWorkspace& w_mc, int
 
 std::pair<double,double> MesonRes(RooWorkspace& w, RooWorkspace& w_mc, int channel) {
   gStyle->SetTitleAlign(33);
-  gStyle->SetTitleX(0.55);
+  gStyle->SetTitleX(0.7);
   double min = 0., max = 0., mass_fix = 0., fit_lo_data = 0., fit_hi_data =0., fit_lo_mc = 0., fit_hi_mc = 0., frame_lo = 0., frame_hi = 0.;
   if (channel == 1) {
-    min = 5.2; max = 5.37; mass_fix = BP_MASS; fit_lo_data = 5.256; fit_hi_data = 5.303; fit_lo_mc = 5.26; fit_hi_mc = 5.297;
+    min = 5.2; max = 5.37; mass_fix = BP_MASS; fit_lo_data = 5.256; fit_hi_data = 5.303; fit_lo_mc = 5.263; fit_hi_mc = 5.295;
     frame_lo = 5.21; frame_hi = 5.35;
   }
   else if (channel == 2) {
@@ -207,7 +218,7 @@ std::pair<double,double> MesonRes(RooWorkspace& w, RooWorkspace& w_mc, int chann
 
   RooRealVar mean("mean", "mean", mass_fix);
   //RooRealVar r("r", "r", 0.171, 0.010, 0.990);
-  RooRealVar sigma1("sigma1", "sigma1", 0.014, 0.0001, 0.05);
+  RooRealVar sigma1("sigma", "sigma", 0.014, 0.0001, 0.05);
   //RooRealVar sigma2("sigma2", "sigma2", 0.002, 0.0001, 0.05);
   //RooRealVar alpha1("alpha1","alpha1", 0.5, -6., 6.);
   //RooRealVar alpha2("alpha2","alpha2", -0.5, -6., 6.);
@@ -231,12 +242,12 @@ std::pair<double,double> MesonRes(RooWorkspace& w, RooWorkspace& w_mc, int chann
   }
 
   RooDataHist dh("dh", "dh", mass_data, Import(*h));
-  RooPlot* frame_data = mass_data.frame(Title("B Meson Resolution (Data)"), Range(frame_lo,frame_hi));
+  RooPlot* frame_data = mass_data.frame(Title(" "), Range(frame_lo,frame_hi));
   dh.plotOn(frame_data);
   mass_data.setRange("centre_mass_data", fit_lo_data, fit_hi_data);
   g11.fitTo(dh, Range("centre_mass_data"));
-  g11.paramOn(frame_data, Layout(0.7,0.91,0.95));
-  frame_data->getAttText()->SetTextSize(0.029);
+  g11.paramOn(frame_data, Layout(0.65,0.995,0.9));
+  frame_data->getAttText()->SetTextSize(0.035);
   //g11.plotOn(frame_data);
   g11.plotOn(frame_data, LineColor(2), LineWidth(3.5), LineStyle(1));
   //g11.plotOn(frame_data,Components("g11"),LineColor(2),LineWidth(1),LineStyle(2));
@@ -244,20 +255,34 @@ std::pair<double,double> MesonRes(RooWorkspace& w, RooWorkspace& w_mc, int chann
   double resolution_data = TMath::Sqrt(TMath::Power(sigma1.getVal(),2)/* *r.getVal() + TMath::Power(sigma2.getVal(),2)*(1-r.getVal())*/);
 
   RooDataSet *d = static_cast<RooDataSet*>(w_mc.data("data"));
-  RooPlot* frame_mc = mass_mc.frame(Title("B Meson Resolution (MC)"), Range(frame_lo,frame_hi));
+  RooPlot* frame_mc = mass_mc.frame(Title(" "), Range(frame_lo,frame_hi));
   d->plotOn(frame_mc);
   mass_mc.setRange("centre_mass_mc", fit_lo_mc, fit_hi_mc);
   g21.fitTo(*d, Range("centre_mass_mc"));
-  g21.paramOn(frame_mc, Layout(0.7,0.91,0.95));
-  frame_mc->getAttText()->SetTextSize(0.029);
+  g21.paramOn(frame_mc, Layout(0.65,0.995,0.9));
+  frame_mc->getAttText()->SetTextSize(0.035);
   //g21.plotOn(frame_mc);
   g21.plotOn(frame_mc, LineColor(4), LineWidth(3.5), LineStyle(1));
   //g21.plotOn(frame_mc,Components("g21"),LineColor(4),LineWidth(1),LineStyle(2));
   //g21.plotOn(frame_mc,Components("g22"),LineColor(4),LineWidth(1),LineStyle(2));
   double resolution_mc = TMath::Sqrt(TMath::Power(sigma1.getVal(),2)/* + TMath::Power(sigma2.getVal(),2)*/);
-   
-  TCanvas c1("c1", "c1", 800, 400); c1.cd(); frame_data->Draw(); 
-  TCanvas c2("c2", "c2", 800, 400); c2.cd(); frame_mc->Draw();
+
+  TString xlabel = "";
+  switch(channel) {
+  case 1:
+    xlabel = "B^{+} mass (GeV)";
+    break;
+  case 2: 
+    xlabel = "B^{0} mass (GeV)";
+    break;
+  case 4:
+    xlabel = "B_{s} mass (GeV)";
+    break;
+  }
+  frame_mc->GetXaxis()->SetTitle(xlabel);   
+  frame_data->GetXaxis()->SetTitle(xlabel);   
+  TCanvas c1("c1", "c1", 1200, 900); c1.cd(); frame_data->GetYaxis()->SetTitleOffset(1.4); frame_data->Draw(); 
+  TCanvas c2("c2", "c2", 1200, 900); c2.cd(); frame_mc->GetYaxis()->SetTitleOffset(1.4); frame_mc->Draw();
   c1.SaveAs("mass_fit_" + channel_to_ntuple_name(channel) + "_data.png");
   c2.SaveAs("mass_fit_" + channel_to_ntuple_name(channel) + "_mc.png");
 

@@ -1,5 +1,6 @@
 #include "UserCode/B_production_x_sec_13_TeV/interface/functions.h"
 
+//Example: fitBias --channel 1 --bin pt
 int main(int argc, char** argv) {
   int channel = 1;
   double *pt_bins = total_pt_bin_edges, *y_bins = total_y_bin_edges;

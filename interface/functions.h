@@ -23,6 +23,7 @@
 #include <RooGlobalFunc.h>
 #include <RooRealVar.h>
 #include <RooProduct.h>
+#include <RooAddition.h>
 #include <RooConstVar.h>
 #include <RooDataSet.h>
 #include <RooDataHist.h>
@@ -59,7 +60,7 @@ using namespace RooFit;
 
 #define LUMINOSITY          2.71
 #define NUMBER_OF_CPU       1
-#define VERSION             "v18"
+#define VERSION             "v19"
 #define BASE_DIR            "/lstore/cms/brunogal/input_for_B_production_x_sec_13_TeV/"
 
 //////////////////////////////////////////////
@@ -214,12 +215,17 @@ void build_pdf(RooWorkspace& w, int channel, std::string choice, std::string cho
 
   //Two Gaussians
   RooRealVar m_mean("m_mean","m_mean",mass_peak,mass_peak-0.09,mass_peak+0.09);
-  RooRealVar m_sigma1("m_sigma1","m_sigma1",0.020,0.010,0.050); //0.010,0.009,0.200);
-  RooRealVar m_sigma2("m_sigma2","m_sigma2",0.010,0.005,0.025); //0.005,0.004,0.100);
-  RooRealVar m_fraction("m_fraction","m_fraction", 0.5, 0, 1);
+  RooRealVar m_sigma1("m_sigma1","m_sigma1",0.015,0.001,0.050); //,0.020,0.010,0.050);
+  
+  //RooRealVar m_sigma2("m_sigma2","m_sigma2",0.010,0.005,0.025);
+  RooRealVar m_sig2scale("m_sig2scale","m_sig2scale",2.0,1.0,2.0);
+  RooProduct m_sigma2("m_sigma2","m_sigma2",RooArgList(m_sigma1,m_sig2scale));
+  
   RooGaussian m_gaussian1("m_gaussian1","m_gaussian1",mass,m_mean,m_sigma1);
   RooGaussian m_gaussian2("m_gaussian2","m_gaussian2",mass,m_mean,m_sigma2);
 
+  RooRealVar m_fraction("m_fraction","m_fraction", 0.5, 0, 1);
+  
   //Crystal Ball
   RooRealVar m_alpha("m_alpha", "m_alpha", mass_peak-0.015/2, mass_peak-0.08, mass_peak-0.003);
   RooRealVar m_n("m_n", "m_n", 2.7, 1, 7);
@@ -233,29 +239,29 @@ void build_pdf(RooWorkspace& w, int channel, std::string choice, std::string cho
   RooAddPdf* pdf_m_signal;
 
   // use single Gaussian for low statistics
-  if(n_signal_initial < 1000)
+  /*
+    if(n_signal_initial < 1000)
   {
     m_fraction.setVal(1.);
     m_fraction.setConstant(kTRUE);
-    m_sigma2.setConstant(kTRUE);
-
+    
     m_fraction2.setVal(1.);
     m_fraction2.setConstant(kTRUE);
-    m_sigma3.setConstant(kTRUE);
   }
-  
+  */
+
   if(choice2=="signal" && choice=="crystal")
     {
       pdf_m_signal = new RooAddPdf("pdf_m_signal", "pdf_m_signal", RooArgList(m_crystal,m_gaussian2), RooArgList(m_fraction));
-      m_sigma2.setConstant(kTRUE);
       m_fraction.setVal(1.);
+      m_fraction.setConstant(kTRUE);
     }
   else 
     if(choice2=="signal" && choice=="1gauss")
       {
 	pdf_m_signal = new RooAddPdf("pdf_m_signal","pdf_m_signal",RooArgList(m_gaussian1,m_gaussian2),RooArgList(m_fraction));
-	m_sigma2.setConstant(kTRUE);
 	m_fraction.setVal(1.);
+	m_fraction.setConstant(kTRUE);
       }
     else
       if(choice2=="signal" && choice=="3gauss")
@@ -294,21 +300,21 @@ void build_pdf(RooWorkspace& w, int channel, std::string choice, std::string cho
     if(choice2=="background" && choice=="bern")
       {
 	pdf_m_combinatorial=new RooAddPdf("pdf_m_combinatorial","pdf_m_combinatorial",RooArgList(pdf_m_combinatorial_bern,pdf_m_combinatorial_exp),RooArgList(m_fraction_exp));
-	m_exp.setConstant(kTRUE);
 	m_fraction_exp.setVal(1.);
+	m_fraction_exp.setConstant(kTRUE);
       }
     else 
       if(choice2=="background" && choice=="power")
 	{
 	  pdf_m_combinatorial=new RooAddPdf("pdf_m_combinatorial","pdf_m_combinatorial",RooArgList(pdf_m_power,pdf_m_combinatorial_exp),RooArgList(m_fraction_exp));
-	  m_exp.setConstant(kTRUE);
-	  m_fraction_exp.setVal(1.);    
+	  m_fraction_exp.setVal(1.);
+	  m_fraction_exp.setConstant(kTRUE);
 	}
       else //this is the nominal bkg
 	{
 	  pdf_m_combinatorial=new RooAddPdf("pdf_m_combinatorial","pdf_m_combinatorial",RooArgList(pdf_m_combinatorial_exp,pdf_m_combinatorial_exp2),RooArgList(m_fraction_exp));
-	  m_exp2.setConstant(kTRUE);
-	  m_fraction_exp.setVal(1.);    
+	  m_fraction_exp.setVal(1.);
+	  m_fraction_exp.setConstant(kTRUE);
 	}
   ////////////////////////////////////////////////////////////////////////////////////////////
   //The components below have no systematic variation yet, they are part of the nominal fit.//
@@ -633,10 +639,10 @@ void plot_mass_fit(RooWorkspace& w, int channel, TString directory, int pt_high,
   RooRealVar mass = *(w.var("mass"));
   RooAbsData* data = w.data("data");
   RooAbsPdf* model = w.pdf("model");
-  RooRealVar lambda = *(w.var("m_exp"));
-  RooRealVar mean = *(w.var("m_mean"));
-  RooRealVar sigma1 = *(w.var("m_sigma1"));
-  RooRealVar sigma2 = *(w.var("m_sigma2"));
+  //RooRealVar lambda = *(w.var("m_exp"));
+  //RooRealVar mean = *(w.var("m_mean"));
+  //RooRealVar sigma1 = *(w.var("m_sigma1"));
+  //RooRealVar sigma2 = *(w.var("m_sigma2"));
   RooRealVar n_signal = *(w.var("n_signal"));
   RooRealVar n_back = *(w.var("n_combinatorial"));    
   RooPlot* frame_m = mass.frame();

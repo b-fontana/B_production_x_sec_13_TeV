@@ -111,8 +111,12 @@ int main(int argc, char** argv)
       precision = 3;
     else
       if(vector.Contains("eff"))
-	precision = 3;
-  
+	{
+	  precision = 4;
+	  if(vector == "totaleff")
+	    precision = 5;
+	}
+
   for(int j=0; j<n_var2_bins; j++)
     {
       std::vector<std::string> labels;
@@ -143,7 +147,7 @@ int main(int argc, char** argv)
       
       for(int i=0; i<n_var1_bins; i++)
 	{
-	  aux.push_back(TString::Format("\\tol{}{%.*f}{%.*f}", precision, val_err_lo[j][i], precision, val_err_hi[j][i]).Data());
+	  aux.push_back(TString::Format("\\large \\tol{}{%.*f}{%.*f}", precision, val_err_lo[j][i], precision, val_err_hi[j][i]).Data());
 	}
       numbers.push_back(aux);
       aux.clear();

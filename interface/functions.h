@@ -1415,19 +1415,19 @@ void latex_table(std::string filename, int n_col, int n_lin, std::vector<std::st
   //file << "\\begin{adjustbox}{width=1\\textwidth}" << std::endl;
     
   //setup table size                                                                                                                             
-  TString col = "c";
+  TString col = "|c|";
 
   for(int i=1; i<n_col; i++)
-    col+="|c"; //col+= TString::Format("|S[round-precision= %d ]", precision[i-1]);
+    col+="c|"; //col+= TString::Format("|S[round-precision= %d ]", precision[i-1]);
 
   file << "\\begin{tabular}{" + col + "}" << std::endl;
-  file << "\\toprule" << std::endl;
+  file << "\\hline" << std::endl;
 
   for(int c=0; c<n_col-1; c++)
     file << "{" << col_name[c] << "}" << " & ";
 
   file << "{" << col_name[n_col-1] << "}" << " \\\\" << std::endl;
-  file << "\\midrule" << std::endl;
+  file << "\\hline" << std::endl;
 
   for(int i=1; i<n_lin; i++)
     {
@@ -1437,9 +1437,8 @@ void latex_table(std::string filename, int n_col, int n_lin, std::vector<std::st
 	file << numbers[c-1][i-1] << " & ";
 
       file << numbers[n_col-2][i-1] << " \\\\" << std::endl;
+      file << "\\hline" << std::endl;
     }
-
-  file << "\\bottomrule" << std::endl;
 
   //End Table                                                                                                                                
   file << "\\end{tabular}" << std::endl;

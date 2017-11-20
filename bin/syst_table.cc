@@ -122,7 +122,7 @@ int main(int argc, char** argv)
       col_name.push_back(syst_fancy_name(syst_list[k]));
     }
 
-  int precision[] = {3,3,3,3,3,3,3,3,3,3,3,3,3,3,3};
+  //int precision[] = {3,3,3,3,3,3,3,3,3,3,3,3,3,3,3};
   /////////////////////////
 
   //read the arrays for each var2 bin
@@ -176,7 +176,7 @@ int main(int argc, char** argv)
 
       TString caption = b_title + " systematics " + var2_name + " from " + bins_cap;
       
-      latex_table(file_name.Data(), col_name.size(), n_var1_bins + 1, col_name, labels, numbers, precision,  caption.Data());
+      //latex_table(file_name.Data(), col_name.size(), n_var1_bins + 1, col_name, labels, numbers, caption.Data());
     }//end of var2 cicle
   
 }//end

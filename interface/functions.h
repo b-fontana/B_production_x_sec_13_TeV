@@ -1121,7 +1121,10 @@ RooRealVar* reco_efficiency(int channel, double pt_min, double pt_max, double y_
 	    }
 	    else if (reweighting_var_str == "mu1eta") weight_passed += h_weights_passed->GetBinContent( h_weights_passed->FindBin(eta_mu1) );
 	    else if (reweighting_var_str == "mu2eta") weight_passed += h_weights_passed->GetBinContent( h_weights_passed->FindBin(eta_mu2) );
-	    else if (reweighting_var_str == "lerrxy") weight_passed += h_weights_passed->GetBinContent( h_weights_passed->FindBin(lxy/errxy) );
+	    else if (reweighting_var_str == "lerrxy") {
+	      if (lxy/errxy >= 8. && lxy/errxy <= 60.) weight_passed += h_weights_passed->GetBinContent( h_weights_passed->FindBin(lxy/errxy) );
+	      else weight_passed += 1.;
+	    }
 	  }
 	}
 
@@ -1178,7 +1181,7 @@ RooRealVar* branching_fraction(TString measure, int channel)
   kstar_to_k_pi->setError(1.4e-4);
 
   RooRealVar* bs_to_jpsi_phi = new RooRealVar("bs","bs",1.08e-3);
-  bs_to_jpsi_phi->setError(9e-5);
+  bs_to_jpsi_phi->setError(8e-5);
 
   RooRealVar* phi_to_k_k = new RooRealVar("phi","phi",48.9e-2);
   phi_to_k_k->setError(5e-3);

@@ -87,6 +87,19 @@ int main(int argc, char** argv)
       break;
     }
   
+  std::vector<std::string> labels;
+  std::string lab;
+  
+  for(int i=0; i<n_var1_bins; i++)
+    {
+      if(var1_name == "pt")
+	lab = std::to_string((int)var1_bins[i]) + " to " + std::to_string((int)var1_bins[i+1]);
+      else
+	lab = TString::Format("%.2f to %.2f", (double)var1_bins[i], (double)var1_bins[i+1]).Data();
+      
+      labels.push_back(lab);
+    }
+
   //read yields or effs or syst
   read_vector(channel, vector, var1_name , var2_name, n_var1_bins, n_var2_bins, var1_bins, var2_bins, val_array[0], val_err_lo[0], val_err_hi[0]);
   
@@ -116,25 +129,9 @@ int main(int argc, char** argv)
 	  if(vector == "totaleff")
 	    precision = 5;
 	}
-
+  
   for(int j=0; j<n_var2_bins; j++)
     {
-      std::vector<std::string> labels;
-      std::string lab;
-
-      for(int i=0; i<n_var1_bins; i++)
-	{
-	  if(var1_name == "pt")
-	    lab = std::to_string((int)var1_bins[i]) + " to " + std::to_string((int)var1_bins[i+1]);
-	  else
-	    lab = TString::Format("%.2f to %.2f", (double)var1_bins[i], (double)var1_bins[i+1]).Data();
-	  
-	  labels.push_back(lab);
-	}
-
-      //std::vector<std::vector<double> > numbers;
-      //std::vector<double> aux;
-      
       std::vector<std::vector<std::string> > numbers;
       std::vector<std::string> aux;
       

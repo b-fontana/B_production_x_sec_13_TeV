@@ -10,18 +10,23 @@
 // channel = 6: Lambda_b -> Jpsi + Lambda
 //-----------------------------------------------------------------
 
-//input example: syst_table --measure x_sec --channel 1 --bins pt --vector syst_summary
+//input example: syst_table --measure x_sec --channel 1 --bins pt
 int main(int argc, char** argv)
 {
   TString measure = "";
   int channel = 0;
   std::string bins = "pt";
-  TString vector = "syst_summary";
 
   for(int i=1 ; i<argc ; ++i)
     {
       std::string argument = argv[i];
       std::stringstream convert;
+
+      if(argument == "--measure")
+	{
+	  convert << argv[++i];
+	  convert >> measure;
+	}
 
       if(argument == "--channel")
 	{
@@ -33,19 +38,9 @@ int main(int argc, char** argv)
 	  convert << argv[++i];
 	  convert >> bins;
 	}
-      if(argument == "--measure")
-	{
-	  convert << argv[++i];
-	  convert >> measure;
-	}
-      if(argument == "--vector")
-	{
-	  convert << argv[++i];
-	  convert >> vector;
-	}
     }
   
-  if(measure == "" || vector == "")
+  if(measure == "")
     {
       std::cout << "ERROR: No --measure or --vector input was provided." << std::endl;
       return 0;
@@ -82,6 +77,8 @@ int main(int argc, char** argv)
   double* var1_bins = NULL;
   double* var2_bins = NULL;
   
+  int precision = 1;
+  
   setup_bins(measure, channel, bins, &var1_name, &n_var1_bins, &var2_name, &n_var2_bins, &var1_bins, &var2_bins);
   
   //set up lables
@@ -93,12 +90,11 @@ int main(int argc, char** argv)
       if(var1_name == "pt")
 	lab = std::to_string((int)var1_bins[i]) + " to " + std::to_string((int)var1_bins[i+1]);
       else
-	lab = std::to_string((double)var1_bins[i]) + " to " + std::to_string((double)var1_bins[i+1]);
+	lab = TString::Format("%.2f to %.2f", (double)var1_bins[i], (double)var1_bins[i+1]).Data();
       
       labels.push_back(lab);
     }
-  /////////////////////////
-
+  
   //set up columns names
   std::vector<std::string> col_name;
 
@@ -112,45 +108,40 @@ int main(int argc, char** argv)
   
   col_name.push_back(var1_str);
   
+  //set up syst list
   std::vector<std::string> syst_list;
   setup_syst_list(channel, &syst_list);
-
   syst_list.push_back("combined_syst");
   
+
   for(int k=0; k< (int)syst_list.size(); k++)
     {
-      col_name.push_back(syst_fancy_name(syst_list[k]));
+      col_name.push_back(syst_fancy_name(syst_list[k]).append("[\\%]"));
     }
-
-  //int precision[] = {3,3,3,3,3,3,3,3,3,3,3,3,3,3,3};
-  /////////////////////////
-
-  //read the arrays for each var2 bin
+  
+  //read the arrays
   for(int j=0; j<n_var2_bins; j++)
     {
-      //to save the values of all the syst in a var2 bin
-      std::vector<std::vector<double> > numbers;
-      //to save the values of each syst in the list
-      std::vector<double> aux;
+      std::vector<std::vector<std::string> > numbers;
+      std::vector<std::string> aux;
       
       for(int k=0; k< (int)syst_list.size(); k++)
-	{
-	  //initialize arrays for yield, efficiencies, etc 
+	{ 
 	  double val_array[n_var2_bins][n_var1_bins];
 	  double val_err_lo[n_var2_bins][n_var1_bins];
 	  double val_err_hi[n_var2_bins][n_var1_bins];
       
-	  //read yields or effs or syst
+	  //read syst
 	  read_vector(channel, syst_list[k], var1_name , var2_name, n_var1_bins, n_var2_bins, var1_bins, var2_bins, val_array[0], val_err_lo[0], val_err_hi[0]);
 	  
 	  for(int i=0; i<n_var1_bins; i++)
 	    {
-	      aux.push_back(val_err_hi[j][i]);
+	      aux.push_back(TString::Format("%.*f", precision, 100*val_err_hi[j][i]).Data());
 	    }
 	  numbers.push_back(aux);
 	  aux.clear();
 	}
-      //////////////////////////////
+  
       
       TString file_name = "";
       TString dir = TString::Format(VERSION) + "/tables/";
@@ -174,9 +165,9 @@ int main(int argc, char** argv)
       else
 	bins_cap = TString::Format("$%d$ to $%d$", (int)var2_bins[j], (int)var2_bins[j+1]);
 
-      TString caption = b_title + " systematics " + var2_name + " from " + bins_cap;
+      TString caption = b_title + " systematics, " + var2_name + " from " + bins_cap;
       
-      //latex_table(file_name.Data(), col_name.size(), n_var1_bins + 1, col_name, labels, numbers, caption.Data());
+      latex_table(file_name.Data(), col_name.size(), n_var1_bins + 1, col_name, labels, numbers, caption.Data(), true);
     }//end of var2 cicle
   
 }//end

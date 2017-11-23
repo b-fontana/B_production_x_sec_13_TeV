@@ -176,8 +176,10 @@ void read_data(RooWorkspace& w, std::string filename, int channel)
     std::cout << "ERROR: The specified Ntuple does not exist (f1)!" << std::endl;
   }
 
+  RooRealVar errxy_shifted("errxy_shifted","errxy_shifted",0.,2.5);
   RooRealVar lerrxy("lerrxy","lerrxy",0,300);
   RooRealVar propert("propert","propert",0.,0.5);
+  w.import(errxy_shifted);
   w.import(lerrxy);
   w.import(propert);
 
@@ -185,16 +187,25 @@ void read_data(RooWorkspace& w, std::string filename, int channel)
   RooArgSet arg_list1(*(w.var("pt")), *(w.var("y")) , *(w.var("mu1pt")) , *(w.var("mu2pt")) , *(w.var("mu1eta")) , *(w.var("mu2eta")) , *(w.var("tk1pt")) , *(w.var("tk2pt")), *(w.var("tk1eta")));
   arg_list1.add(*(w.var("tk2eta")));
   arg_list1.add(*(w.var("lxy")));
-  arg_list1.add(*(w.var("errxy")));
+  arg_list1.add(*(w.var("errxy"))); 
   arg_list1.add(*(w.var("vtxprob")));
   arg_list1.add(*(w.var("cosalpha2d")));
   arg_list1.add(*(w.var("mass")));
 
-  std::cout << "before data" << std::endl;
   RooDataSet* data = new RooDataSet("data","data",nt1,arg_list1);
-  std::cout << "after data" << std::endl;
-  RooFormulaVar lerrxyFunc("lerrxy","lerrxy","lxy/errxy", RooArgList( *(w.var("errxy")), *(w.var("lxy")) ));
+  TString formula1, formula2;
+  if (filename.find("_mc_") != std::string::npos) {
+    formula1 = "1.14*errxy";
+    formula2 = "lxy/(1.14*errxy)";
+  }
+  else {
+    formula1 = "errxy";
+    formula2 = "lxy/errxy";
+  }
+  RooFormulaVar errxyFunc("errxy_shifted","errxy_shifted",formula1,RooArgList(*(w.var("errxy"))));
+  RooFormulaVar lerrxyFunc("lerrxy","lerrxy",formula2, RooArgList( *(w.var("errxy")), *(w.var("lxy")) ));
   RooFormulaVar propertFunc("propert","propert","mass*lxy/pt", RooArgList( *(w.var("mass")),*(w.var("lxy")),*(w.var("pt"))));
+  data->addColumn(errxyFunc);
   data->addColumn(lerrxyFunc);
   data->addColumn(propertFunc);  
 
@@ -767,22 +778,32 @@ std::vector<TH1D*> histoBuild(RooWorkspace& w, int channel, std::string extensio
   TH1D* h_aux;
   RooDataSet *data =(RooDataSet*) w.data("data");
 
-  TH1D* aux_errxy = new TH1D("aux_errxy", "aux_errxy", BIN_NUMBER, getXRange(12,channel).at(0),getXRange(12,channel).at(1));
+  /*TH1D* aux_errxy = new TH1D("aux_errxy", "aux_errxy", BIN_NUMBER, getXRange(12,channel).at(0),getXRange(12,channel).at(1));
+  TH1D* aux_lerrxy = new TH1D("aux_lerrxy", "aux_lerrxy", BIN_NUMBER, getXRange(15,channel).at(0),getXRange(15,channel).at(1));
+  */
   for (int k=0; k<variables; ++k) {
+    std::cout << varName(k+1)+extension << std::endl;
     h_aux = (TH1D*)data->createHistogram((varName(k+1)+extension).c_str(),*(vars.at(k)),Binning(BIN_NUMBER,getXRange(k+1,channel).at(0),getXRange(k+1,channel).at(1)));
-    if (k==11) { //shift the errxy MC distribution 
-      std::cout << "Errxy corrected!" << std::endl;
+    /*if (k==11) { //shift the errxy MC distribution 
       for (int ii=1; ii<=h_aux->GetNbinsX(); ++ii) {
         for (int jj=1; jj<=h_aux->GetBinContent(ii); ++jj)
           aux_errxy->Fill(1.14*h_aux->GetBinCenter(ii));
       }
       h_aux = aux_errxy;
     }
-
+    else if (k==14){ //shift the lerrxy MC distribution
+      for (int ii2=1; ii2<=h_aux->GetNbinsX(); ++ii2) {
+	std::cout << "Bin: " << h_aux->GetBinLowEdge(ii2) << " - " << h_aux->GetBinLowEdge(ii2) + 2*(h_aux->GetBinCenter(ii2)-h_aux->GetBinLowEdge(ii2)) << "; Previou content: " << h_aux->GetBinCenter(ii2) << "; Current content: " << h_aux->GetBinCenter(ii2)/1.14 << std::endl;
+        for (int jj2=1; jj2<=h_aux->GetBinContent(ii2); ++jj2)
+          aux_lerrxy->Fill(static_cast<double>(h_aux->GetBinCenter(ii2)/1.14));
+      }
+      h_aux = aux_lerrxy;
+    }
+    */
     h_aux->SetTitle((varName(k+1)+extension).c_str());
     histos.push_back(h_aux);
   }
- 
+
   return histos;
 }
 
@@ -873,7 +894,8 @@ void histoPlot(std::vector<TH1D*> v1, std::vector<TH1D*> v2, int channel, int fl
     h_aux->GetYaxis()->SetTitleSize(0.125);
     h_aux->GetYaxis()->SetTitleOffset(0.26);
     h_aux->GetYaxis()->SetTitle("Data / MC");
-    h_aux->GetXaxis()->SetTitle((varName(i+1) + " (" + unitName(i+1) + ")").c_str());
+    if (i==11) h_aux->GetXaxis()->SetTitle("errxy (cm)");
+    else h_aux->GetXaxis()->SetTitle((varName(i+1) + " (" + unitName(i+1) + ")").c_str());
     h_aux->GetYaxis()->SetNdivisions(4.5);
     h_aux->Divide(v2.at(i));
     if(!flag) {
@@ -943,7 +965,7 @@ std::string varName(int variable) {
     s = "lxy";
     break;
   case 12:
-    s = "errxy";
+    s = "errxy_shifted"; //one can replace this string by "errxy" to use the non-shifted variable
     break;
   case 13:
     s = "vtxprob";

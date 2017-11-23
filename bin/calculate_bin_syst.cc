@@ -311,7 +311,7 @@ int main(int argc, char** argv)
 		}
 	    }
       
-	  absolute_syst_val = fabs(nominal_val.getVal() - alternative_val)/nominal_val.getVal();
+	  absolute_syst_val = fabs(nominal_val.getVal() - alternative_val)/nominal_val.getVal(); 
 	}
     }
   
@@ -486,9 +486,11 @@ double mass_window_syst(RooWorkspace& ws, int channel, double pt_min, double pt_
 double reweighting_syst(int channel, double pt_min, double pt_max, double y_min, double y_max, double nominal_quantity) {
   std::vector<double> range_syst;
   std::vector<TString> reweight_var_names;
+  reweight_var_names.push_back("mu1eta");
   reweight_var_names.push_back("mu1pt");
-  reweight_var_names.push_back("pt");
   reweight_var_names.push_back("lerrxy");
+  //reweight_var_names.push_back("y");
+  //reweight_var_names.push_back("pt");
 
   RooRealVar* eff_corrected;
   int reweight_variables_number = static_cast<int>(reweight_var_names.size());  

@@ -489,6 +489,8 @@ double reweighting_syst(int channel, double pt_min, double pt_max, double y_min,
   reweight_var_names.push_back("mu1eta");
   reweight_var_names.push_back("mu1pt");
   reweight_var_names.push_back("lerrxy");
+  reweight_var_names.push_back("tk1pt");
+  reweight_var_names.push_back("tk1eta");	
   //reweight_var_names.push_back("y");
   //reweight_var_names.push_back("pt");
 

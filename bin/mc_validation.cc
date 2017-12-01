@@ -505,14 +505,14 @@ std::vector<double> getBorder(RooWorkspace& w, int channel, int option) {
       //mass_max = getMass(channel)+2*getSigma(w,channel);
     }
    else if (option==3) {
-     mass_min = 4.85;
-     mass_max = 5.05;
+     mass_min = 4.8;
+     mass_max = 5.;
      //mass_min = getMass(channel)-6*getSigma(w,channel);
      // mass_max = getMass(channel)-4*getSigma(w,channel);
     }
     else if (option==4) {
-      mass_min = 5.6;
-      mass_max = 5.8;
+      mass_min = 5.5;
+      mass_max = 5.75;
       //mass_min = getMass(channel)+4*getSigma(w,channel);
       //mass_max = getMass(channel)+6*getSigma(w,channel);
     }
@@ -539,14 +539,14 @@ std::vector<double> getBorder(RooWorkspace& w, int channel, int option) {
       //mass_max = getMass(channel)+2*getSigma(w,channel);
     }
    else if (option==3) {
-     mass_min = 5.0;
-     mass_max = 5.2;
+     mass_min = 4.8;
+     mass_max = 5.15;
      //mass_min = getMass(channel)-6*getSigma(w,channel);
      // mass_max = getMass(channel)-4*getSigma(w,channel);
     }
     else if (option==4) {
       mass_min = 5.55;
-      mass_max = 5.75;
+      mass_max = 5.85;
       //mass_min = getMass(channel)+4*getSigma(w,channel);
       //mass_max = getMass(channel)+6*getSigma(w,channel);
     }
@@ -630,7 +630,7 @@ std::vector<TH1D*> sideband_sub(RooWorkspace& w, RooWorkspace& w_mc, int channel
   reduceddata_central = (RooDataSet*) data->reduce(Form("mass>%lf",left));
   reduceddata_central = (RooDataSet*) reduceddata_central->reduce(Form("mass<%lf",right));
 
-  RooRealVar lambda("lambda", "lambda",-2., -5., 0.);
+  RooRealVar lambda("lambda", "lambda",-2.0, -5, -0.5);
   RooExponential fit_side("fit_side", "fit_side_exp", mass, lambda);
 
   mass.setRange("all", min1, max2);
@@ -646,15 +646,23 @@ std::vector<TH1D*> sideband_sub(RooWorkspace& w, RooWorkspace& w_mc, int channel
   }
   lambda.setConstant(kTRUE);
 
-  RooPlot* massframe = mass.frame(Title("Exponential Fit - Sideband Subtraction"));
-  reduceddata_side->plotOn(massframe,Range("all"));
+  RooPlot* massframe = mass.frame(Title(" "));
+  //reduceddata_side->plotOn(massframe,Range("all"));
+  data->plotOn(massframe,Range("all"));
   fit_side.plotOn(massframe/*, Range("all")*/);
   massframe->GetYaxis()->SetTitleOffset(1.2);
+  /*Bp:  massframe->GetYaxis()->SetRangeUser(800,58000);*/
+  /*B0: massframe->GetYaxis()->SetRangeUser(800,26000);*/
+  /*Bs: */massframe->GetYaxis()->SetRangeUser(90,8000);
+  TString B = "";
+  switch(channel) {
+  case 1: B = "B^{+}"; break;
+  case 2: B = "B^{0}"; break;
+  case 4: B = "B_{s}"; break;
+  }
+  massframe->GetXaxis()->SetTitle(B + " meson mass (GeV)");
 
   //Fit ao background nas zonas laterais do espectro de massa necessário para estimar a mesma quantidade na zona central
-  TCanvas d;
-  d.cd();
-  massframe->Draw(); 
   TLatex* tex11 = new TLatex(0.68,0.8,"2.71 fb^{-1} (13 TeV)");
   tex11->SetNDC(kTRUE);
   tex11->SetLineWidth(2);
@@ -669,15 +677,22 @@ std::vector<TH1D*> sideband_sub(RooWorkspace& w, RooWorkspace& w_mc, int channel
 
   double lambda_str = lambda.getVal();
   double lambda_err = lambda.getError();
-  
-  TLatex* tex12 = new TLatex(0.15, 0.50, Form("#lambda_{exp} = %.3lf #pm %.3lf",lambda_str,lambda_err));
+
+  TCanvas d, d_linear;
+  d.cd();  
+  massframe->Draw();
+  TLatex* tex12 = new TLatex(0.65, 0.50, Form("#lambda = %.3lf #pm %.3lf",lambda_str,lambda_err));
   tex12->SetNDC(kTRUE);
   tex12->SetTextFont(42);
   tex12->SetTextSize(0.04);
   tex12->Draw();     
   d.SetLogy();
   std::string canvas = channel_to_ntuple_name(channel) + "_background_fit.png";
-  d.SaveAs(canvas.c_str());   
+  d.SaveAs(canvas.c_str());
+  d_linear.cd();
+  massframe->Draw();
+  tex12->Draw();
+  d_linear.SaveAs(("linear_"+canvas).c_str());   
 
   //Integrar a distribuição de background
 

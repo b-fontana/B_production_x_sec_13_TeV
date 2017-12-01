@@ -87,10 +87,21 @@ int main(int argc, char** argv)
       break;
     }
   
+  std::vector<std::string> labels;
+  std::string lab;
+  
+  for(int i=0; i<n_var1_bins; i++)
+    {
+      if(var1_name == "pt")
+	lab = std::to_string((int)var1_bins[i]) + " to " + std::to_string((int)var1_bins[i+1]);
+      else
+	lab = TString::Format("%.2f to %.2f", (double)var1_bins[i], (double)var1_bins[i+1]).Data();
+      
+      labels.push_back(lab);
+    }
+
   //read yields or effs or syst
   read_vector(channel, vector, var1_name , var2_name, n_var1_bins, n_var2_bins, var1_bins, var2_bins, val_array[0], val_err_lo[0], val_err_hi[0]);
-  
-  int precision[]={2,2,2};
   
   std::vector<std::string> col_name;
 
@@ -101,55 +112,58 @@ int main(int argc, char** argv)
 
   col_name.push_back(var1_str);
   col_name.push_back(table_str);
-  col_name.push_back("errlo");
-  col_name.push_back("errhi");
+  col_name.push_back("Stat. uncertainty");
 
-  for(int j=0; j<n_var2_bins; j++)
-    {
-      //maybe set the precision of the doubles here
-      std::vector<std::string> labels;
-      std::string lab;
-
-      for(int i=0; i<n_var1_bins; i++)
+  int precision = 2;
+  
+  //specific precision value for each table
+  if(vector == "yield")
+    precision = 0;
+  else
+    if(vector.Contains("Bu") || vector.Contains("Bd") || vector.Contains("Bs") || vector.Contains("fu") || vector.Contains("fd") || vector.Contains("fs"))
+      precision = 3;
+    else
+      if(vector.Contains("eff"))
 	{
-	  if(var1_name == "pt")
-	    lab = std::to_string((int)var1_bins[i]) + " to " + std::to_string((int)var1_bins[i+1]);
-	  else
-	    lab = std::to_string((double)var1_bins[i]) + " to " + std::to_string((double)var1_bins[i+1]);
-
-	  labels.push_back(lab);
+	  precision = 4;
+	  if(vector == "totaleff")
+	    precision = 5;
 	}
   
-      std::vector<std::vector<double> > numbers;
-      std::vector<double> aux;
-
+  for(int j=0; j<n_var2_bins; j++)
+    {
+      std::vector<std::vector<std::string> > numbers;
+      std::vector<std::string> aux;
+      
       for(int i=0; i<n_var1_bins; i++)
 	{
-	  aux.push_back(val_array[j][i]);
-	}
-      numbers.push_back(aux);
-      aux.clear();
-
-      for(int i=0; i<n_var1_bins; i++)
-	{
-	  aux.push_back(val_err_lo[j][i]);
-	}
-      numbers.push_back(aux);
-      aux.clear();
-
-      for(int i=0; i<n_var1_bins; i++)
-	{
-	  aux.push_back(val_err_hi[j][i]);
+	  aux.push_back(TString::Format("%.*f", precision, val_array[j][i]).Data());
 	}
       numbers.push_back(aux);
       aux.clear();
       
+      for(int i=0; i<n_var1_bins; i++)
+	{
+	  aux.push_back(TString::Format("\\large \\tol{}{%.*f}{%.*f}", precision, val_err_lo[j][i], precision, val_err_hi[j][i]).Data());
+	}
+      numbers.push_back(aux);
+      aux.clear();
+
+      /*
+      for(int i=0; i<n_var1_bins; i++)
+	{
+	  aux.push_back(TString::Format("%.*f", precision, val_err_hi[j][i]).Data());
+	}
+      numbers.push_back(aux);
+      aux.clear();
+      */
+
       TString file_name = "";
       TString dir = TString::Format(VERSION) + "/tables/";
       TString bins_str ="";
       TString ntuple_name = "";
 
-      if(vector == "BsBu" || vector == "fsfu" || vector == "BsBd" || vector == "fsfd" || vector == "BdBu" || vector == "fdfu")
+      if(vector.Contains("Bu") || vector.Contains("Bd") || vector.Contains("Bs") || vector.Contains("fu") || vector.Contains("fd") || vector.Contains("fs"))
 	ntuple_name = "";
       else
 	ntuple_name = channel_to_ntuple_name(channel) + "_";
@@ -169,11 +183,11 @@ int main(int argc, char** argv)
       if(var1_name == "pt")
 	bins_cap = TString::Format("$%.2f$ to $%.2f$", var2_bins[j], var2_bins[j+1]);
       else
-	bins_cap = TString::Format("$%d$ to $%d$", (int)var2_bins[j], (int)var2_bins[j+1]);
+	bins_cap = TString::Format("$%d$ to $%d$", (int)var2_bins[j], (int)var2_bins[j+1]) + " GeV";
 
       TString caption = b_title + " " + vector + " " + var2_name + " from " + bins_cap;
       
-      latex_table(file_name.Data(), col_name.size(), n_var1_bins + 1, col_name, labels, numbers, precision, caption.Data());
+      latex_table(file_name.Data(), col_name.size(), n_var1_bins + 1, col_name, labels, numbers, caption.Data());
     }//end of var2 cicle
   
 }//end of create_table

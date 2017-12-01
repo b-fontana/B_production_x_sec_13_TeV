@@ -23,6 +23,7 @@
 #include <RooGlobalFunc.h>
 #include <RooRealVar.h>
 #include <RooProduct.h>
+#include <RooAddition.h>
 #include <RooConstVar.h>
 #include <RooDataSet.h>
 #include <RooDataHist.h>
@@ -59,7 +60,7 @@ using namespace RooFit;
 
 #define LUMINOSITY          2.71
 #define NUMBER_OF_CPU       1
-#define VERSION             "v18"
+#define VERSION             "v19"
 #define BASE_DIR            "/lstore/cms/brunogal/input_for_B_production_x_sec_13_TeV/"
 
 //////////////////////////////////////////////
@@ -94,7 +95,7 @@ RooRealVar* branching_fraction(TString measure, int channel);
 //void read_vector(TString measure, int channel, TString vector, TString var1_name , TString var2_name, int n_var1_bins, int n_var2_bins,  double* var1_bins, double* var2_bins, double* array, double* err_lo = NULL, double* err_hi = NULL);
 void read_vector(int channel, TString vector, TString var1_name , TString var2_name, int n_var1_bins, int n_var2_bins,  double* var1_bins, double* var2_bins, double* array, double* err_lo = NULL, double* err_hi = NULL);
 void print_table(TString title, int n_var1_bins, int n_var2_bins, TString var1_name, TString var2_name, double* var1_bin_edges, double* var2_bin_edges, double* array, double* stat_err_lo, double* stat_err_hi, double* syst_err_lo = NULL, double* syst_err_hi = NULL, double* BF_err = NULL);
-void latex_table(std::string filename, int n_col, int n_lin, std::vector<std::string> col_name, std::vector<std::string> labels, std::vector<std::vector<double> > numbers, int* precision, std::string caption);
+void latex_table(std::string filename, int n_col, int n_lin, std::vector<std::string> col_name, std::vector<std::string> labels, std::vector<std::vector<std::string> > numbers, std::string caption, bool vertical = false);
 
 void mc_study(RooWorkspace& w, int channel, double pt_min, double pt_max, double y_min, double y_max);
 
@@ -214,12 +215,17 @@ void build_pdf(RooWorkspace& w, int channel, std::string choice, std::string cho
 
   //Two Gaussians
   RooRealVar m_mean("m_mean","m_mean",mass_peak,mass_peak-0.09,mass_peak+0.09);
-  RooRealVar m_sigma1("m_sigma1","m_sigma1",0.020,0.010,0.050); //0.010,0.009,0.200);
-  RooRealVar m_sigma2("m_sigma2","m_sigma2",0.010,0.005,0.025); //0.005,0.004,0.100);
-  RooRealVar m_fraction("m_fraction","m_fraction", 0.5, 0, 1);
+  RooRealVar m_sigma1("m_sigma1","m_sigma1",0.015,0.001,0.050); //,0.020,0.010,0.050);
+  
+  //RooRealVar m_sigma2("m_sigma2","m_sigma2",0.010,0.005,0.025);
+  RooRealVar m_sig2scale("m_sig2scale","m_sig2scale",2.0,1.0,2.0);
+  RooProduct m_sigma2("m_sigma2","m_sigma2",RooArgList(m_sigma1,m_sig2scale));
+  
   RooGaussian m_gaussian1("m_gaussian1","m_gaussian1",mass,m_mean,m_sigma1);
   RooGaussian m_gaussian2("m_gaussian2","m_gaussian2",mass,m_mean,m_sigma2);
 
+  RooRealVar m_fraction("m_fraction","m_fraction", 0.5, 0, 1);
+  
   //Crystal Ball
   RooRealVar m_alpha("m_alpha", "m_alpha", mass_peak-0.015/2, mass_peak-0.08, mass_peak-0.003);
   RooRealVar m_n("m_n", "m_n", 2.7, 1, 7);
@@ -233,29 +239,29 @@ void build_pdf(RooWorkspace& w, int channel, std::string choice, std::string cho
   RooAddPdf* pdf_m_signal;
 
   // use single Gaussian for low statistics
-  if(n_signal_initial < 1000)
-    {
-      m_fraction.setVal(1.);
-      m_fraction.setConstant(kTRUE);
-      m_sigma2.setConstant(kTRUE);
+  /*
+    if(n_signal_initial < 1000)
+  {
+    m_fraction.setVal(1.);
+    m_fraction.setConstant(kTRUE);
+    
+    m_fraction2.setVal(1.);
+    m_fraction2.setConstant(kTRUE);
+  }
+  */
 
-      m_fraction2.setVal(1.);
-      m_fraction2.setConstant(kTRUE);
-      m_sigma3.setConstant(kTRUE);
-    }
-  
   if(choice2=="signal" && choice=="crystal")
     {
       pdf_m_signal = new RooAddPdf("pdf_m_signal", "pdf_m_signal", RooArgList(m_crystal,m_gaussian2), RooArgList(m_fraction));
-      m_sigma2.setConstant(kTRUE);
       m_fraction.setVal(1.);
+      m_fraction.setConstant(kTRUE);
     }
   else 
     if(choice2=="signal" && choice=="1gauss")
       {
 	pdf_m_signal = new RooAddPdf("pdf_m_signal","pdf_m_signal",RooArgList(m_gaussian1,m_gaussian2),RooArgList(m_fraction));
-	m_sigma2.setConstant(kTRUE);
 	m_fraction.setVal(1.);
+	m_fraction.setConstant(kTRUE);
       }
     else
       if(choice2=="signal" && choice=="3gauss")
@@ -295,25 +301,25 @@ void build_pdf(RooWorkspace& w, int channel, std::string choice, std::string cho
     if(choice2=="background" && choice=="bern")
       {
 	pdf_m_combinatorial=new RooAddPdf("pdf_m_combinatorial","pdf_m_combinatorial",RooArgList(pdf_m_combinatorial_bern,pdf_m_combinatorial_exp),RooArgList(m_fraction_exp));
-	m_exp.setConstant(kTRUE);
 	m_fraction_exp.setVal(1.);
+	m_fraction_exp.setConstant(kTRUE);
       }
     else 
       if(choice2=="background" && choice=="power")
 	{
 	  pdf_m_combinatorial=new RooAddPdf("pdf_m_combinatorial","pdf_m_combinatorial",RooArgList(pdf_m_power,pdf_m_combinatorial_exp),RooArgList(m_fraction_exp));
-	  m_exp.setConstant(kTRUE);
-	  m_fraction_exp.setVal(1.);    
+	  m_fraction_exp.setVal(1.);
+	  m_fraction_exp.setConstant(kTRUE);
 	}
-      else {//this is the nominal bkg
-	pdf_m_combinatorial=new RooAddPdf("pdf_m_combinatorial","pdf_m_combinatorial",RooArgList(pdf_m_combinatorial_exp,pdf_m_combinatorial_exp2),RooArgList(m_fraction_exp));
-	m_exp2.setVal(0.);
-	m_exp2.setConstant(kTRUE);
-	m_fraction_exp.setConstant(kTRUE);
-      }
+  else //this is the nominal bkg
+	{
+	  pdf_m_combinatorial=new RooAddPdf("pdf_m_combinatorial","pdf_m_combinatorial",RooArgList(pdf_m_combinatorial_exp,pdf_m_combinatorial_exp2),RooArgList(m_fraction_exp));
+	  m_fraction_exp.setVal(1.);
+	  m_fraction_exp.setConstant(kTRUE);
+	  m_exp2.setVal(0.);
+	  m_exp2.setConstant(kTRUE);
+  }
 
-  //pdf_m_combinatorial = static_cast<RooAddPdf*>(pdf_m_combinatorial);
-   
   ////////////////////////////////////////////////////////////////////////////////////////////
   //The components below have no systematic variation yet, they are part of the nominal fit.//
   ////////////////////////////////////////////////////////////////////////////////////////////
@@ -459,14 +465,11 @@ void build_pdf(RooWorkspace& w, int channel, std::string choice, std::string cho
     {
     default:
     case 1:// B+ -> J/psi K+
-      //m_nonprompt_shift.setVal(4.74168e-02);
-      //m_nonprompt_scale.setVal(5.14425);
-      model = new RooAddPdf("model","model", RooArgList(*pdf_m_signal, *pdf_m_combinatorial, *pdf_m_jpsiX/*pdf_m_nonprompt_erf*/, pdf_m_jpsipi),RooArgList(n_signal, n_combinatorial, n_nonprompt, n_jpsipi));
+      model = new RooAddPdf("model","model", RooArgList(*pdf_m_signal, *pdf_m_combinatorial, *pdf_m_jpsiX, pdf_m_jpsipi),RooArgList(n_signal, n_combinatorial, n_nonprompt, n_jpsipi));
       break;
     case 2:// B0 -> J/psi K*
       pdf_m_signal_copy = new RooAddPdf(*pdf_m_signal, "pdf_m_signal_copy");
       pdf_m_signal = new RooAddPdf("pdf_m_signal","pdf_m_signal",RooArgList(k_pi_swap,*pdf_m_signal_copy),RooArgList(f_swap));
-      //f_swap.setVal(0.1409);
       model = new RooAddPdf("model","model", RooArgList(*pdf_m_signal, *pdf_m_combinatorial), RooArgList(n_signal, n_combinatorial));
       break;
     case 3://B0 -> J/psi Ks
@@ -654,10 +657,10 @@ void plot_mass_fit(RooWorkspace& w, int channel, TString directory, int pt_high,
   RooRealVar mass = *(w.var("mass"));
   RooAbsData* data = w.data("data");
   RooAbsPdf* model = w.pdf("model");
-  RooRealVar lambda = *(w.var("m_exp"));
-  RooRealVar mean = *(w.var("m_mean"));
-  RooRealVar sigma1 = *(w.var("m_sigma1"));
-  RooRealVar sigma2 = *(w.var("m_sigma2"));
+  //RooRealVar lambda = *(w.var("m_exp"));
+  //RooRealVar mean = *(w.var("m_mean"));
+  //RooRealVar sigma1 = *(w.var("m_sigma1"));
+  //RooRealVar sigma2 = *(w.var("m_sigma2"));
   RooRealVar n_signal = *(w.var("n_signal"));
   RooRealVar n_back = *(w.var("n_combinatorial"));    
   RooPlot* frame_m = mass.frame();
@@ -1174,8 +1177,8 @@ RooRealVar* branching_fraction(TString measure, int channel)
   RooRealVar* bu_to_jpsi_ku = new RooRealVar("bu","bu",1.026e-3);
   bu_to_jpsi_ku->setError(0.031e-3);
 
-  RooRealVar* bd_to_jpsi_kstar = new RooRealVar("bd","bd",1.32e-3);
-  bd_to_jpsi_kstar->setError(6e-5);
+  RooRealVar* bd_to_jpsi_kstar = new RooRealVar("bd","bd",1.28e-3);
+  bd_to_jpsi_kstar->setError(5e-5);
   
   RooRealVar* kstar_to_k_pi = new RooRealVar("kstar","kstar",0.66503);
   kstar_to_k_pi->setError(1.4e-4);
@@ -1417,33 +1420,38 @@ void print_table(TString title, int n_var1_bins, int n_var2_bins, TString var1_n
     }
 }
 
-void latex_table(std::string filename, int n_col, int n_lin, std::vector<std::string> col_name, std::vector<std::string> labels, std::vector<std::vector<double> > numbers, int* precision, std::string caption)
+void latex_table(std::string filename, int n_col, int n_lin, std::vector<std::string> col_name, std::vector<std::string> labels, std::vector<std::vector<std::string> > numbers, std::string caption, bool vertical)
 {
   std::ofstream file;
 
   file.open(filename + ".tex");
   
   // Create table
-  file << "\\sisetup{round-mode=places}" << std::endl;
+  //file << "\\sisetup{round-mode=places}" << std::endl;
   file << std::endl;
                                                    
   file << "\\begin{table}" << std::endl;
-  file << "\\begin{adjustbox}{width=1\\textwidth}" << std::endl;
+  file << "\\centering" << std::endl;
+  file << "\\caption{"+caption+"}" << std::endl;
   
+  if(vertical)
+    {
+      file << "\\begin{adjustbox}{angle=90,height=0.98\\textheight}" << std::endl;
+    }
   //setup table size                                                                                                                             
-  TString col = "c";
+  TString col = "|c|";
 
   for(int i=1; i<n_col; i++)
-    col+= TString::Format("|S[round-precision= %d ]", precision[i-1]); //col+="|c";
+    col+="c|"; //col+= TString::Format("|S[round-precision= %d ]", precision[i-1]);
 
   file << "\\begin{tabular}{" + col + "}" << std::endl;
-  file << "\\toprule" << std::endl;
+  file << "\\hline" << std::endl;
 
   for(int c=0; c<n_col-1; c++)
     file << "{" << col_name[c] << "}" << " & ";
 
   file << "{" << col_name[n_col-1] << "}" << " \\\\" << std::endl;
-  file << "\\midrule" << std::endl;
+  file << "\\hline" << std::endl;
 
   for(int i=1; i<n_lin; i++)
     {
@@ -1453,14 +1461,17 @@ void latex_table(std::string filename, int n_col, int n_lin, std::vector<std::st
 	file << numbers[c-1][i-1] << " & ";
 
       file << numbers[n_col-2][i-1] << " \\\\" << std::endl;
+      file << "\\hline" << std::endl;
     }
-
-  file << "\\bottomrule" << std::endl;
 
   //End Table                                                                                                                                
   file << "\\end{tabular}" << std::endl;
-  file << "\\end{adjustbox}" << std::endl;
-  file << "\\caption{"+caption+"}" << std::endl;
+
+  if(vertical)
+    {
+      file << "\\end{adjustbox}" << std::endl;
+    }
+
   file << "\\end{table}" << std::endl;
 
   std::string line;

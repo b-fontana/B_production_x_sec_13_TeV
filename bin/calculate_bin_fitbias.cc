@@ -1,3 +1,4 @@
+#include <algorithm>
 #include "UserCode/B_production_x_sec_13_TeV/interface/functions.h"
 #include "TRandom.h"
 
@@ -67,15 +68,17 @@ int main(int argc, char** argv)
 
   RooMCStudy* mcstudy = new RooMCStudy(*model_open,mass_open,Binned(kTRUE),Silence(),Extended(),FitOptions(Save(kTRUE),PrintEvalErrors(0)));
 
-  mcstudy->generateAndFit(4000/*,gRandom->Poisson(data_open->numEntries())*/);
+  mcstudy->generateAndFit(10/*,gRandom->Poisson(data_open->numEntries())*/);
 
   std::cout << data_open->numEntries() << std::endl;
 
   // Make plots of the distributions of the pull of each parameter
   std::vector<RooPlot*> frames, framesParam;
   for (int i=0; i<params_size; ++i) {
-    frames.push_back(mcstudy->plotPull(params.at(i),FrameBins(50),FitGauss(kTRUE)));
+    frames.push_back(mcstudy->plotPull(params.at(i),FrameBins(70),FitGauss(kTRUE),FrameRange(-4.5,4.5)));
+    frames[i]->SetTitle(" ");
     framesParam.push_back(mcstudy->plotParam(params.at(i),FrameBins(50)));
+    framesParam[i]->SetTitle(" ");
   }
 
   // Draw all plots on a canvas
@@ -83,14 +86,24 @@ int main(int argc, char** argv)
   gStyle->SetOptStat(0);
   TCanvas* c = new TCanvas("pulls","pulls",900,800);
   gPad->SetLeftMargin(0.15);
-  c->Divide(2,1/*params_size/3*/);
   for(int i=0; i<params_size; ++i) {
-    c->cd(i+1);
+    c->cd();
     frames.at(i)->GetYaxis()->SetTitleOffset(1.4);
     frames.at(i)->Draw();
-    c->cd(i+2);
+  }
+  
+  TString ptFormat = TString::Format("%d_to_%d", (int)pt_min, (int)pt_max);
+  TString yFormat = TString::Format("%.2f_to_%.2f", y_min, y_max);
+  yFormat[1] = '_';
+  yFormat[9] = '_';
+  c->SaveAs("pulls_poisson_" + channel_to_ntuple_name(channel) + "_pt_from_" + ptFormat + "_y_from_" + yFormat + ".png");
+
+  TCanvas* c_params = new TCanvas("c_params", "c_params",900,800);
+  for (int i=0; i<params_size; ++i) {
+    c_params->cd();
     framesParam.at(i)->GetYaxis()->SetTitleOffset(1.4);
     framesParam.at(i)->Draw();
   }
-  c->SaveAs("pulls_poisson_" + channel_to_ntuple_name(channel) + "_pt_from_" + TString::Format("%d_to_%d", (int)pt_min, (int)pt_max) + "_y_from_" + TString::Format("%.2f_to_%.2f", y_min, y_max) + ".png");
+  c_params->SaveAs("pulls_params_poisson_" + channel_to_ntuple_name(channel) + "_pt_from_" + ptFormat + "_y_from_" + yFormat + ".png");
+
 }

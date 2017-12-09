@@ -167,7 +167,7 @@ int main(int argc, char** argv)
 
       TString caption = b_title + " systematics, " + var2_name + " from " + bins_cap;
       
-      latex_table(file_name.Data(), col_name.size(), n_var1_bins + 1, col_name, labels, numbers, caption.Data(), true);
+      latex_table(file_name.Data(), col_name.size(), n_var1_bins + 1, col_name, labels, numbers, caption.Data());
     }//end of var2 cicle
   
 }//end

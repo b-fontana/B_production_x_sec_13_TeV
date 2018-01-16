@@ -262,7 +262,10 @@ int main(int argc, char** argv)
       if(j==0) 
 	{
 	  graph->GetXaxis()->SetTitle(x_axis_name);
-	  graph->GetYaxis()->SetTitle("d#sigma/dp_{T} [#mub/GeV]");
+	  if(eff)
+	    graph->GetYaxis()->SetTitle("d#sigma/dp_{T} [#mub/GeV]");
+	  else
+	    graph->GetYaxis()->SetTitle("Uncorrected yield");
 	  
 	  //to set the range of the plot, it takes the min and max value of cross section.
 	  if(n_var2_bins > 1)

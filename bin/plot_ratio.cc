@@ -106,7 +106,7 @@ int main(int argc, char** argv)
 
   double ratio_BF_err[n_var2_bins][n_var1_bins];
   
-  //double global_syst_err = 0.0;
+  double global_syst_err = 0.0;
   std::vector<std::string> global_syst_list;
   std::vector<double> global_syst_val;
 
@@ -235,15 +235,15 @@ int main(int argc, char** argv)
       std::cout << "debug: global systematics list:" << std::endl;
       
       for(int k=0 ; k < (int)global_syst_list.size() ; k++)
-	std::cout << "debug: global " << k+1 << " : " << global_syst_list[k] << " : " << global_syst_val[k] << std::endl;
+	{
+	  std::cout << "syst " << k+1 << " : " << global_syst_list[k] << " : " << global_syst_val[k] << std::endl;
+	  
+	  global_syst_err += pow(global_syst_val[k],2);
+	}
       
-      //global_syst_err = sqrt( pow(b_fraction_err[0]/b_fraction[0],2) + pow(b_fraction_err[1]/b_fraction[1],2) );
-      
-      //if(ratio == "fsfd")
-      //global_syst_err = sqrt( pow(global_syst_err,2) + pow( 0, 2) ); //tktk width systematic, set to zero for now
-      
-      //if(ratio == "fsfu" || ratio == "fdfu")
-      //global_syst_err = sqrt( pow(global_syst_err,2) + pow( 0.028, 2) ); //tracking efficiency
+      global_syst_err = sqrt(global_syst_err);
+
+      std::cout << "global syst err : " << global_syst_err << std::endl;
     }
 
   //plot the ratio
@@ -256,7 +256,7 @@ int main(int argc, char** argv)
 
   TLegend *leg = new TLegend (leg_x1, leg_y1, leg_x2, leg_y2);
   
-  TLatex * tex = new TLatex(0.69,0.91,TString::Format("%.2f fb^{-1} (13 TeV)",LUMINOSITY));
+  TLatex *tex = new TLatex(0.69,0.91,TString::Format("%.2f fb^{-1} (13 TeV)",LUMINOSITY));
   tex->SetNDC(kTRUE);
   tex->SetLineWidth(2);
   tex->SetTextSize(0.04);
@@ -320,7 +320,7 @@ int main(int argc, char** argv)
       if(j==0) 
 	{
 	  graph->GetXaxis()->SetTitle(x_axis_name);
-	  	  
+
 	  //to set the range of the plot, it takes the min and max value of ratio.
 	  if(n_var2_bins > 1)
             graph->GetYaxis()->SetRangeUser(0.1*ratio_min, 10*ratio_max);
@@ -332,39 +332,46 @@ int main(int argc, char** argv)
                 {
 		  gStyle->SetOptStat();
 		  gStyle->SetOptFit();
+		  
+		  TGraphAsymmErrors* graph2 = new TGraphAsymmErrors(n_var1_bins, var1_bin_centre, ratio_array[j], var1_bin_centre_lo, var1_bin_centre_hi, ratio_total_err_lo[j], ratio_total_err_hi[j]);
  
-		  graph->Fit("pol1","W","");
-                  graph->GetFunction("pol1")->SetLineColor(4);
-                  graph->Draw("ap");
+		  graph2->SetTitle(ratio_title);
+		  graph2->GetYaxis()->SetRangeUser(0.5*ratio_min, 2*ratio_max);
+		  graph2->GetXaxis()->SetTitle(x_axis_name);
+
+		  graph2->Fit("pol0","W","");
+                  graph2->GetFunction("pol0")->SetLineColor(1);
+                  graph2->Draw("ap");
 		  gPad->Update();
 
-		  TPaveStats* tps1 = (TPaveStats*) graph->FindObject("stats");
-		  tps1->SetTextColor(4);
-		  tps1->SetLineColor(4);
+		  TPaveStats* tps1 = (TPaveStats*) graph2->FindObject("stats");
+		  tps1->SetTextColor(1);
+		  tps1->SetLineColor(1);		  
+		  tps1->Draw("same");
+
+		  ///////////////////////////////////////////////////////
+		  TGraphAsymmErrors* graph3 = (TGraphAsymmErrors*)graph2->Clone("graph3");
+		  		  		  
+		  graph3->Fit("pol1","W","");
+		  graph3->GetFunction("pol1")->SetLineColor(4);
+		  graph3->Draw("pX same");
+		  gPad->Update();
+		  		  
 		  double X1 = tps1->GetX1NDC();
 		  double Y1 = tps1->GetY1NDC();
 		  double X2 = tps1->GetX2NDC();
 		  double Y2 = tps1->GetY2NDC();
-
-		  TGraphAsymmErrors* graph2 = new TGraphAsymmErrors(n_var1_bins, var1_bin_centre, ratio_array[j], var1_bin_centre_lo, var1_bin_centre_hi, ratio_total_err_lo[j], ratio_total_err_hi[j]);
-
-		  //TGraphAsymmErrors* graph2 = (TGraphAsymmErrors*)graph->Clone("graph2");
-                  graph2->Fit("pol0","W","");
-                  graph2->GetFunction("pol0")->SetLineColor(1);
-                  graph2->Draw("pX same");
-		  gPad->Update();
-
-		  TPaveStats *tps2 = (TPaveStats*) graph2->FindObject("stats");
-		  tps2->SetTextColor(1);
-		  tps2->SetLineColor(1);
+		  
+		  TPaveStats *tps2 = (TPaveStats*) graph3->FindObject("stats");
+		  tps2->SetTextColor(4);
+		  tps2->SetLineColor(4);
 		  tps2->SetX1NDC(X1);
 		  tps2->SetX2NDC(X2);
 		  tps2->SetY1NDC(Y1-(Y2-Y1));
 		  tps2->SetY2NDC(Y1);
-
-		  tps1->Draw("same");
 		  tps2->Draw("same");
-		  
+		  //////////////////////////////////////////////////////
+
 		  cz.Update();
 		}
 	      else
@@ -393,7 +400,7 @@ int main(int argc, char** argv)
       leg->AddEntry(graph, label, "lp");
       
       //systematic errors
-      if(eff && syst)
+      if(eff && syst && !poly)
         {
 	  TGraphAsymmErrors* graph_syst = new TGraphAsymmErrors(n_var1_bins, var1_bin_centre, ratio_array[j], var1_bin_centre_lo, var1_bin_centre_hi, ratio_syst_lo[j], ratio_syst_hi[j]);
 	  graph_syst->SetFillColor(j+2);
@@ -403,6 +410,15 @@ int main(int argc, char** argv)
     }//end of var2 cicle
   
   leg->Draw("same");
+
+  if(eff && syst)
+    {
+      TLatex *syst_tex = new TLatex(0.1,0.85,TString::Format("global systematic uncertainty %.2f %%", 100*global_syst_err));
+      syst_tex->SetNDC(kTRUE);
+      syst_tex->SetTextSize(0.03);
+      syst_tex->Draw("same");
+    }
+  
   cz.Update();
   
   if(n_var2_bins > 1)

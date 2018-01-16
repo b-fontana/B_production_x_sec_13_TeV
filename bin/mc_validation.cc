@@ -650,10 +650,6 @@ std::vector<TH1D*> sideband_sub(RooWorkspace& w, RooWorkspace& w_mc, int channel
   //reduceddata_side->plotOn(massframe,Range("all"));
   data->plotOn(massframe,Range("all"));
   fit_side.plotOn(massframe/*, Range("all")*/);
-  massframe->GetYaxis()->SetTitleOffset(1.2);
-  /*Bp:  massframe->GetYaxis()->SetRangeUser(800,58000);*/
-  /*B0: massframe->GetYaxis()->SetRangeUser(800,26000);*/
-  /*Bs: */massframe->GetYaxis()->SetRangeUser(90,8000);
   TString B = "";
   switch(channel) {
   case 1: B = "B^{+}"; break;
@@ -680,6 +676,10 @@ std::vector<TH1D*> sideband_sub(RooWorkspace& w, RooWorkspace& w_mc, int channel
 
   TCanvas d, d_linear;
   d.cd();  
+  massframe->GetYaxis()->SetTitleOffset(1.1);
+  /*Bp: */massframe->GetYaxis()->SetRangeUser(800,58000);
+  /*B0: massframe->GetYaxis()->SetRangeUser(800,42000);*/
+  /*Bs: massframe->GetYaxis()->SetRangeUser(90,8000);*/
   massframe->Draw();
   TLatex* tex12 = new TLatex(0.65, 0.50, Form("#lambda = %.3lf #pm %.3lf",lambda_str,lambda_err));
   tex12->SetNDC(kTRUE);
@@ -690,6 +690,10 @@ std::vector<TH1D*> sideband_sub(RooWorkspace& w, RooWorkspace& w_mc, int channel
   std::string canvas = channel_to_ntuple_name(channel) + "_background_fit.png";
   d.SaveAs(canvas.c_str());
   d_linear.cd();
+  massframe->GetYaxis()->SetTitleOffset(1.35);
+  /*Bp: */massframe->GetYaxis()->SetRangeUser(1,58000);
+  /*B0: massframe->GetYaxis()->SetRangeUser(1,42000);*/
+  /*Bs: massframe->GetYaxis()->SetRangeUser(1,8000); */
   massframe->Draw();
   tex12->Draw();
   d_linear.SaveAs(("linear_"+canvas).c_str());   

@@ -1,4 +1,3 @@
-#include <algorithm>
 #include "UserCode/B_production_x_sec_13_TeV/interface/functions.h"
 #include "TRandom.h"
 
@@ -68,7 +67,7 @@ int main(int argc, char** argv)
 
   RooMCStudy* mcstudy = new RooMCStudy(*model_open,mass_open,Binned(kTRUE),Silence(),Extended(),FitOptions(Save(kTRUE),PrintEvalErrors(0)));
 
-  mcstudy->generateAndFit(10/*,gRandom->Poisson(data_open->numEntries())*/);
+  mcstudy->generateAndFit(5000/*,gRandom->Poisson(data_open->numEntries())*/);
 
   std::cout << data_open->numEntries() << std::endl;
 

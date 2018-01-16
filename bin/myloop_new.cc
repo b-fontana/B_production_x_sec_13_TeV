@@ -468,10 +468,8 @@ int main(int argc, char** argv)
 		  particle_flow_number[8]++;
 		
 		//-----------------------------------------------------------------
-		// J/psi cut
-		// KFC: May need to consider an y dependent cut?
-		//add the jpsi vertex prob!?
-
+		// J/psi cuts
+						
 		if (fabs(BInfo->uj_mass[ujidx]-JPSI_MASS)>=0.150) continue;
 		if(run_on_mc)
 		  particle_flow_number[9]++;
@@ -782,37 +780,38 @@ int main(int argc, char** argv)
 	    if(cuts)
 	      {
 		// cuts that depend on complex variables defined above.
-				
-		if(b_type==1 || b_type==2 || b_type==4 || b_type==5 || b_type==6) //for K+, pi+, K*0, phi
-		  {
-		    if(br->vtxprob<=0.1) continue;
-		    if(run_on_mc)
-		      particle_flow_number[21]++;
-
-		    if(br->lxy/br->errxy<=3.5) continue;
-		    if(run_on_mc)
-		      particle_flow_number[22]++;
-
-		    if(br->cosalpha2d<=0.99) continue;
-		    if(run_on_mc)
-		      particle_flow_number[23]++;
-		  }
 		
+		if(br->ujvtxprob<=0.1) continue;
+		
+		if(br->vtxprob<=0.1) continue;
+		if(run_on_mc)
+		  particle_flow_number[21]++;
+
+		if(br->lxy/br->errxy<=3.5) continue;
+		if(run_on_mc)
+		  particle_flow_number[22]++;
+
+		if(br->cosalpha2d<=0.99) continue;
+		if(run_on_mc)
+		  particle_flow_number[23]++;
+		
+		//di-track vertex probability
+		//if(b_type==3 || b_type==4 || b_type==5 || b_type==6 || b_type==7 || b_type==8 || b_type==9)
+		//if(br->tktkvtxprob<=0.02) continue;
+
 		if(b_type==3 || b_type==8 || b_type==9) // Ks and lambda
-		  {
-		    if (br->vtxprob<=0.1) continue;
-		    if (br->lxy/br->errxy<=3.5) continue;
-		    if (br->cosalpha2d<=0.99) continue;
-		    if (br->tktkblxy/br->tktkberrxy<=3.0) continue;
-		  }
-		
-		if(b_type==7) // pipi
-		  {
-		    if (br->vtxprob<=0.1) continue;
-		    if (fabs(br->tk1eta)>=2.4) continue;
-		    if (fabs(br->tk2eta)>=2.4) continue;
-		  }
-		//-----------------------------------------------------------------
+		  if (br->tktkblxy/br->tktkberrxy<=3.0) continue;
+		  		
+		//b_type==1 //K+
+		//b_type==2 // pi+
+		//b_type==3 // Ks
+		//b_type==4 //K*0
+		//b_type==5 //K*0
+		//b_type==6 //phi
+		//b_type==7 // pipi
+		//b_type==8 // lambda
+		//b_type==9 // lambda
+		  
 	      }//end of cuts
 	    
 	    if(b_type == 4 || b_type == 5)

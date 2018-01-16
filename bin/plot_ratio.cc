@@ -314,7 +314,7 @@ int main(int argc, char** argv)
       else
         ratio_title += " yield ratio";
 
-      graph->SetTitle(ratio_title);
+      //graph->SetTitle(ratio_title);
       
       //draw this for the first var2 bin, or in case there is only one bin.
       if(j==0) 
@@ -335,7 +335,7 @@ int main(int argc, char** argv)
 		  
 		  TGraphAsymmErrors* graph2 = new TGraphAsymmErrors(n_var1_bins, var1_bin_centre, ratio_array[j], var1_bin_centre_lo, var1_bin_centre_hi, ratio_total_err_lo[j], ratio_total_err_hi[j]);
  
-		  graph2->SetTitle(ratio_title);
+		  //graph2->SetTitle(ratio_title);
 		  graph2->GetYaxis()->SetRangeUser(0.5*ratio_min, 2*ratio_max);
 		  graph2->GetXaxis()->SetTitle(x_axis_name);
 

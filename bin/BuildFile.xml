@@ -16,6 +16,7 @@
   <bin name="create_table"   file="create_table.cc"></bin>
   <bin name="create_ratio_table"   file="create_ratio_table.cc"></bin>
   <bin name="syst_table"   file="syst_table.cc"></bin>
+  <bin name="syst_ratio_table"   file="syst_ratio_table.cc"></bin>
   <bin name="plot_eff"   file="plot_eff.cc"></bin>
   <bin name="plot_x_sec"   file="plot_x_sec.cc"></bin>
   <bin name="plot_ratio"   file="plot_ratio.cc"></bin>

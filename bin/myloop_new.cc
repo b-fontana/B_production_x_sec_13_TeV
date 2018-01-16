@@ -443,11 +443,11 @@ int main(int argc, char** argv)
 		  }
 
 		// Basic muon selections
-		if (MuonInfo->pt[mu1idx]<=4.) continue;
+		if (MuonInfo->pt[mu1idx]<=4.2) continue;
 		if(run_on_mc)
 		  particle_flow_number[3]++;
 
-		if (MuonInfo->pt[mu2idx]<=4.) continue;
+		if (MuonInfo->pt[mu2idx]<=4.2) continue;
 		if(run_on_mc)
 		  particle_flow_number[4]++;
 		
@@ -471,11 +471,12 @@ int main(int argc, char** argv)
 		// J/psi cut
 		// KFC: May need to consider an y dependent cut?
 		//add the jpsi vertex prob!?
+
 		if (fabs(BInfo->uj_mass[ujidx]-JPSI_MASS)>=0.150) continue;
 		if(run_on_mc)
 		  particle_flow_number[9]++;
 		
-		if (BInfo->uj_pt[ujidx]<=10.0) continue; //was 8.0 before
+		if (BInfo->uj_pt[ujidx]<=8.0) continue;
 		if(run_on_mc)
 		  particle_flow_number[10]++;
 		
@@ -483,26 +484,26 @@ int main(int argc, char** argv)
 		// Basic track selections
 		if (b_type==1 || b_type==2) // k, pi
 		  {
-		    if (TrackInfo->pt[tk1idx]<=1.6) continue; //was 0.8
-		    if (fabs(TrackInfo->eta[tk1idx])>=2.5) continue;
+		    if (TrackInfo->pt[tk1idx]<=1.0) continue;
+		    if (fabs(TrackInfo->eta[tk1idx])>=2.4) continue;
 		    if (TrackInfo->chi2[tk1idx]/TrackInfo->ndf[tk1idx]>=5.) continue;
 		    if (TrackInfo->striphit[tk1idx]+TrackInfo->pixelhit[tk1idx]<5) continue;
 		  }
 		else
 		  { // others (2 tracks)
-		    if (TrackInfo->pt[tk1idx]<=0.7) continue;
+		    if (TrackInfo->pt[tk1idx]<=1.0) continue;
 		    if(run_on_mc)
 		      particle_flow_number[11]++;
 		    
-		    if (TrackInfo->pt[tk2idx]<=0.7) continue;
+		    if (TrackInfo->pt[tk2idx]<=1.0) continue;
 		    if(run_on_mc)
 		      particle_flow_number[12]++;
 
-		    if (fabs(TrackInfo->eta[tk1idx])>=2.5) continue;
+		    if (fabs(TrackInfo->eta[tk1idx])>=2.4) continue;
 		    if(run_on_mc)
 		      particle_flow_number[13]++;
 		    
-		    if (fabs(TrackInfo->eta[tk2idx])>=2.5) continue;
+		    if (fabs(TrackInfo->eta[tk2idx])>=2.4) continue;
 		    if(run_on_mc)
 		      particle_flow_number[14]++;
 
@@ -526,8 +527,8 @@ int main(int argc, char** argv)
 		//---------------------------------------------------------------------
 		// ditrack mass window selection
 		
-		double k_short_window = 0.015; //originally was 0.060
-		double lambda_window = 0.015;  //originally was 0.010
+		double k_short_window = 0.015;
+		double lambda_window = 0.015;
 		
 		double k_star_window = 0.050;
 		double k_star_veto = 0.050;
@@ -784,15 +785,15 @@ int main(int argc, char** argv)
 				
 		if(b_type==1 || b_type==2 || b_type==4 || b_type==5 || b_type==6) //for K+, pi+, K*0, phi
 		  {
-		    if(br->vtxprob<=0.1) continue; //original cut 0.2
+		    if(br->vtxprob<=0.1) continue;
 		    if(run_on_mc)
 		      particle_flow_number[21]++;
 
-		    if(br->lxy/br->errxy<=3.0) continue; //original cut 4.5
+		    if(br->lxy/br->errxy<=3.5) continue;
 		    if(run_on_mc)
 		      particle_flow_number[22]++;
 
-		    if(br->cosalpha2d<=0.99) continue; //original cut 0.996
+		    if(br->cosalpha2d<=0.99) continue;
 		    if(run_on_mc)
 		      particle_flow_number[23]++;
 		  }
@@ -800,16 +801,16 @@ int main(int argc, char** argv)
 		if(b_type==3 || b_type==8 || b_type==9) // Ks and lambda
 		  {
 		    if (br->vtxprob<=0.1) continue;
-		    if (br->lxy/br->errxy<=3.0) continue;
+		    if (br->lxy/br->errxy<=3.5) continue;
 		    if (br->cosalpha2d<=0.99) continue;
 		    if (br->tktkblxy/br->tktkberrxy<=3.0) continue;
 		  }
 		
 		if(b_type==7) // pipi
 		  {
-		    if (br->vtxprob<=0.2) continue;
-		    if (fabs(br->tk1eta)>=1.6) continue;
-		    if (fabs(br->tk2eta)>=1.6) continue;
+		    if (br->vtxprob<=0.1) continue;
+		    if (fabs(br->tk1eta)>=2.4) continue;
+		    if (fabs(br->tk2eta)>=2.4) continue;
 		  }
 		//-----------------------------------------------------------------
 	      }//end of cuts

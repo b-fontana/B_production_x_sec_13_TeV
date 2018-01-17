@@ -284,16 +284,38 @@ int main(int argc, char** argv)
 	ratio_min = ratio_array[0][i] - ratio_syst_lo[0][i];
     }
 
+  TString ratio_title = "";
   TString no_eff_ratio = "";
   
   if(ratio == "fsfu")
-    no_eff_ratio = "BsBu";
+    {
+      no_eff_ratio = "BsBu";
+      
+      if(eff)
+	ratio_title = "#frac{f_s}{f_u}";
+      else
+	ratio_title = "#frac{N(B^0_s)}{N(B^+)}";
+    }
   else
     if(ratio == "fsfd")
-      no_eff_ratio = "BsBd";
+      {
+	no_eff_ratio = "BsBd";
+	
+	if(eff)
+	  ratio_title = "#frac{f_s}{f_d}";
+	else
+	  ratio_title = "#frac{N(B^0_s)}{N(B^0)}";
+      }
     else
       if(ratio == "fdfu")
-	no_eff_ratio = "BdBu";
+	{
+	  no_eff_ratio = "BdBu";
+	  
+	  if(eff)
+	    ratio_title = "#frac{f_d}{f_u}";
+	  else
+	    ratio_title = "#frac{N(B^0)}{N(B^+)}";
+	}
   
   //ratio name
   TString ratio_name = "";
@@ -307,27 +329,18 @@ int main(int argc, char** argv)
     {
       TGraphAsymmErrors* graph = new TGraphAsymmErrors(n_var1_bins, var1_bin_centre, ratio_array[j], var1_bin_centre_lo, var1_bin_centre_hi, ratio_err_lo[j], ratio_err_hi[j]);
       
-      TString ratio_title = ratio_name;
-      
-      if(eff)
-        ratio_title += " fragmentation fraction ratio";
-      else
-        ratio_title += " yield ratio";
-
-      //graph->SetTitle(ratio_title);
-      
       //draw this for the first var2 bin, or in case there is only one bin.
       if(j==0) 
 	{
 	  graph->GetXaxis()->SetTitle(x_axis_name);
+	  graph->GetYaxis()->SetTitle(ratio_title);
+	  graph->GetYaxis()->SetRangeUser(0.5*ratio_min, 2*ratio_max);
 
 	  //to set the range of the plot, it takes the min and max value of ratio.
 	  if(n_var2_bins > 1)
             graph->GetYaxis()->SetRangeUser(0.1*ratio_min, 10*ratio_max);
           else
 	    {
-	      graph->GetYaxis()->SetRangeUser(0.5*ratio_min, 2*ratio_max);
-	      
 	      if(poly)
                 {
 		  gStyle->SetOptStat();
@@ -335,10 +348,10 @@ int main(int argc, char** argv)
 		  
 		  TGraphAsymmErrors* graph2 = new TGraphAsymmErrors(n_var1_bins, var1_bin_centre, ratio_array[j], var1_bin_centre_lo, var1_bin_centre_hi, ratio_total_err_lo[j], ratio_total_err_hi[j]);
  
-		  //graph2->SetTitle(ratio_title);
-		  graph2->GetYaxis()->SetRangeUser(0.5*ratio_min, 2*ratio_max);
-		  graph2->GetXaxis()->SetTitle(x_axis_name);
-
+		  //graph2->GetYaxis()->SetTitle(ratio_title);
+		  //graph2->GetYaxis()->SetRangeUser(0.5*ratio_min, 2*ratio_max);
+		  //graph2->GetXaxis()->SetTitle(x_axis_name);
+		  
 		  graph2->Fit("pol0","W","");
                   graph2->GetFunction("pol0")->SetLineColor(1);
                   graph2->Draw("ap");

@@ -10,7 +10,7 @@
 #include "UserCode/B_production_x_sec_13_TeV/interface/myloop.h"
 #include "UserCode/B_production_x_sec_13_TeV/interface/channel.h"
 
-//myloop_new --channel 1 --mc 0 --truth 0 --cuts 1 --tk_win 1 --tk_veto 1 --debug 0 --input file --output /some/place
+//myloop_new --channel 1 --mc 0 --truth 0 --cuts 1 --tk_win 1 --tk_veto 1 --match 0 --debug 0 --input file --output /some/place
 int main(int argc, char** argv)
 {
   int channel = 1;
@@ -19,6 +19,7 @@ int main(int argc, char** argv)
   int cuts = 1;
   int tk_window_cut =1;
   int tk_veto_cut =1;
+  int MuTrgMatch = 0;
   int debug = 0;
   TString input_file = "";
   std::string dir ="";
@@ -64,6 +65,12 @@ int main(int argc, char** argv)
           convert >> tk_veto_cut;
         }
       
+      if(argument == "--match")
+	{
+          convert << argv[++i];
+          convert >> MuTrgMatch;
+        }
+
       if(argument == "--debug")
 	{
           convert << argv[++i];
@@ -269,6 +276,8 @@ int main(int argc, char** argv)
     std::vector<std::string> particle_flow_string = {"event","signal","HLT_selection","mu1pt","mu2pt","mu1eta","mu2eta","mu1soft","mu2soft","jpsi_mass","jpsi_pt","tk1pt","tk2pt","tk1eta","tk2eta","tk1chi_ndf","tk2chi_ndf","tk1hits","tk2hits","tktk_mass","tktk_veto","vtx_prob","lxy_errlxy","cos2D"};
     std::vector<int> particle_flow_number;
 
+    int n_triggered_dimuons = 0;
+
     for(int i=0; i < (int)particle_flow_string.size(); i++)
       particle_flow_number.push_back(0);
     
@@ -441,8 +450,20 @@ int main(int argc, char** argv)
 		    if(run_on_mc)	
 		      particle_flow_number[2]++;
 		  }
+		
+		//Muon Trigger Matching, not finished yet. Need to find how to choose the HTL.
+		if(MuTrgMatch)
+		  {
+		    if(debug && MuonInfo->isTriggered[mu1idx] && MuonInfo->isTriggered[mu2idx])
+		      {
+			std::cout << "====================== matched Muons ===========================" << std::endl;
+			n_triggered_dimuons ++;
+		      }
 
-		// Basic muon selections
+		    if( !(MuonInfo->isTriggered[mu1idx]) || !(MuonInfo->isTriggered[mu2idx]) ) continue;
+		  }
+
+		// Muon selection
 		if (MuonInfo->pt[mu1idx]<=4.2) continue;
 		if(run_on_mc)
 		  particle_flow_number[3]++;
@@ -895,6 +916,15 @@ int main(int argc, char** argv)
 	  }//end of the selected_bees loop	
       } // end of evt loop
     
+    if(debug)
+      {
+	std::cout << std::endl;
+	std::cout << "========================================" << std::endl;
+	std::cout << "Number of triggered di-muons: " << n_triggered_dimuons << std::endl;
+	std::cout << "========================================" << std::endl;
+	std::cout << std::endl;
+      }
+
     if(run_on_mc)
       {
 	std::cout << "THIS VALUES ONLY MAKES SENSE FOR THE DITRACK CHANNELS!!" << std::endl;

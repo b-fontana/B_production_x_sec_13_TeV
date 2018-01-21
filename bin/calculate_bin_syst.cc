@@ -442,13 +442,16 @@ double mass_window_syst(RooWorkspace& ws, int channel, double pt_min, double pt_
   RooRealVar mass = *(ws.var("mass"));
   RooRealVar* fit_res;
 
+  //10% of the size of the mass window
+  double mass_window_variation = 0.1 * fabs(mass.getMax() - mass.getMin());
+
   std::vector<double> mass_min;
   std::vector<double> mass_max;
 
   mass_min.push_back(mass.getMin());
-  mass_min.push_back(0.95 * mass.getMin());
+  mass_min.push_back(mass.getMin() - mass_window_variation);
   mass_max.push_back(mass.getMax());
-  mass_max.push_back(1.05 * mass.getMax());
+  mass_max.push_back(mass.getMax() + mass_window_variation);
 
   std::vector<double> range_syst;
 

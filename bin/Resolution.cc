@@ -19,7 +19,6 @@ std::pair<double,double> DoubleTrackRes(RooWorkspace& ws, RooWorkspace& ws_mc, i
 std::pair<double,double> MesonRes(RooWorkspace& ws, RooWorkspace& ws_mc, int channel);
 
 int main(int argc, char **argv) {
-
   int channel = 0;
   int input_data_flag = 0, input_mc_flag = 0;
   std::string input_data, input_mc;
@@ -124,23 +123,14 @@ std::pair<double,double> DoubleTrackRes(RooWorkspace& w, RooWorkspace& w_mc, int
    RooRealVar tktkmass_data = *(w.var("tktkmass"));
    RooRealVar tktkmass_mc = *(w_mc.var("tktkmass"));
 
-   RooRealVar mean("mean", "mean", mass_fix);
-   //RooRealVar r("r", "r", 0.700, 0.010, 0.990);
-   RooRealVar sigma1("sigma", "sigma", 0.02, 0.001, 0.100);
-   //   RooRealVar sigma2("sigma2", "sigma2", 0.006, 0.001, 0.100);
-   // RooRealVar alpha1("alpha1","alpha1", 0.5, -6., 6.);
-   // RooRealVar alpha2("alpha2","alpha2", -0.5, -6., 6.);
-   // RooRealVar n1("n1", "n1", 3.00);
-   // RooRealVar n2("n2", "n2", 3.00);
-
-   RooGaussian g11("g11", "cb11", tktkmass_data, mean, sigma1/*, alpha1, n1*/); 
-   //RooGaussian g12("g12", "cb12", tktkmass_data, mean, sigma2/*, alpha2, n2*/);
-   RooGaussian g21("g21", "cb21", tktkmass_mc, mean, sigma1/*, alpha1, n1*/);
-   //RooGaussian g22("g22", "cb22", tktkmass_mc, mean, sigma2/*, alpha2, n2*/);
-  
-   //RooAddPdf g1("g1", "g1", g11, g12, r);
-   //RooAddPdf g2("g2", "g2", g21, g22, r);
-
+   RooRealVar mean_data("mean_data", "mean_{Data}", mass_fix, mass_fix-0.2, mass_fix+0.2, "GeV");   
+   RooRealVar sigma_data("sigma_data", "sigma_{Data}", 0.02, 0.001, 0.100, "GeV");
+   RooRealVar mean_mc("mean_mc", "mean_{MC}", mass_fix, mass_fix-0.2, mass_fix+0.2, "GeV");   
+   RooRealVar sigma_mc("sigma_mc", "sigma_{MC}", 0.02, 0.001, 0.100, "GeV");
+   
+   RooGaussian g11("g11", "cb11", tktkmass_data, mean_data, sigma_data/*, alpha1, n1*/); 
+   RooGaussian g21("g21", "cb21", tktkmass_mc, mean_mc, sigma_mc/*, alpha1, n1*/);
+    
    TFile *f = new TFile("ss_histograms.root","OPEN");
    TH1D* h;
    h = (TH1D*)f->Get("tktkmass_ss_data_"+channel_to_ntuple_name(channel));
@@ -148,32 +138,41 @@ std::pair<double,double> DoubleTrackRes(RooWorkspace& w, RooWorkspace& w_mc, int
      std::cout << "The sideband subtracted histogram was not available. It will be calculated now." << std::endl;
      h = sideband_sub(w, w_mc, channel, "_ss_data", "tktkmass", min, max);
    }
-
+   
    RooDataHist dh("dh", "dh", tktkmass_data, Import(*h));
    RooPlot* frame_data = tktkmass_data.frame(Title(" "), Range(frame_lo,frame_hi));
    dh.plotOn(frame_data);
    tktkmass_data.setRange("centre_tktkmass_data", fit_lo_data, fit_hi_data);
    g11.fitTo(dh, Range("centre_tktkmass_data"));
-   g11.paramOn(frame_data, Layout(0.65,0.995,0.90));
-   frame_data->getAttText()->SetTextSize(0.035);
+   g11.paramOn(frame_data, Layout(0.6,0.995,0.90));
+   frame_data->getAttText()->SetTextSize(0.03);
    //g11.plotOn(frame_data);
    g11.plotOn(frame_data, LineColor(2), LineWidth(3.5), LineStyle(1));
    //g11.plotOn(frame_data,Components("g11"),LineColor(2),LineWidth(1),LineStyle(2));
    //g11.plotOn(frame_data,Components("g12"),LineColor(2),LineWidth(1),LineStyle(2));
-   double resolution_data = TMath::Sqrt(TMath::Power(sigma1.getVal(),2)/* *r.getVal() + TMath::Power(sigma2.getVal(),2)*(1-r.getVal())*/);
+   double resolution_data = TMath::Sqrt(TMath::Power(sigma_data.getVal(),2)/* *r.getVal() + TMath::Power(sigma2.getVal(),2)*(1-r.getVal())*/);
 
    RooDataSet *d = static_cast<RooDataSet*>(w_mc.data("data"));
    RooPlot* frame_mc = tktkmass_mc.frame(Title(" "), Range(frame_lo,frame_hi));
    d->plotOn(frame_mc);
    tktkmass_mc.setRange("centre_tktkmass_mc", fit_lo_mc, fit_hi_mc);
    g21.fitTo(*d, Range("centre_tktkmass_mc"));
-   g21.paramOn(frame_mc, Layout(0.65,0.995,0.9));
-   frame_mc->getAttText()->SetTextSize(0.035);
+   g21.paramOn(frame_mc, Layout(0.6,0.995,0.9));
+   frame_mc->getAttText()->SetTextSize(0.03);
    //g21.plotOn(frame_mc);
    g21.plotOn(frame_mc, LineColor(4), LineWidth(3.5), LineStyle(1));
    //g21.plotOn(frame_mc,Components("g21"),LineColor(4),LineWidth(1),LineStyle(2));
    //g21.plotOn(frame_mc,Components("g22"),LineColor(4),LineWidth(1),LineStyle(2));
-   double resolution_mc = TMath::Sqrt(TMath::Power(sigma1.getVal(),2)/* *r.getVal() + TMath::Power(sigma2.getVal(),2)*(1-r.getVal())*/);
+   double resolution_mc = TMath::Sqrt(TMath::Power(sigma_mc.getVal(),2)/* *r.getVal() + TMath::Power(sigma2.getVal(),2)*(1-r.getVal())*/);
+
+   RooArgSet *argset_data = new RooArgSet(mean_data,sigma_data);
+   RooArgSet *argset_mc = new RooArgSet(mean_mc,sigma_mc);
+   RooPlot* frame_double = tktkmass_data.frame(Title(" "), Range(frame_lo,frame_hi));
+   g11.paramOn(frame_double, Layout(0.3,0.89,0.37), Parameters(*argset_data), ShowConstants(kFALSE));
+   g11.plotOn(frame_double, LineColor(2), LineWidth(3.5), LineStyle(1), RooFit::Name("G11Track"));
+   g21.paramOn(frame_double,  Layout(0.3,0.89,0.25), Parameters(*argset_mc), ShowConstants(kFALSE));
+   tktkmass_data.setRange("centre_mass_double", fit_lo_mc, fit_hi_mc);
+   g21.plotOn(frame_double, LineColor(4), LineWidth(3.5), LineStyle(1), Range("centre_mass_double"), RooFit::Name("G21Track"));
    
    TString xlabel = "";
    switch(channel) {
@@ -186,10 +185,20 @@ std::pair<double,double> DoubleTrackRes(RooWorkspace& w, RooWorkspace& w_mc, int
    }
    frame_mc->GetXaxis()->SetTitle(xlabel);
    frame_data->GetXaxis()->SetTitle(xlabel);
+   frame_double->GetXaxis()->SetTitle(xlabel);   
+   frame_double->GetYaxis()->SetLabelSize(0);   
+   frame_double->GetYaxis()->SetLabelOffset(999);   
+   frame_double->GetYaxis()->SetTitle("");   
+   TLegend *leg = new TLegend(0.15, 0.15, .25, .25);
+   leg->AddEntry(frame_double->findObject("G11Track"),"Data","l");
+   leg->AddEntry(frame_double->findObject("G21Track"),"MC","l");
+
    TCanvas c1("c1", "c1", 1200, 900); c1.cd(); frame_data->GetYaxis()->SetTitleOffset(1.4); frame_data->Draw(); 
    TCanvas c2("c2", "c2", 1200, 900); c2.cd(); frame_mc->GetYaxis()->SetTitleOffset(1.4); frame_mc->Draw();
+   TCanvas c3("c3", "c3", 1200, 900); c3.cd(); frame_double->GetYaxis()->SetTitleOffset(1.4); frame_double->Draw(); leg->Draw("same");
    c1.SaveAs("tktkmass_fit_" + channel_to_ntuple_name(channel) + "_data.png");
    c2.SaveAs("tktkmass_fit_" + channel_to_ntuple_name(channel) + "_mc.png");
+   c3.SaveAs("tktkmass_fit_" + channel_to_ntuple_name(channel) + "_double.png");
 
    std::pair<double,double> resolutions(resolution_data,resolution_mc);
    return resolutions;
@@ -198,17 +207,17 @@ std::pair<double,double> DoubleTrackRes(RooWorkspace& w, RooWorkspace& w_mc, int
 std::pair<double,double> MesonRes(RooWorkspace& w, RooWorkspace& w_mc, int channel) {
   gStyle->SetTitleAlign(33);
   gStyle->SetTitleX(0.7);
-  double min = 0., max = 0., mass_fix = 0., fit_lo_data = 0., fit_hi_data =0., fit_lo_mc = 0., fit_hi_mc = 0., frame_lo = 0., frame_hi = 0.;
+  double mass_fix = 0., fit_lo_data = 0., fit_hi_data =0., fit_lo_mc = 0., fit_hi_mc = 0., frame_lo = 0., frame_hi = 0.;
   if (channel == 1) {
-    min = 5.2; max = 5.37; mass_fix = BP_MASS; fit_lo_data = 5.256; fit_hi_data = 5.303; fit_lo_mc = 5.263; fit_hi_mc = 5.295;
+    /*min = 5.2; max = 5.37;*/ mass_fix = BP_MASS; fit_lo_data = 5.256; fit_hi_data = 5.303; fit_lo_mc = 5.263; fit_hi_mc = 5.295;
     frame_lo = 5.21; frame_hi = 5.35;
   }
   else if (channel == 2) {
-    min = 5.24; max = 5.32; mass_fix = B0_MASS; fit_lo_data = 5.262; fit_hi_data = 5.295; fit_lo_mc = 5.265; fit_hi_mc = 5.293;
+    /*min = 5.24; max = 5.32;*/ mass_fix = B0_MASS; fit_lo_data = 5.262; fit_hi_data = 5.295; fit_lo_mc = 5.265; fit_hi_mc = 5.293;
     frame_lo = 5.24; frame_hi = 5.32;
   }
   else if (channel ==4) {
-    min = 5.32; max = 5.41; mass_fix = BS_MASS; fit_lo_data = 5.356; fit_hi_data = 5.377; fit_lo_mc = 5.359; fit_hi_mc = 5.375;
+    /*min = 5.32; max = 5.41;*/ mass_fix = BS_MASS; fit_lo_data = 5.356; fit_hi_data = 5.377; fit_lo_mc = 5.359; fit_hi_mc = 5.375;
     frame_lo = 5.345; frame_hi = 5.385;
   }
   else std::cout << "The selected channel is not a valid option." << std::endl;
@@ -216,56 +225,58 @@ std::pair<double,double> MesonRes(RooWorkspace& w, RooWorkspace& w_mc, int chann
   RooRealVar mass_data = *(w.var("mass"));
   RooRealVar mass_mc = *(w_mc.var("mass"));
 
-  RooRealVar mean("mean", "mean", mass_fix);
-  //RooRealVar r("r", "r", 0.171, 0.010, 0.990);
-  RooRealVar sigma1("sigma", "sigma", 0.014, 0.0001, 0.05);
-  //RooRealVar sigma2("sigma2", "sigma2", 0.002, 0.0001, 0.05);
-  //RooRealVar alpha1("alpha1","alpha1", 0.5, -6., 6.);
-  //RooRealVar alpha2("alpha2","alpha2", -0.5, -6., 6.);
-  //RooRealVar n1("n1", "n1", 3.00);
-  //RooRealVar n2("n2", "n2", 3.00);
+  RooRealVar mean_data("mean_data", "mean_{Data}", mass_fix, mass_fix-0.2, mass_fix+0.2, "GeV");
+  RooRealVar sigma_data("sigma_data", "sigma_{Data}", 0.014, 0.0001, 0.05, "GeV");
+  RooRealVar mean_mc("mean_mc", "mean_{MC}", mass_fix, mass_fix-0.2, mass_fix+0.2, "GeV");
+  RooRealVar sigma_mc("sigma_mc", "sigma_{MC}", 0.014, 0.0001, 0.05, "GeV");
   
-  RooGaussian g11("g11", "g11", mass_data, mean, sigma1/*, alpha1, n1*/); 
-  //RooGaussian g12("g12", "g12", mass_data, mean, sigma2/*, alpha2, n2*/);
-  RooGaussian g21("g21", "g21", mass_mc, mean, sigma1/*, alpha1, n1*/);
-  //RooGaussian g22("g22", "g22", mass_mc, mean, sigma2/*, alpha2, n2*/);
+  RooGaussian g11("g11", "g11", mass_data, mean_data, sigma_data/*, alpha1, n1*/); 
+  RooGaussian g21("g21", "g21", mass_mc, mean_mc, sigma_mc/*, alpha1, n1*/);
   
-  //RooAddPdf g1("g1", "g1", g11, g12, r);
-  //RooAddPdf g2("g2", "g2", g21, g22, r);
-  
-  TFile *f = new TFile("ss_histograms.root","OPEN");
+  /*  TFile *f = new TFile("ss_histograms.root","OPEN");
   TH1D* h;
   h = (TH1D*)f->Get("mass_ss_data_"+channel_to_ntuple_name(channel));
   if(h==nullptr) {
     std::cout << "The sideband subtracted histogram was not available. It will be calculated now." << std::endl;
     h = sideband_sub(w, w_mc, channel, "_ss_data", "mass", min, max);
-  }
+    }*/
 
-  RooDataHist dh("dh", "dh", mass_data, Import(*h));
+  //  RooDataHist dh("dh", "dh", mass_data, Import(*h));
+  //RooPlot* frame_data = mass_data.frame(Title(" "), Range(frame_lo,frame_hi));
+
+  RooDataSet *dh = static_cast<RooDataSet*>(w.data("data"));
   RooPlot* frame_data = mass_data.frame(Title(" "), Range(frame_lo,frame_hi));
-  dh.plotOn(frame_data);
+  dh->plotOn(frame_data);
   mass_data.setRange("centre_mass_data", fit_lo_data, fit_hi_data);
-  g11.fitTo(dh, Range("centre_mass_data"));
-  g11.paramOn(frame_data, Layout(0.65,0.995,0.9));
-  frame_data->getAttText()->SetTextSize(0.035);
+  g11.fitTo(*dh, Range("centre_mass_data"));
+  g11.paramOn(frame_data, Layout(0.6,0.995,0.9));
+  frame_data->getAttText()->SetTextSize(0.03);
   //g11.plotOn(frame_data);
   g11.plotOn(frame_data, LineColor(2), LineWidth(3.5), LineStyle(1));
   //g11.plotOn(frame_data,Components("g11"),LineColor(2),LineWidth(1),LineStyle(2));
   //g11.plotOn(frame_data,Components("g12"),LineColor(2),LineWidth(1),LineStyle(2));
-  double resolution_data = TMath::Sqrt(TMath::Power(sigma1.getVal(),2)/* *r.getVal() + TMath::Power(sigma2.getVal(),2)*(1-r.getVal())*/);
+  double resolution_data = TMath::Sqrt(TMath::Power(sigma_data.getVal(),2)/* *r.getVal() + TMath::Power(sigma2.getVal(),2)*(1-r.getVal())*/);
 
   RooDataSet *d = static_cast<RooDataSet*>(w_mc.data("data"));
   RooPlot* frame_mc = mass_mc.frame(Title(" "), Range(frame_lo,frame_hi));
   d->plotOn(frame_mc);
   mass_mc.setRange("centre_mass_mc", fit_lo_mc, fit_hi_mc);
   g21.fitTo(*d, Range("centre_mass_mc"));
-  g21.paramOn(frame_mc, Layout(0.65,0.995,0.9));
-  frame_mc->getAttText()->SetTextSize(0.035);
-  //g21.plotOn(frame_mc);
+  g21.paramOn(frame_mc, Layout(0.6,0.995,0.9));
+  frame_mc->getAttText()->SetTextSize(0.03);
   g21.plotOn(frame_mc, LineColor(4), LineWidth(3.5), LineStyle(1));
   //g21.plotOn(frame_mc,Components("g21"),LineColor(4),LineWidth(1),LineStyle(2));
   //g21.plotOn(frame_mc,Components("g22"),LineColor(4),LineWidth(1),LineStyle(2));
-  double resolution_mc = TMath::Sqrt(TMath::Power(sigma1.getVal(),2)/* + TMath::Power(sigma2.getVal(),2)*/);
+  double resolution_mc = TMath::Sqrt(TMath::Power(sigma_mc.getVal(),2)/* + TMath::Power(sigma2.getVal(),2)*/);
+
+  RooArgSet *argset_data = new RooArgSet(mean_data,sigma_data);
+  RooArgSet *argset_mc = new RooArgSet(mean_mc,sigma_mc);
+  RooPlot* frame_double = mass_data.frame(Title(" "), Range(frame_lo,frame_hi));
+  g11.paramOn(frame_double, Layout(0.3,0.89,0.37), Parameters(*argset_data), ShowConstants(kFALSE));
+  g11.plotOn(frame_double, LineColor(2), LineWidth(3.5), LineStyle(1), RooFit::Name("G11"));
+  g21.paramOn(frame_double,  Layout(0.3,0.89,0.25), Parameters(*argset_mc), ShowConstants(kFALSE));
+  mass_data.setRange("centre_mass_double", fit_lo_mc, fit_hi_mc);
+  g21.plotOn(frame_double, LineColor(4), LineWidth(3.5), LineStyle(1), Range("centre_mass_double"), RooFit::Name("G21"));
 
   TString xlabel = "";
   switch(channel) {
@@ -281,10 +292,20 @@ std::pair<double,double> MesonRes(RooWorkspace& w, RooWorkspace& w_mc, int chann
   }
   frame_mc->GetXaxis()->SetTitle(xlabel);   
   frame_data->GetXaxis()->SetTitle(xlabel);   
+  frame_double->GetXaxis()->SetTitle(xlabel);   
+  frame_double->GetYaxis()->SetLabelSize(0);   
+  frame_double->GetYaxis()->SetLabelOffset(999);   
+  frame_double->GetYaxis()->SetTitle("");   
+  TLegend *leg = new TLegend(0.15, 0.15, .25, .25);
+  leg->AddEntry(frame_double->findObject("G11"),"Data","l");
+  leg->AddEntry(frame_double->findObject("G21"),"MC","l");
+
   TCanvas c1("c1", "c1", 1200, 900); c1.cd(); frame_data->GetYaxis()->SetTitleOffset(1.4); frame_data->Draw(); 
   TCanvas c2("c2", "c2", 1200, 900); c2.cd(); frame_mc->GetYaxis()->SetTitleOffset(1.4); frame_mc->Draw();
+  TCanvas c3("c3", "c3", 1200, 900); c3.cd(); frame_double->GetYaxis()->SetTitleOffset(1.4); frame_double->Draw(); leg->Draw("same");
   c1.SaveAs("mass_fit_" + channel_to_ntuple_name(channel) + "_data.png");
   c2.SaveAs("mass_fit_" + channel_to_ntuple_name(channel) + "_mc.png");
+  c3.SaveAs("mass_fit_" + channel_to_ntuple_name(channel) + "_double.png");
 
   std::pair<double,double> resolutions(resolution_data,resolution_mc);
   return resolutions;

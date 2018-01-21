@@ -340,7 +340,11 @@ std::vector<double> getBorder(int channel, int option) {
   
   switch (channel) {
   case 2: //nkstar
-    if (option==2) {
+    if(option == 1) {
+      mass_min = 4.15;
+      mass_max = 6.55;
+    }
+    else if (option==2) {
       mass_min = 5.222; 
       mass_max = 5.322;
     }
@@ -354,7 +358,11 @@ std::vector<double> getBorder(int channel, int option) {
    }
     break;
   case 4: //nphi
-    if (option==2) {
+    if(option == 1) {
+      mass_min = 4.15;
+      mass_max = 6.55;
+    }
+    else if (option==2) {
       mass_min = 5.322; 
       mass_max = 5.4;
     }

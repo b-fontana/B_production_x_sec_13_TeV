@@ -10,7 +10,7 @@
 // channel = 6: Lambda_b -> Jpsi + Lambda
 //-----------------------------------------------------------------
 
-//input example: plot_x_sec --channel 1 --bins pt_y --eff 1 --syst 0
+//example: plot_x_sec --channel 1 --bins pt_y --eff 1 --syst 0
 int main(int argc, char** argv)
 {
   int channel = 1;

@@ -60,7 +60,7 @@ using namespace RooFit;
 
 #define LUMINOSITY          2.71
 #define NUMBER_OF_CPU       1
-#define VERSION             "v19"
+#define VERSION             "v20"
 #define BASE_DIR            "/lstore/cms/brunogal/input_for_B_production_x_sec_13_TeV/"
 
 //////////////////////////////////////////////
@@ -238,18 +238,6 @@ void build_pdf(RooWorkspace& w, int channel, std::string choice, std::string cho
 
   RooAddPdf* pdf_m_signal;
 
-  // use single Gaussian for low statistics
-  /*
-    if(n_signal_initial < 1000)
-  {
-    m_fraction.setVal(1.);
-    m_fraction.setConstant(kTRUE);
-    
-    m_fraction2.setVal(1.);
-    m_fraction2.setConstant(kTRUE);
-  }
-  */
-
   if(choice2=="signal" && choice=="crystal")
     {
       pdf_m_signal = new RooAddPdf("pdf_m_signal", "pdf_m_signal", RooArgList(m_crystal,m_gaussian2), RooArgList(m_fraction));
@@ -273,7 +261,7 @@ void build_pdf(RooWorkspace& w, int channel, std::string choice, std::string cho
   // combinatorial background PDF
   
   //One Exponential
-  RooRealVar m_exp("m_exp","m_exp",-0.,-4.,0.); //,-0.3,-4.,0.);
+  RooRealVar m_exp("m_exp","m_exp",0.,-4.,0.); //,-0.3,-4.,0.);
   RooExponential pdf_m_combinatorial_exp("pdf_m_combinatorial_exp","pdf_m_combinatorial_exp",mass,m_exp);
 
   //Two Exponentials
@@ -295,33 +283,24 @@ void build_pdf(RooWorkspace& w, int channel, std::string choice, std::string cho
 
   RooAddPdf* pdf_m_combinatorial = nullptr;
 
-  //if(choice2=="background" && choice=="2exp")
-  //pdf_m_combinatorial=new RooAddPdf("pdf_m_combinatorial","pdf_m_combinatorial",RooArgList(pdf_m_combinatorial_exp,pdf_m_combinatorial_exp2),RooArgList(m_fraction_exp));
-  //else
-    if(choice2=="background" && choice=="bern")
+  if(choice2=="background" && choice=="bern")
+    {
+      pdf_m_combinatorial=new RooAddPdf("pdf_m_combinatorial","pdf_m_combinatorial",RooArgList(pdf_m_combinatorial_bern,pdf_m_combinatorial_exp),RooArgList(m_fraction_exp));
+      m_fraction_exp.setVal(1.);
+      m_fraction_exp.setConstant(kTRUE);
+    }
+  else 
+    if(choice2=="background" && choice=="power")
       {
-	pdf_m_combinatorial=new RooAddPdf("pdf_m_combinatorial","pdf_m_combinatorial",RooArgList(pdf_m_combinatorial_bern,pdf_m_combinatorial_exp),RooArgList(m_fraction_exp));
+	pdf_m_combinatorial=new RooAddPdf("pdf_m_combinatorial","pdf_m_combinatorial",RooArgList(pdf_m_power,pdf_m_combinatorial_exp),RooArgList(m_fraction_exp));
 	m_fraction_exp.setVal(1.);
 	m_fraction_exp.setConstant(kTRUE);
       }
-    else 
-      if(choice2=="background" && choice=="power")
-	{
-	  pdf_m_combinatorial=new RooAddPdf("pdf_m_combinatorial","pdf_m_combinatorial",RooArgList(pdf_m_power,pdf_m_combinatorial_exp),RooArgList(m_fraction_exp));
-	  m_fraction_exp.setVal(1.);
-	  m_fraction_exp.setConstant(kTRUE);
-	}
-  else //this is the nominal bkg
-	{
-	  pdf_m_combinatorial=new RooAddPdf("pdf_m_combinatorial","pdf_m_combinatorial",RooArgList(pdf_m_combinatorial_exp));
-
-	  //pdf_m_combinatorial=new RooAddPdf("pdf_m_combinatorial","pdf_m_combinatorial",RooArgList(pdf_m_combinatorial_exp,pdf_m_combinatorial_exp2),RooArgList(m_fraction_exp));
-	  //m_fraction_exp.setVal(1.);
-	  //m_fraction_exp.setConstant(kTRUE);
-	  //m_exp2.setVal(0.);
-	  //m_exp2.setConstant(kTRUE);
-  }
-
+    else //this is the nominal bkg
+      {
+	pdf_m_combinatorial=new RooAddPdf("pdf_m_combinatorial","pdf_m_combinatorial",RooArgList(pdf_m_combinatorial_exp));
+      }
+  
   ////////////////////////////////////////////////////////////////////////////////////////////
   //The components below have no systematic variation yet, they are part of the nominal fit.//
   ////////////////////////////////////////////////////////////////////////////////////////////
@@ -758,7 +737,7 @@ void plot_mass_fit(RooWorkspace& w, int channel, TString directory, int pt_high,
   
   double chi_square = frame_m->chiSquare("thePdf","theData");
  
-  TLatex* tex8 = new TLatex(0.17, 0.5, Form("#frac{#chi^2}{ndf} = %.3lf", chi_square));
+  TLatex* tex8 = new TLatex(0.17, 0.5, Form("#frac{#chi^{2}}{ndf} = %.3lf", chi_square));
   tex8->SetNDC(kTRUE);
   tex8->SetTextFont(42);
   tex8->SetTextSize(0.035);

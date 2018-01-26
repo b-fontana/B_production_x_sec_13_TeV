@@ -60,7 +60,7 @@ using namespace RooFit;
 
 #define LUMINOSITY          2.71
 #define NUMBER_OF_CPU       1
-#define VERSION             "v19"
+#define VERSION             "v20"
 #define BASE_DIR            "/lstore/cms/brunogal/input_for_B_production_x_sec_13_TeV/"
 
 //////////////////////////////////////////////
@@ -238,18 +238,6 @@ void build_pdf(RooWorkspace& w, int channel, std::string choice, std::string cho
 
   RooAddPdf* pdf_m_signal;
 
-  // use single Gaussian for low statistics
-  /*
-    if(n_signal_initial < 1000)
-  {
-    m_fraction.setVal(1.);
-    m_fraction.setConstant(kTRUE);
-    
-    m_fraction2.setVal(1.);
-    m_fraction2.setConstant(kTRUE);
-  }
-  */
-
   if(choice2=="signal" && choice=="crystal")
     {
       pdf_m_signal = new RooAddPdf("pdf_m_signal", "pdf_m_signal", RooArgList(m_crystal,m_gaussian2), RooArgList(m_fraction));
@@ -273,13 +261,13 @@ void build_pdf(RooWorkspace& w, int channel, std::string choice, std::string cho
   // combinatorial background PDF
   
   //One Exponential
-  RooRealVar m_exp("m_exp","m_exp",-0.,-4.,0.); //,-0.3,-4.,0.);
-
+  RooRealVar m_exp("m_exp","m_exp",0.,-4.,0.); //,-0.3,-4.,0.);
   RooExponential pdf_m_combinatorial_exp("pdf_m_combinatorial_exp","pdf_m_combinatorial_exp",mass,m_exp);
 
   //Two Exponentials
-  RooRealVar m_exp2("m_exp2","m_exp2",-0.3,-4.,0.);
-  RooExponential pdf_m_combinatorial_exp2("pdf_m_combinatorial_exp2","pdf_m_combinatorial_exp2",mass,m_exp2);
+  //RooRealVar m_exp2("m_exp2","m_exp2",-0.3,-4.,0.);
+  //RooExponential pdf_m_combinatorial_exp2("pdf_m_combinatorial_exp2","pdf_m_combinatorial_exp2",mass,m_exp2);
+  
   RooRealVar m_fraction_exp("m_fraction_exp", "m_fraction_exp", 1.);
 
   //Bernstein
@@ -295,31 +283,24 @@ void build_pdf(RooWorkspace& w, int channel, std::string choice, std::string cho
 
   RooAddPdf* pdf_m_combinatorial = nullptr;
 
-  if(choice2=="background" && choice=="2exp")
-    pdf_m_combinatorial=new RooAddPdf("pdf_m_combinatorial","pdf_m_combinatorial",RooArgList(pdf_m_combinatorial_exp,pdf_m_combinatorial_exp2),RooArgList(m_fraction_exp));
-  else
-    if(choice2=="background" && choice=="bern")
+  if(choice2=="background" && choice=="bern")
+    {
+      pdf_m_combinatorial=new RooAddPdf("pdf_m_combinatorial","pdf_m_combinatorial",RooArgList(pdf_m_combinatorial_bern,pdf_m_combinatorial_exp),RooArgList(m_fraction_exp));
+      m_fraction_exp.setVal(1.);
+      m_fraction_exp.setConstant(kTRUE);
+    }
+  else 
+    if(choice2=="background" && choice=="power")
       {
-	pdf_m_combinatorial=new RooAddPdf("pdf_m_combinatorial","pdf_m_combinatorial",RooArgList(pdf_m_combinatorial_bern,pdf_m_combinatorial_exp),RooArgList(m_fraction_exp));
+	pdf_m_combinatorial=new RooAddPdf("pdf_m_combinatorial","pdf_m_combinatorial",RooArgList(pdf_m_power,pdf_m_combinatorial_exp),RooArgList(m_fraction_exp));
 	m_fraction_exp.setVal(1.);
 	m_fraction_exp.setConstant(kTRUE);
       }
-    else 
-      if(choice2=="background" && choice=="power")
-	{
-	  pdf_m_combinatorial=new RooAddPdf("pdf_m_combinatorial","pdf_m_combinatorial",RooArgList(pdf_m_power,pdf_m_combinatorial_exp),RooArgList(m_fraction_exp));
-	  m_fraction_exp.setVal(1.);
-	  m_fraction_exp.setConstant(kTRUE);
-	}
-  else //this is the nominal bkg
-	{
-	  pdf_m_combinatorial=new RooAddPdf("pdf_m_combinatorial","pdf_m_combinatorial",RooArgList(pdf_m_combinatorial_exp,pdf_m_combinatorial_exp2),RooArgList(m_fraction_exp));
-	  m_fraction_exp.setVal(1.);
-	  m_fraction_exp.setConstant(kTRUE);
-	  m_exp2.setVal(0.);
-	  m_exp2.setConstant(kTRUE);
-  }
-
+    else //this is the nominal bkg
+      {
+	pdf_m_combinatorial=new RooAddPdf("pdf_m_combinatorial","pdf_m_combinatorial",RooArgList(pdf_m_combinatorial_exp));
+      }
+  
   ////////////////////////////////////////////////////////////////////////////////////////////
   //The components below have no systematic variation yet, they are part of the nominal fit.//
   ////////////////////////////////////////////////////////////////////////////////////////////
@@ -756,7 +737,7 @@ void plot_mass_fit(RooWorkspace& w, int channel, TString directory, int pt_high,
   
   double chi_square = frame_m->chiSquare("thePdf","theData");
  
-  TLatex* tex8 = new TLatex(0.17, 0.5, Form("#frac{#chi^2} = %.3lf", chi_square));
+  TLatex* tex8 = new TLatex(0.17, 0.5, Form("#frac{#chi^{2}}{ndf} = %.3lf", chi_square));
   tex8->SetNDC(kTRUE);
   tex8->SetTextFont(42);
   tex8->SetTextSize(0.035);
@@ -1075,11 +1056,9 @@ RooRealVar* reco_efficiency(int channel, double pt_min, double pt_max, double y_
     tin_with_cuts->SetBranchAddress("mu2pt", &pt_mu2);
     tin_with_cuts->SetBranchAddress("mu1eta", &eta_mu1);
     tin_with_cuts->SetBranchAddress("mu2eta", &eta_mu2);
-    if(reweighting_var_str == "lerrxy") {
-      tin_with_cuts->SetBranchAddress("lxy", &lxy);
-      tin_with_cuts->SetBranchAddress("errxy", &errxy);
-    }
- 
+    tin_with_cuts->SetBranchAddress("lxy", &lxy);
+    tin_with_cuts->SetBranchAddress("errxy", &errxy);
+     
     if(syst) {
       if (reweighting_var_str != "eta" && reweighting_var_str != "y" && reweighting_var_str != "pt" && reweighting_var_str != "mu1pt" && reweighting_var_str != "mu2pt" && reweighting_var_str != "mu1eta" && reweighting_var_str != "mu2eta" && reweighting_var_str != "lerrxy")
 	tin_with_cuts->SetBranchAddress(reweighting_var_str, &reweighting_variable);
@@ -1099,6 +1078,9 @@ RooRealVar* reco_efficiency(int channel, double pt_min, double pt_max, double y_
 	if (fabs(eta_b) > 2.4) continue; //B mesons inside the detector region eta < 2.4
 	if (fabs(y_b)<y_min || fabs(y_b)>y_max) continue; // within the y binning
 	if (pt_b<pt_min || pt_b>pt_max) continue; //within the pt bin
+
+	//shift correction of errxy
+	if((lxy/(1.14*errxy)) <= 3.5)continue;
 		
 	bool muon1Filter = fabs(eta_mu1) < 2.4 && pt_mu1 > 2.8;
 	bool muon2Filter = fabs(eta_mu2) < 2.4 && pt_mu2 > 2.8;

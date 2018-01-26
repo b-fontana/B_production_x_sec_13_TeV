@@ -77,7 +77,7 @@ int main(int argc, char** argv)
   TLorentzVector v4_tk1, v4_tk2;
   
   TCanvas* cv1;
-  cv1 = new TCanvas("cv1", "First canvas", 1280, 720);
+  //cv1 = new TCanvas("cv1", "First canvas", 1024, 768);
   /////////////////////////////////////////////////////////////////////////
 
   std::cout << "Filling histograms without mass or veto cuts" << std::endl;
@@ -188,9 +188,10 @@ int main(int argc, char** argv)
 
 
   //////////////////////////////////////////////////////////
-
-  cv1->Divide(2,1);
-  cv1->cd(1);
+  cv1 = new TCanvas("cv1", "First canvas", 1024, 768);
+  
+  //cv1->Divide(2,1);
+  //cv1->cd(1);
   ditrack_mass_true->SetLineWidth(3);
   ditrack_mass_true->SetLineColor(kOrange);
   ditrack_mass_true->Draw();
@@ -209,9 +210,20 @@ int main(int argc, char** argv)
   l2->SetLineColor(kRed);
   l2->Draw("");
 
+  if(channel == 2)
+    cv1->SaveAs(output_dir + "tktk_mass_window_" + channel_to_ntuple_name(channel) + ".png");
+  else
+    if(channel == 4)
+      cv1->SaveAs(output_dir + "tktk_veto_window_" + channel_to_ntuple_name(channel) + ".png");
+    else
+      return -1;
+
+  delete cv1;
+
   /////////////////////////
-  
-  cv1->cd(2);
+  cv1 = new TCanvas("cv1", "First canvas", 1024, 768);
+
+  //cv1->cd(2);
   ditrack_veto_true->SetLineColor(kOrange);
   ditrack_veto_true->SetLineWidth(3);
   ditrack_veto_true->Draw();
@@ -231,8 +243,14 @@ int main(int argc, char** argv)
   l4->Draw("");
   
   ///////////////////////////////////////////////////////////
-  cv1->SaveAs(output_dir + "tktk_mass_and_veto_" + channel_to_ntuple_name(channel) + "_no_window_no_veto.png");
-
+  if(channel == 2)
+    cv1->SaveAs(output_dir + "tktk_veto_window_" + channel_to_ntuple_name(channel) + ".png");
+  else
+    if(channel == 4)
+      cv1->SaveAs(output_dir + "tktk_mass_window_" + channel_to_ntuple_name(channel) + ".png");
+    else
+      return -1;
+  
   delete cv1;
   delete tin;
 }

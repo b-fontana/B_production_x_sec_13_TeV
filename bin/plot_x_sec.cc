@@ -246,14 +246,6 @@ int main(int argc, char** argv)
     {
       TGraphAsymmErrors* graph = new TGraphAsymmErrors(n_var1_bins, var1_bin_means[j], x_sec[j], var1_bin_edges_lo[j], var1_bin_edges_hi[j], x_sec_err_lo[j], x_sec_err_hi[j]);
 
-      TString x_sec_title = b_title;
-      if(eff)
-        x_sec_title += " differential cross section";
-      else
-        x_sec_title += " signal yield";
-
-      graph->SetTitle(x_sec_title);
-      
       graph->SetMarkerColor(j+2);
       graph->SetMarkerSize(0.2);
       graph->SetMarkerStyle(20+j);
@@ -262,7 +254,10 @@ int main(int argc, char** argv)
       if(j==0) 
 	{
 	  graph->GetXaxis()->SetTitle(x_axis_name);
-	  graph->GetYaxis()->SetTitle("d#sigma/dp_{T} [#mub/GeV]");
+	  if(eff)
+	    graph->GetYaxis()->SetTitle("d#sigma/dp_{T} [#mub/GeV]"); //need to add the info of the channel in the axis title
+	  else
+	    graph->GetYaxis()->SetTitle("Uncorrected yield");
 	  
 	  //to set the range of the plot, it takes the min and max value of cross section.
 	  if(n_var2_bins > 1)

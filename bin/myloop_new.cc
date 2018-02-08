@@ -10,7 +10,7 @@
 #include "UserCode/B_production_x_sec_13_TeV/interface/myloop.h"
 #include "UserCode/B_production_x_sec_13_TeV/interface/channel.h"
 
-//myloop_new --channel 1 --mc 0 --truth 0 --cuts 1 --tk_win 1 --tk_veto 1 --debug 0 --input file --output /some/place
+//myloop_new --channel 1 --mc 0 --truth 0 --cuts 1 --tk_win 1 --tk_veto 1 --match 0 --debug 0 --input file --output /some/place
 int main(int argc, char** argv)
 {
   int channel = 1;
@@ -19,6 +19,7 @@ int main(int argc, char** argv)
   int cuts = 1;
   int tk_window_cut =1;
   int tk_veto_cut =1;
+  int MuTrgMatch = 0;
   int debug = 0;
   TString input_file = "";
   std::string dir ="";
@@ -64,6 +65,12 @@ int main(int argc, char** argv)
           convert >> tk_veto_cut;
         }
       
+      if(argument == "--match")
+	{
+          convert << argv[++i];
+          convert >> MuTrgMatch;
+        }
+
       if(argument == "--debug")
 	{
           convert << argv[++i];
@@ -269,6 +276,8 @@ int main(int argc, char** argv)
     std::vector<std::string> particle_flow_string = {"event","signal","HLT_selection","mu1pt","mu2pt","mu1eta","mu2eta","mu1soft","mu2soft","jpsi_mass","jpsi_pt","tk1pt","tk2pt","tk1eta","tk2eta","tk1chi_ndf","tk2chi_ndf","tk1hits","tk2hits","tktk_mass","tktk_veto","vtx_prob","lxy_errlxy","cos2D"};
     std::vector<int> particle_flow_number;
 
+    int n_triggered_dimuons = 0;
+
     for(int i=0; i < (int)particle_flow_string.size(); i++)
       particle_flow_number.push_back(0);
     
@@ -452,14 +461,32 @@ int main(int argc, char** argv)
 		    if(run_on_mc)	
 		      particle_flow_number[2]++;
 		  }
+		
+		//Muon Trigger Matching, not finished yet. Need to find how to choose the HTL.
+		if(MuTrgMatch)
+		  {
+		    if(debug && MuonInfo->isTriggered[mu1idx] && MuonInfo->isTriggered[mu2idx])
+		      {
+			std::cout << "====================== matched Muons ===========================" << std::endl;
+			n_triggered_dimuons ++;
+		      }
 
+		    if( !(MuonInfo->isTriggered[mu1idx]) || !(MuonInfo->isTriggered[mu2idx]) ) continue;
+		  }
+
+<<<<<<< HEAD
 		// Basic muon selections
 		if (MuonInfo->pt[mu1idx]<=4.) continue;
 		if(run_on_mc){
+=======
+		// Muon selection
+		if (MuonInfo->pt[mu1idx]<=4.2) continue;
+		if(run_on_mc)
+>>>>>>> 1ebd28ce0959c9ceb4102bcc6b7a782f231d7e6b
 		  particle_flow_number[3]++;
 		  std::cout << particle_flow_number[3] << std::endl;}
 
-		if (MuonInfo->pt[mu2idx]<=4.) continue;
+		if (MuonInfo->pt[mu2idx]<=4.2) continue;
 		if(run_on_mc)
 		  particle_flow_number[4]++;
 		
@@ -480,14 +507,13 @@ int main(int argc, char** argv)
 		  particle_flow_number[8]++;
 		
 		//-----------------------------------------------------------------
-		// J/psi cut
-		// KFC: May need to consider an y dependent cut?
-		//add the jpsi vertex prob!?
+		// J/psi cuts
+						
 		if (fabs(BInfo->uj_mass[ujidx]-JPSI_MASS)>=0.150) continue;
 		if(run_on_mc)
 		  particle_flow_number[9]++;
 		
-		if (BInfo->uj_pt[ujidx]<=10.0) continue; //was 8.0 before
+		if (BInfo->uj_pt[ujidx]<=8.0) continue;
 		if(run_on_mc)
 		  particle_flow_number[10]++;
 		
@@ -495,26 +521,26 @@ int main(int argc, char** argv)
 		// Basic track selections
 		if (b_type==1 || b_type==2) // k, pi
 		  {
-		    if (TrackInfo->pt[tk1idx]<=1.6) continue; //was 0.8
-		    if (fabs(TrackInfo->eta[tk1idx])>=2.5) continue;
+		    if (TrackInfo->pt[tk1idx]<=1.0) continue;
+		    if (fabs(TrackInfo->eta[tk1idx])>=2.4) continue;
 		    if (TrackInfo->chi2[tk1idx]/TrackInfo->ndf[tk1idx]>=5.) continue;
 		    if (TrackInfo->striphit[tk1idx]+TrackInfo->pixelhit[tk1idx]<5) continue;
 		  }
 		else
 		  { // others (2 tracks)
-		    if (TrackInfo->pt[tk1idx]<=0.7) continue;
+		    if (TrackInfo->pt[tk1idx]<=1.0) continue;
 		    if(run_on_mc)
 		      particle_flow_number[11]++;
 		    
-		    if (TrackInfo->pt[tk2idx]<=0.7) continue;
+		    if (TrackInfo->pt[tk2idx]<=1.0) continue;
 		    if(run_on_mc)
 		      particle_flow_number[12]++;
 
-		    if (fabs(TrackInfo->eta[tk1idx])>=2.5) continue;
+		    if (fabs(TrackInfo->eta[tk1idx])>=2.4) continue;
 		    if(run_on_mc)
 		      particle_flow_number[13]++;
 		    
-		    if (fabs(TrackInfo->eta[tk2idx])>=2.5) continue;
+		    if (fabs(TrackInfo->eta[tk2idx])>=2.4) continue;
 		    if(run_on_mc)
 		      particle_flow_number[14]++;
 
@@ -538,8 +564,8 @@ int main(int argc, char** argv)
 		//---------------------------------------------------------------------
 		// ditrack mass window selection
 		
-		double k_short_window = 0.015; //originally was 0.060
-		double lambda_window = 0.015;  //originally was 0.010
+		double k_short_window = 0.015;
+		double lambda_window = 0.015;
 		
 		double k_star_window = 0.050;
 		double k_star_veto = 0.050;
@@ -793,37 +819,38 @@ int main(int argc, char** argv)
 	    if(cuts)
 	      {
 		// cuts that depend on complex variables defined above.
-				
-		if(b_type==1 || b_type==2 || b_type==4 || b_type==5 || b_type==6) //for K+, pi+, K*0, phi
-		  {
-		    if(br->vtxprob<=0.1) continue; //original cut 0.2
-		    if(run_on_mc)
-		      particle_flow_number[21]++;
-
-		    if(br->lxy/br->errxy<=3.0) continue; //original cut 4.5
-		    if(run_on_mc)
-		      particle_flow_number[22]++;
-
-		    if(br->cosalpha2d<=0.99) continue; //original cut 0.996
-		    if(run_on_mc)
-		      particle_flow_number[23]++;
-		  }
 		
+		if(br->ujvtxprob<=0.1) continue;
+		
+		if(br->vtxprob<=0.1) continue;
+		if(run_on_mc)
+		  particle_flow_number[21]++;
+
+		if(br->lxy/br->errxy<=3.5) continue;
+		if(run_on_mc)
+		  particle_flow_number[22]++;
+
+		if(br->cosalpha2d<=0.99) continue;
+		if(run_on_mc)
+		  particle_flow_number[23]++;
+		
+		//di-track vertex probability
+		//if(b_type==3 || b_type==4 || b_type==5 || b_type==6 || b_type==7 || b_type==8 || b_type==9)
+		//if(br->tktkvtxprob<=0.02) continue;
+
 		if(b_type==3 || b_type==8 || b_type==9) // Ks and lambda
-		  {
-		    if (br->vtxprob<=0.1) continue;
-		    if (br->lxy/br->errxy<=3.0) continue;
-		    if (br->cosalpha2d<=0.99) continue;
-		    if (br->tktkblxy/br->tktkberrxy<=3.0) continue;
-		  }
-		
-		if(b_type==7) // pipi
-		  {
-		    if (br->vtxprob<=0.2) continue;
-		    if (fabs(br->tk1eta)>=1.6) continue;
-		    if (fabs(br->tk2eta)>=1.6) continue;
-		  }
-		//-----------------------------------------------------------------
+		  if (br->tktkblxy/br->tktkberrxy<=3.0) continue;
+		  		
+		//b_type==1 //K+
+		//b_type==2 // pi+
+		//b_type==3 // Ks
+		//b_type==4 //K*0
+		//b_type==5 //K*0
+		//b_type==6 //phi
+		//b_type==7 // pipi
+		//b_type==8 // lambda
+		//b_type==9 // lambda
+		  
 	      }//end of cuts
 	    
 	    if(b_type == 4 || b_type == 5)
@@ -907,6 +934,15 @@ int main(int argc, char** argv)
 	  }//end of the selected_bees loop	
       } // end of evt loop
     
+    if(debug)
+      {
+	std::cout << std::endl;
+	std::cout << "========================================" << std::endl;
+	std::cout << "Number of triggered di-muons: " << n_triggered_dimuons << std::endl;
+	std::cout << "========================================" << std::endl;
+	std::cout << std::endl;
+      }
+
     if(run_on_mc)
       {
 	std::cout << "THIS VALUES ONLY MAKES SENSE FOR THE DITRACK CHANNELS!!" << std::endl;

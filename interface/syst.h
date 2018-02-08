@@ -7,8 +7,8 @@ std::vector<std::string> ntphi_syst_list   = {"signal_pdf_syst", "combinatorial_
 
 //global_syst_list
 std::vector<std::string> fsfu_global_syst_list = {"b_fraction_syst", "tracking_syst"};
-std::vector<std::string> fsfd_global_syst_list = {"b_fraction_syst"};
-std::vector<std::string> fdfu_global_syst_list = {"b_fraction_syst", "tracking_syst"};
+std::vector<std::string> fsfd_global_syst_list = {"b_fraction_syst", "tktk_width_syst"};
+std::vector<std::string> fdfu_global_syst_list = {"b_fraction_syst", "tracking_syst", "tktk_width_syst"};
 
 //global_syst_val
 RooRealVar* bu_branch = branching_fraction("ratio", 1);
@@ -16,6 +16,7 @@ RooRealVar* bd_branch = branching_fraction("ratio", 2);
 RooRealVar* bs_branch = branching_fraction("ratio", 4);
 
 double tracking_syst = 0.028;
+double tktk_width_syst = 0; //set to zero for now.
 double fsfu_b_fraction_syst = sqrt( pow(bs_branch->getError()/bs_branch->getVal(),2) + pow(bu_branch->getError()/bu_branch->getVal(),2) ) ;
 double fsfd_b_fraction_syst = sqrt( pow(bs_branch->getError()/bs_branch->getVal(),2) + pow(bd_branch->getError()/bd_branch->getVal(),2) ) ;
 double fdfu_b_fraction_syst = sqrt( pow(bd_branch->getError()/bd_branch->getVal(),2) + pow(bu_branch->getError()/bu_branch->getVal(),2) ) ;
@@ -50,6 +51,9 @@ void setup_global_syst_val(std::vector<double>* global_syst_val, TString measure
 		    {
 		      if(fsfd_global_syst_list[i] == "b_fraction_syst")
 			global_syst_val->push_back(fsfd_b_fraction_syst);
+		      else
+			if(fsfd_global_syst_list[i] == "tktk_width_syst")
+			  global_syst_val->push_back(tktk_width_syst);
 		    }
 		else
 		  if(ratio == "fdfu")
@@ -60,6 +64,9 @@ void setup_global_syst_val(std::vector<double>* global_syst_val, TString measure
 			else
 			  if(fdfu_global_syst_list[i] == "tracking_syst")
 			    global_syst_val->push_back(tracking_syst);
+			  else
+			    if(fdfu_global_syst_list[i] == "tktk_width_syst")
+			      global_syst_val->push_back(tktk_width_syst);
 		      }
 	    } 
 	}

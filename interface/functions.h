@@ -756,7 +756,7 @@ void plot_mass_fit(RooWorkspace& w, int channel, TString directory, int pt_high,
   
   double chi_square = frame_m->chiSquare("thePdf","theData");
  
-  TLatex* tex8 = new TLatex(0.17, 0.5, Form("#chi^{2} = %.3lf", chi_square));
+  TLatex* tex8 = new TLatex(0.17, 0.5, Form("#frac{#chi^2} = %.3lf", chi_square));
   tex8->SetNDC(kTRUE);
   tex8->SetTextFont(42);
   tex8->SetTextSize(0.035);
@@ -1375,14 +1375,24 @@ void read_vector(int channel, TString vector, TString var1_name , TString var2_n
     eff_title = b_title + " Overall efficiency";
   if(eff_name == "recoeff_reweight")
     eff_title = b_title + " MC corrected efficiency";
+  
   if(eff_name == "ratioeff")
     {
-      eff_title = b_title + " Efficiency ratio";
-      eff_name = b_title + "_ratioeff"; //to indicate which ratio efficiency, fsfu or fsfd or fdfu
+      eff_name = b_title + "_ratioeff";
+      
+      if(b_title == "fsfu")
+	eff_title = "#frac{#epsilon_u}{#epsilon_s}";
+      else
+	if(b_title == "fsfd")
+	  eff_title = "#frac{#epsilon_d}{#epsilon_s}";
+	else
+	  if(b_title == "fdfu")
+	    eff_title = "#frac{#epsilon_u}{#epsilon_d}";
     }
 
-  graph_pre_eff->SetTitle(eff_title);
+  //graph_pre_eff->SetTitle(eff_title);
   graph_pre_eff->GetXaxis()->SetTitle(x_axis_name);
+  graph_pre_eff->GetYaxis()->SetTitle(eff_title);
   graph_pre_eff->Draw("AP");
 
   if(measure != "x_sec" && measure != "ratio")

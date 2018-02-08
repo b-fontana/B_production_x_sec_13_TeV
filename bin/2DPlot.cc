@@ -5,6 +5,7 @@ using namespace RooFit;
 TH2D* SidebandSub(int channel, TString file_name, TString tree_name, TString var1_str, TString var2_str, int nbinsx, double nbinsy);
 std::vector<double> getBorder(int channel, int option);
 
+//Example: 2D --channel 4 --sample_kind data --particle B
 int main(int argc, char** argv)
 {
   int channel = 1;
@@ -31,22 +32,31 @@ int main(int argc, char** argv)
         }
     }
 
-  int nbinsx = 75, nbinsy = 90;
-  TH2D *h1 = new TH2D("h1", "h1", nbinsx, -3.05, 3.05, nbinsy, 0, 60);
-  TH2D *h2 = new TH2D("h2", "h2", nbinsx, -3.05, 3.05, nbinsy, 0, 60);
+  int nbinsx = 90, nbinsy = 90;
+  TH2D *h1 = new TH2D("h1", "h1", nbinsx, -3.95, 3.95, nbinsy, 0, 60);
+  TH2D *h2 = new TH2D("h2", "h2", nbinsx, -3.95, 3.95, nbinsy, 0, 60);
   TH2D *h_data = nullptr;
+
+  TH1D *h_eff_gen = new TH1D("h_eff_gen", "h_eff_gen", 100, 0., 3.4);
+  TH1D *h_eff_gen2 = new TH1D("h_eff_gen2", "h_eff_gen2", 100, 0., 3.4); //with bmuon filter
+  TH1D *h_eff_reco = new TH1D("h_eff_reco", "h_eff_reco", 100, 0., 3.4);
+  TH1D *h_eff_reco_nocuts = new TH1D("h_eff_reco_nocuts", "h_eff_reco_nocuts", 100, 0., 3.4);
 
   TString file1_string = "";
   TString file2_string = "";
+  TString file3_string = "";
+  TString file4_string = "";
   if(sample_kind == "mc") {
     file1_string = "/lstore/cms/brunogal/input_for_B_production_x_sec_13_TeV/new_inputs/myloop_gen_" + channel_to_ntuple_name(channel) + "_bfilter.root";
-    file2_string = "/lstore/cms/brunogal/input_for_B_production_x_sec_13_TeV/new_inputs/myloop_gen_" + channel_to_ntuple_name(channel) + "_bmuonfilter.root";
+    file2_string = "/lstore/cms/brunogal/input_for_B_production_x_sec_13_TeV/new_inputs/myloop_gen_" + channel_to_ntuple_name(channel) +"_bmuonfilter.root";
+    file3_string = "/lstore/cms/brunogal/input_for_B_production_x_sec_13_TeV/final_selection/reduced_myloop_new_mc_truth_" + channel_to_ntuple_name(channel) + "_with_cuts.root";
+    file4_string = "/lstore/cms/brunogal/input_for_B_production_x_sec_13_TeV/no_cuts/myloop_new_mc_truth_" + channel_to_ntuple_name(channel) + "_no_cuts.root";
   }
   else if(sample_kind == "data") {
-    file1_string = "/lstore/cms/brunogal/input_for_B_production_x_sec_13_TeV/new_inputs/myloop_new_data_" + channel_to_ntuple_name(channel) + "_with_cuts.root";
+    file1_string = "/lstore/cms/brunogal/input_for_B_production_x_sec_13_TeV/final_selection/myloop_new_data_" + channel_to_ntuple_name(channel) + "_with_cuts.root";
     if (particle == "B") {
       h_data = SidebandSub(channel,file1_string,channel_to_ntuple_name(channel),"y","pt",nbinsx,nbinsy);
-      h_data->GetYaxis()->SetTitle("pt (GeV)");
+      h_data->GetYaxis()->SetTitle("p_{T} (GeV)");
     }
     else if (particle == "muon") {
       h_data = SidebandSub(channel,file1_string,channel_to_ntuple_name(channel),"mu1eta","mu1pt",nbinsx,nbinsy);
@@ -56,6 +66,7 @@ int main(int argc, char** argv)
     h_data->SetStats(kFALSE);
     h_data->SetTitle("");
     h_data->GetYaxis()->SetTitleOffset(1.1);
+    h_data->GetZaxis()->SetTitle("");
     TCanvas c1("c1","c1",1500,1100);
     TCanvas c2("c2","c2",1500,1100);
     c1.cd();
@@ -66,7 +77,7 @@ int main(int argc, char** argv)
     pad1.SetRightMargin(5.);
     c1.SaveAs("2D_"+channel_to_ntuple_name(channel)+"_"+sample_kind+"_"+particle+".png");
     c2.cd();
-    if (particle == "B") h_data->GetYaxis()->SetRangeUser(9.5,14);
+    if (particle == "B") h_data->GetYaxis()->SetRangeUser(7.0,14);
     else if (particle == "muon") h_data->GetYaxis()->SetRangeUser(2.9,6);
     h_data->Draw("colz1");
     c2.SetRightMargin(10.);
@@ -78,18 +89,24 @@ int main(int argc, char** argv)
     {
       TFile* f1 = new TFile(file1_string, "OPEN");
       TFile* f2 = new TFile(file2_string, "OPEN");
+      TFile* f3 = new TFile(file3_string, "OPEN");
+      TFile* f4 = new TFile(file4_string, "OPEN");
       TTree* t1 = static_cast<TTree*>(f1->Get(channel_to_ntuple_name(channel)+"_gen"));
       TTree* t2 = static_cast<TTree*>(f2->Get(channel_to_ntuple_name(channel)+"_gen"));
+      TTree* t3 = static_cast<TTree*>(f3->Get(channel_to_ntuple_name(channel)));
+      TTree* t4 = static_cast<TTree*>(f4->Get(channel_to_ntuple_name(channel)));
   
-      double var1_1, var2_1, var1_2, var2_2;
-      TString var1_str = "mu1eta", var2_str = "mu1pt";
+      double var1_1, var2_1, var1_2, var2_2, var1_3, var2_3, var1_4, var2_4;
+      TString var1_str = "y", var2_str = "pt";
       t1->SetBranchAddress(var1_str,&var1_1);
       t1->SetBranchAddress(var2_str,&var2_1);
 
+      //////2D Plots///////////////////////////////////////////////////////
       int nentries1 = t1->GetEntries();
       for(int entry=0; entry<nentries1; ++entry) {
 	t1->GetEntry(entry);
 	h1->Fill(var1_1,var2_1);
+	h_eff_gen->Fill(var1_1);
       }
 
       t2->SetBranchAddress(var1_str,&var1_2);
@@ -98,33 +115,95 @@ int main(int argc, char** argv)
       for(int entry=0; entry<nentries2; ++entry) {
 	t2->GetEntry(entry);
 	h2->Fill(var1_2,var2_2);
+	h_eff_gen2->Fill(var1_2);
+      }
+      ///////////////////////////////////////////////////////////////////////
+      /////1D Plots (I know the macro name is wrong!)////////////////////////
+      ///////////////////////////////////////////////////////////////////////
+
+      t3->SetBranchAddress(var1_str,&var1_3);
+      t3->SetBranchAddress(var2_str,&var2_3);
+      int nentries3 = t3->GetEntries();
+      for(int entry=0; entry<nentries3; ++entry) {
+	t3->GetEntry(entry);
+	h_eff_reco->Fill(var1_3);
+      }
+
+      t4->SetBranchAddress(var1_str,&var1_4);
+      t4->SetBranchAddress(var2_str,&var2_4);
+      int nentries4 = t4->GetEntries();
+      for(int entry=0; entry<nentries4; ++entry) {
+	t4->GetEntry(entry);
+	h_eff_reco_nocuts->Fill(var1_4);
       }
 
       gStyle->SetOptStat(0);
       TCanvas *c = new TCanvas("c","c",1800,1100);
-      c->Divide(2,2);
+      c->Divide(1,2);
       c->cd(1);
       h1->SetTitle(" ");
-      h1->GetXaxis()->SetTitleOffset(0.8);
-      h1->GetYaxis()->SetTitleOffset(1.15);
+      h1->GetXaxis()->SetTitleOffset(0.75);
+      h1->GetYaxis()->SetTitleOffset(1.05);
       h1->GetXaxis()->SetTitle(var1_str);
       h1->GetYaxis()->SetTitle(var2_str+"(GeV)");
       h1->Draw("colz");
       c->cd(2);
       h2->SetTitle(" ");
-      h2->GetXaxis()->SetTitleOffset(0.8);
-      h2->GetYaxis()->SetTitleOffset(1.15);
+      h2->GetXaxis()->SetTitleOffset(0.75);
+      h2->GetYaxis()->SetTitleOffset(1.05);
       h2->GetXaxis()->SetTitle(var1_str);
       h2->GetYaxis()->SetTitle(var2_str+"(GeV)");
       h2->Draw("colz");
-      c->cd(3);
+      /*c->cd(3);
       TH2D* h3 = static_cast<TH2D*>(h1->Clone("h3"));
       h3->Divide(h2);
       h3->Draw("colz");
+      */
       c->SaveAs("2DPlot_"+channel_to_ntuple_name(channel)+"_"+sample_kind+"_"+particle+".png");
 
-      std::cout << h1->GetBinContent(h1->FindBin(0.,20)) << std::endl;
-      std::cout << h2->GetBinContent(h2->FindBin(0.,20)) << std::endl;
+      TCanvas *c_eff = new TCanvas("c_eff","c_eff",1800,1800);
+      c_eff->Divide(1,4);
+      c_eff->cd(1);
+      h_eff_gen->SetTitle("");
+      h_eff_gen->GetXaxis()->SetTitleOffset(0.8);
+      h_eff_gen->GetXaxis()->SetTitle(var1_str);
+      h_eff_gen->Draw();
+      TLatex* text_eff_gen = new TLatex(0.60, 0.84, TString::Format("2015 MC GEN (BFilter)"));
+      text_eff_gen->SetNDC(kTRUE);
+      text_eff_gen->SetTextSize(0.04);
+      text_eff_gen->SetLineWidth(2);
+      text_eff_gen->Draw("same");
+      c_eff->cd(2);
+      h_eff_gen2->SetTitle("");
+      h_eff_gen2->GetXaxis()->SetTitleOffset(0.8);
+      h_eff_gen2->GetXaxis()->SetTitle(var1_str);
+      h_eff_gen2->Draw();
+      TLatex* text_eff_gen2 = new TLatex(0.60, 0.84, TString::Format("2015 MC GEN (BMuonFilter)"));
+      text_eff_gen2->SetNDC(kTRUE);
+      text_eff_gen2->SetTextSize(0.04);
+      text_eff_gen2->SetLineWidth(2);
+      text_eff_gen2->Draw("same");
+      c_eff->cd(4);
+      h_eff_reco->SetTitle("");
+      h_eff_reco->GetXaxis()->SetTitleOffset(0.8);
+      h_eff_reco->GetXaxis()->SetTitle(var1_str);
+      h_eff_reco->Draw();
+      TLatex* text_eff_reco = new TLatex(0.60, 0.84, TString::Format("2015 MC RECO (with selection cuts)"));
+      text_eff_reco->SetNDC(kTRUE);
+      text_eff_reco->SetTextSize(0.04);
+      text_eff_reco->SetLineWidth(2);
+      text_eff_reco->Draw("same");
+      c_eff->cd(3);
+      h_eff_reco_nocuts->SetTitle("");
+      h_eff_reco_nocuts->GetXaxis()->SetTitleOffset(0.8);
+      h_eff_reco_nocuts->GetXaxis()->SetTitle(var1_str);
+      h_eff_reco_nocuts->Draw();
+      TLatex* text_eff_reco_nocuts = new TLatex(0.60, 0.84, TString::Format("2015 MC RECO (without selection cuts)"));
+      text_eff_reco_nocuts->SetNDC(kTRUE);
+      text_eff_reco_nocuts->SetTextSize(0.04);
+      text_eff_reco_nocuts->SetLineWidth(2);
+      text_eff_reco_nocuts->Draw("same");
+      c_eff->SaveAs("Eff_GenvsReco_" + channel_to_ntuple_name(channel) + ".png");
     }
 
   return 0;

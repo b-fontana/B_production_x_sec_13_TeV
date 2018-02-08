@@ -195,8 +195,8 @@ void read_data(RooWorkspace& w, std::string filename, int channel)
   RooDataSet* data = new RooDataSet("data","data",nt1,arg_list1);
   TString formula1, formula2;
   if (filename.find("_mc_") != std::string::npos) {
-    formula1 = "1.14*errxy";
-    formula2 = "lxy/(1.14*errxy)";
+    formula1 = "errxy";
+    formula2 = "lxy/(errxy)";
   }
   else {
     formula1 = "errxy";

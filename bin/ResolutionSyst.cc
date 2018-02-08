@@ -8,6 +8,7 @@ void set_up_vars(RooWorkspace& w, int channel);
 TH1D* sideband_sub(RooWorkspace& w, RooWorkspace& w_mc, int channel, double m1, double m2);
 std::vector<double> getBorder(int channel, int option);
 double getSigma(RooWorkspace& w, int channel);
+double HistoFit(int channel, bool mc, TH1& h);
 
 //Example: ResSyst --channel 4
 int main(int argc, char **argv) {
@@ -32,7 +33,7 @@ int main(int argc, char **argv) {
       return 0;
     }
 
-  TString file_data = "myloop_new_notktkmasscut_data_" + channel_to_ntuple_name(channel) + "_with_cuts.root";
+  TString file_data = "notktkmasscut_finalselection_myloop_new_data_" + channel_to_ntuple_name(channel) + "_with_cuts.root";
   TString file_mc = "notktkmasscut_myloop_new_mc_truth_" + channel_to_ntuple_name(channel) + 
     "_with_cuts_no_tk_win_cut.root";
 
@@ -52,10 +53,11 @@ int main(int argc, char **argv) {
   std::cout << "MC:" << std::endl;
   std::cout << "Nominal tktkmass cuts efficiency: " << static_cast<double>(d_mc_reduced->numEntries())/static_cast<double>(d_mc->numEntries()) << 
     " (Numerator: " << d_mc_reduced->numEntries() << ", Denominator: " << d_mc->numEntries() << ")" << std::endl;
-
+  
   TH1D* h_mc = static_cast<TH1D*>( d_mc->createHistogram("MC Tktkmass Distribution", *(ws_mc->var("tktkmass")),Binning(200,limits.first,limits.second)) );
   TCanvas *c_h_mc = new TCanvas("c_h_mc", "c_h_mc", 900, 800);
   gStyle->SetOptStat(0);
+  //gStyle->SetOptFit(1111);
   h_mc->SetTitle(" ");
   TString xlabel = "";
   switch(channel) {
@@ -67,8 +69,27 @@ int main(int argc, char **argv) {
     break;
   }
   h_mc->GetXaxis()->SetTitle(xlabel);
-  h_mc->GetYaxis()->SetTitleOffset(1.4);
+  h_mc->GetYaxis()->SetTitleOffset(1.55);
+  double WidthB0_mc = 0.;
+  WidthB0_mc = HistoFit(channel, 1, *h_mc);
   h_mc->Draw();
+  std::cout << h_mc->GetRMS() << std::endl;
+  TLatex *ltx_mc = nullptr;
+  std::string t_mc = "Width: #sigma = " + std::to_string(WidthB0_mc) + " GeV";
+  ltx_mc = new TLatex(0.55,0.8,t_mc.c_str());
+  ltx_mc->SetNDC(kTRUE);
+  ltx_mc->SetTextFont(42);
+  ltx_mc->SetTextSize(0.035);
+  ltx_mc->SetLineWidth(2);
+  ltx_mc->Draw("same");
+  std::string t2_mc = "RMS: " + std::to_string(h_mc->GetRMS()) + " GeV";
+  TLatex *ltx2_mc = new TLatex(0.55,0.72,t2_mc.c_str());
+  ltx2_mc->SetNDC(kTRUE);
+  ltx2_mc->SetTextFont(42);
+  ltx2_mc->SetTextSize(0.035);
+  ltx2_mc->SetLineWidth(2);
+  ltx2_mc->Draw("same");
+
   double maximum = h_mc->GetMaximum();
   TLine *line1_mc = new TLine(cuts.first,0,cuts.first,maximum);
   line1_mc->SetLineStyle(7);
@@ -79,7 +100,7 @@ int main(int argc, char **argv) {
   line1_mc->Draw();
   line2_mc->Draw();
   c_h_mc->SaveAs("c_h_mc_"+channel_to_ntuple_name(channel)+".png"); 
-
+  
   //////////////////////////////////////////////////
   //////////SS Data tktkmass cuts efficiency////////
   //////////////////////////////////////////////////
@@ -108,8 +129,26 @@ int main(int argc, char **argv) {
     break;
   }
   h->GetXaxis()->SetTitle(xlabel);
-  h->GetYaxis()->SetTitleOffset(1.4);
+  h->GetYaxis()->SetTitleOffset(1.55);
+  double WidthB0 = 0.;
+  WidthB0 = HistoFit(channel, 0, *h);
   h->Draw();
+  TLatex *ltx = nullptr;
+  std::string t = "Width: #sigma = " + std::to_string(WidthB0) + " GeV";
+  ltx = new TLatex(0.55,0.8,t.c_str());
+  ltx->SetNDC(kTRUE);
+  ltx->SetTextFont(42);
+  ltx->SetTextSize(0.035);
+  ltx->SetLineWidth(2);
+  ltx->Draw("same");
+  std::string t2 = "RMS: " + std::to_string(h->GetRMS()) + " GeV";
+  TLatex *ltx2 = new TLatex(0.58,0.72,t2.c_str());
+  ltx2->SetNDC(kTRUE);
+  ltx2->SetTextFont(42);
+  ltx2->SetTextSize(0.035);
+  ltx2->SetLineWidth(2);
+  ltx2->Draw("same");
+
   maximum = h->GetMaximum();
   TLine *line1_data = new TLine(cuts.first,0,cuts.first,maximum);
   line1_data->SetLineStyle(7);
@@ -133,7 +172,129 @@ int main(int argc, char **argv) {
   std::cout << "Data:" << std::endl;
   std::cout << "Nominal tktkmass cuts efficiency: " << static_cast<double>(nentries_withcuts)/static_cast<double>(nentries) << 
     " (Numerator: " << nentries_withcuts << ", Denominator: " << nentries << ")" << std::endl;
-  
+}
+
+double HistoFit(int channel, bool mc, TH1& h) {
+  double MASS = 0;
+  TF1* sig = nullptr;
+  /*  TF1* backg = nullptr;
+  TF1* total = nullptr;
+  */
+  double left_sig = 0., right_sig = 0.;
+  //double left_backg = 0., right_backg = 0.;
+  if(channel == 2)
+    {
+      MASS = KSTAR_MASS;
+      left_sig = 0.75; right_sig = 1.05;
+      //left_backg = 0.96; right_backg = 1.3;
+      sig = new TF1("sig","([0]*exp(-(x-[1])*(x-[1])/(2*[2]*[2]))) + ([3]*exp(-(x-[4])*(x-[4])/(2*[5]*[5]))) + ([6]*exp(-(x-[7])*(x-[7])/(2*[8]*[8])))", left_sig, right_sig);
+      //     backg = new TF1("backg","([0] + [1]*x + [2]*x*x)", left_backg, right_backg);
+    }
+  else if (channel == 4)
+    {
+      left_sig = 0.99; right_sig = 1.04;
+      //left_backg = 1.03; right_backg = 1.09;
+      MASS = PHI_MASS;
+      sig = new TF1("sig","([0]*exp(-(x-[1])*(x-[1])/(2*[2]*[2]))) + ([3]*exp(-(x-[4])*(x-[4])/(2*[5]*[5]))) + ([6]*exp(-(x-[7])*(x-[7])/(2*[8]*[8])))", left_sig, right_sig);
+      //backg = new TF1("backg","([0] + [1]*x + [2]*x*x)", left_backg, right_backg);
+    }
+  //triple gaussian
+  sig->SetLineColor(3);
+  sig->SetLineWidth(3);
+  sig->SetParNames("SignalConst1","SignalMean1","SignalSigma1","SignalConst2","SignalMean2","SignalSigma2","SignalConst3","SignalMean3","SignalSigma3");
+  if(channel==2) 
+    {
+      if(mc) {
+	sig->SetParameter(0,2500.);
+	sig->SetParLimits(0,0.,9000);
+      }
+      else  {
+	sig->SetParameter(0,1000.);
+	sig->SetParLimits(0,0.,7000);
+      }
+      sig->SetParameter(1,MASS);
+      sig->SetParLimits(1,MASS-0.05,MASS+0.05);
+      sig->SetParameter(2,0.001);
+      sig->SetParLimits(2,0.00001,0.6);
+      sig->SetParameter(3,1000.);
+      if(mc) sig->SetParLimits(3,0.,8000);
+      else  sig->SetParLimits(3,0.,7000);
+      sig->SetParameter(4,MASS);
+      sig->SetParLimits(4,MASS-0.05,MASS+0.05);
+      sig->SetParameter(5,0.003);
+      sig->SetParLimits(5,0.0001,0.35);
+      sig->SetParameter(6,2000.);
+      sig->SetParLimits(6,0.,10000);
+      sig->SetParameter(7,MASS);
+      sig->SetParLimits(7,MASS-0.05,MASS+0.05);
+      sig->SetParameter(8,0.01);
+      sig->SetParLimits(8,0.001,0.5);
+      h.Fit("sig","ER", "", left_sig, right_sig);
+    }
+  else if(channel==4) 
+    {
+      if(mc) {
+	sig->SetParameter(0,2500.);
+	sig->SetParLimits(0,0.,45000);
+      }
+      else  {
+	sig->SetParameter(0,1000.);
+	sig->SetParLimits(0,0.,7000);
+      }
+      sig->SetParameter(1,MASS);
+      sig->SetParLimits(1,MASS-0.03,MASS+0.03);
+      sig->SetParameter(2,0.001);
+      sig->SetParLimits(2,0.00001,0.35);
+      if(mc) {
+	sig->SetParameter(3,10000.);
+	sig->SetParLimits(3,0.,45000);
+      }
+      else  {
+	sig->SetParameter(3,1000.);
+	sig->SetParLimits(3,0.,7000);
+      }
+      sig->SetParameter(4,MASS);
+      sig->SetParLimits(4,MASS-0.03,MASS+0.03);
+      sig->SetParameter(5,0.003);
+      sig->SetParLimits(5,0.0001,0.35);
+      if(mc) {
+	sig->SetParameter(6,10000.);
+	sig->SetParLimits(6,0.,30000);
+      }
+      else {
+	sig->SetParameter(6,2000.);
+	sig->SetParLimits(6,0.,10000);
+      }
+      sig->SetParameter(7,MASS);
+      sig->SetParLimits(7,MASS-0.03,MASS+0.03);
+      sig->SetParameter(8,0.01);
+      sig->SetParLimits(8,0.001,0.5);
+      h.Fit("sig","ER", "", left_sig, right_sig);
+    }
+  /*if(channel == 2 && !mc)
+    {
+      backg->SetLineColor(3);
+      backg->SetLineWidth(1);
+      backg->SetParNames("BackgConst","Slope","Quadratic");
+      backg->SetParameter(0,150);
+      backg->SetParLimits(0,0,1000);
+      backg->SetParameter(1,-0.2);
+      backg->SetParLimits(1,-20.,0.);
+      backg->SetParameter(2,-5.);
+      backg->SetParLimits(2,-20.,20.);
+      //h.Fit("backg","ER+", "", left_backg, right_backg);
+ 
+      total = new TF1("total", "sig+backg", 0.65, 1.3);
+      total->SetLineColor(4);
+      total->SetLineWidth(4);
+      h.Fit("total","ER+", "", 0.65, 1.3);
+    }
+  */
+
+  double r1 = sig->GetParameter(0)/(sig->GetParameter(0)+sig->GetParameter(3)+sig->GetParameter(6));
+  double r2 = sig->GetParameter(3)/(sig->GetParameter(0)+sig->GetParameter(3)+sig->GetParameter(6));
+  std::cout << r1 << ", " << r2 << std::endl;
+  return TMath::Sqrt(TMath::Power(sig->GetParameter(2),2)*r1 + TMath::Power(sig->GetParameter(5),2)*r2 + TMath::Power(sig->GetParameter(8),2)*(1-r1-r2));
 }
 
 void create_dataset(RooWorkspace& w, TString filename, int channel)
@@ -325,6 +486,10 @@ TH1D* sideband_sub(RooWorkspace& w, RooWorkspace& w_mc, int channel, double m1, 
   for (int i=1; i<=nbins; ++i) {
     if (h1->GetBinContent(i) < 0.) h1->SetBinContent(i,0.);
     if (channel == 4 && h1->GetBinCenter(i) > 1.09) h1->SetBinContent(i,0.);
+    /* if (channel == 2 && h1->GetBinCenter(i) > 1.2) {
+      h1->SetBinContent(i,0.);
+      }*/
+    
   }			     
 
   TFile f("ss_histograms_ResolutionSyst.root","RECREATE");

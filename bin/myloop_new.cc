@@ -474,15 +474,9 @@ int main(int argc, char** argv)
 		    if( !(MuonInfo->isTriggered[mu1idx]) || !(MuonInfo->isTriggered[mu2idx]) ) continue;
 		  }
 
-<<<<<<< HEAD
-		// Basic muon selections
-		if (MuonInfo->pt[mu1idx]<=4.) continue;
-		if(run_on_mc){
-=======
 		// Muon selection
 		if (MuonInfo->pt[mu1idx]<=4.2) continue;
-		if(run_on_mc)
->>>>>>> 1ebd28ce0959c9ceb4102bcc6b7a782f231d7e6b
+		if(run_on_mc) {
 		  particle_flow_number[3]++;
 		  std::cout << particle_flow_number[3] << std::endl;}
 

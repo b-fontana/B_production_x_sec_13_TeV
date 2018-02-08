@@ -317,10 +317,6 @@ void set_up_vars(RooWorkspace& w, int channel)
   double tktkmass_min, tktkmass_max;
 
   switch(channel) {
-  case 1:
-    tktkmass_min = KAON_MASS-0.6;
-    tktkmass_max = KAON_MASS+0.6;
-    break;
   case 2:
     tktkmass_min = KSTAR_MASS-0.6;
     tktkmass_max = KSTAR_MASS+0.6;

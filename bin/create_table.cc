@@ -101,7 +101,7 @@ int main(int argc, char** argv)
     }
 
   //read yields or effs or syst
-  read_vector(channel, vector, var1_name , var2_name, n_var1_bins, n_var2_bins, var1_bins, var2_bins, val_array[0], val_err_lo[0], val_err_hi[0]);
+  read_vector(channel, vector, var1_name , var2_name, n_var1_bins, n_var2_bins, var1_bins, var2_bins, val_array[0], "", val_err_lo[0], val_err_hi[0]);
   
   std::vector<std::string> col_name;
 

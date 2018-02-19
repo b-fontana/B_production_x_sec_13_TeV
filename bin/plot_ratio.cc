@@ -150,15 +150,15 @@ int main(int argc, char** argv)
       b_fraction_err[ch] = branch->getError();
       
       //read yield
-      read_vector(channel, "yield", var1_name , var2_name, n_var1_bins, n_var2_bins, var1_bins, var2_bins, yield[ch][0], yield_err_lo[ch][0], yield_err_hi[ch][0]);
+      read_vector(channel, "yield", var1_name , var2_name, n_var1_bins, n_var2_bins, var1_bins, var2_bins, yield[ch][0], "", yield_err_lo[ch][0], yield_err_hi[ch][0]);
 	  
       //read efficiency
       if(eff)
-	read_vector(channel, "totaleff", var1_name , var2_name, n_var1_bins, n_var2_bins, var1_bins, var2_bins, total_eff[ch][0], total_eff_err_lo[ch][0], total_eff_err_hi[ch][0]);
+	read_vector(channel, "totaleff", var1_name , var2_name, n_var1_bins, n_var2_bins, var1_bins, var2_bins, total_eff[ch][0], "", total_eff_err_lo[ch][0], total_eff_err_hi[ch][0]);
       
       //read syst
       if(syst)
-	read_vector(channel, "combined_syst", var1_name , var2_name, n_var1_bins, n_var2_bins, var1_bins, var2_bins, combined_syst[ch][0],combined_syst_lo[ch][0],combined_syst_hi[ch][0]);
+	read_vector(channel, "combined_syst", var1_name , var2_name, n_var1_bins, n_var2_bins, var1_bins, var2_bins, combined_syst[ch][0], ratio, combined_syst_lo[ch][0], combined_syst_hi[ch][0]);
       else
 	for(int j=0; j<n_var2_bins; j++)
 	  {
@@ -332,6 +332,7 @@ int main(int argc, char** argv)
       //draw this for the first var2 bin, or in case there is only one bin.
       if(j==0) 
 	{
+	  graph->SetTitle("");
 	  graph->GetXaxis()->SetTitle(x_axis_name);
 	  graph->GetYaxis()->SetTitle(ratio_title);
 	  graph->GetYaxis()->SetRangeUser(0.5*ratio_min, 2*ratio_max);
@@ -347,7 +348,9 @@ int main(int argc, char** argv)
 		  gStyle->SetOptFit();
 		  
 		  TGraphAsymmErrors* graph2 = new TGraphAsymmErrors(n_var1_bins, var1_bin_centre, ratio_array[j], var1_bin_centre_lo, var1_bin_centre_hi, ratio_total_err_lo[j], ratio_total_err_hi[j]);
- 
+		  
+		  graph2->SetTitle("");
+		  
 		  //graph2->GetYaxis()->SetTitle(ratio_title);
 		  //graph2->GetYaxis()->SetRangeUser(0.5*ratio_min, 2*ratio_max);
 		  //graph2->GetXaxis()->SetTitle(x_axis_name);
@@ -364,7 +367,8 @@ int main(int argc, char** argv)
 
 		  ///////////////////////////////////////////////////////
 		  TGraphAsymmErrors* graph3 = (TGraphAsymmErrors*)graph2->Clone("graph3");
-		  		  		  
+		  
+		  graph3->SetTitle("");
 		  graph3->Fit("pol1","W","");
 		  graph3->GetFunction("pol1")->SetLineColor(4);
 		  graph3->Draw("pX same");
@@ -416,6 +420,7 @@ int main(int argc, char** argv)
       if(eff && syst && !poly)
         {
 	  TGraphAsymmErrors* graph_syst = new TGraphAsymmErrors(n_var1_bins, var1_bin_centre, ratio_array[j], var1_bin_centre_lo, var1_bin_centre_hi, ratio_syst_lo[j], ratio_syst_hi[j]);
+	  graph_syst->SetTitle("");
 	  graph_syst->SetFillColor(j+2);
 	  graph_syst->SetFillStyle(3001);
 	  graph_syst->Draw("2 same");
@@ -458,6 +463,6 @@ int main(int argc, char** argv)
   std::cout << "=== " << ratio_name << " ===" << std::endl;
 
   //Fragmentation fraction
-  print_table("FRAGMENTATION FRACTION RATIO", n_var1_bins, n_var2_bins, var1_name, var2_name, var1_bins, var2_bins, ratio_array[0], ratio_err_lo[0], ratio_err_hi[0], ratio_syst_lo[0], ratio_syst_hi[0], ratio_BF_err[0]);
+  print_table("FRAGMENTATION FRACTION RATIO", n_var1_bins, n_var2_bins, var1_name, var2_name, var1_bins, var2_bins, ratio_array[0], ratio_err_lo[0], ratio_err_hi[0], ratio_syst_lo[0], ratio_syst_hi[0], ratio_BF_err[0], &global_syst_err);
 
 }//end

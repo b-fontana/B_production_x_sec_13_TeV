@@ -1011,6 +1011,32 @@ RooRealVar* prefilter_efficiency(int channel, double pt_min, double pt_max, doub
 
   RooRealVar* eff1 = new RooRealVar("eff1","eff1",eff);
   eff1->setAsymError(eff_lo,eff_hi);
+
+  fin->Close();
+  delete fin;
+
+  return eff1;
+}
+
+//the weight are correct only for 'mu1pt', 'mu2pt' and 'pt'; for the other variables we still have to impose weight = 1 in some points
+RooRealVar* reco_efficiency(int channel, double pt_min, douvble pt_max, double y_min, double y_max, bool syst TString reweighting_var_str) 
+{
+
+  double weight_passed = 0.;
+  TFile* f_weights = nullptr;
+  TH1D* h_weights_passed = nullptr;
+
+  //------------read monte carlo gen without cuts-----------------------------
+  TString mc_input_no_cuts = TString::Format(BASE_DIR) + "/new_inputs/reduced_my_loop_gen_" + channel_to_ntuple_name(channel) + "_bmuonfilter.root";
+  TFile *fin_no_cuts = new TFile(mc_input_no_cuts);
+
+  TString ntuple_name = channel_to_ntuple_name(channel) + "_gen";
+  TTree *tin_no_cuts = (TTree*)fin_no_cuts->Get(ntuple_name);
+  //set up all the variables needed
+  double pt_b, eta_b, y_b, pt_mu1, pt_mu2, eta_mu1, eta_mu2;
+  double reweighting_variable;
+  double lxy, errxy;
+
   //read the ntuple from selected_data
   tin_no_cuts->SetBranchAddress("eta", &eta_b);
   tin_no_cuts->SetBranchAddress("y", &y_b);

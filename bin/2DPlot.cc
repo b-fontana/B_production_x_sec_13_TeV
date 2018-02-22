@@ -2,7 +2,7 @@
 #include <TH2D.h>
 
 using namespace RooFit;
-TH2D* SidebandSub(int channel, TString file_name, TString tree_name, TString var1_str, TString var2_str, int nbinsx, double nbinsy);
+TH2D* SidebandSub(int channel, TString file_name, TString tree_name, TString var1_str, TString var2_str, int nbinsx, double nbinsy, TString particle);
 std::vector<double> getBorder(int channel, int option);
 
 //Example: 2D --channel 4 --sample_kind data --particle B
@@ -33,14 +33,21 @@ int main(int argc, char** argv)
     }
 
   int nbinsx = 90, nbinsy = 90;
-  TH2D *h1 = new TH2D("h1", "h1", nbinsx, -3.95, 3.95, nbinsy, 0, 60);
-  TH2D *h2 = new TH2D("h2", "h2", nbinsx, -3.95, 3.95, nbinsy, 0, 60);
+  double max_range = 0;
+  if(particle == "B") max_range = 45;
+  else if(particle == "muon") max_range = 15;
+  //TH2D *h1 = new TH2D("h1", "h1", nbinsx, -3.95, 3.95, nbinsy, 0, max_range);
+  //TH2D *h2 = new TH2D("h2", "h2", nbinsx, -3.95, 3.95, nbinsy, 0, max_range);
+  TH2D *h3 = new TH2D("h3", "h3", nbinsx, -2.7, 2.7, nbinsy, 0, max_range);
+  TH2D *h4 = new TH2D("h4", "h4", nbinsx, -2.7, 2.7, nbinsy, 0, max_range);
   TH2D *h_data = nullptr;
+  //TH2D *h_data2 = nullptr;
 
-  TH1D *h_eff_gen = new TH1D("h_eff_gen", "h_eff_gen", 100, 0., 3.4);
+  /*  TH1D *h_eff_gen = new TH1D("h_eff_gen", "h_eff_gen", 100, 0., 3.4);
   TH1D *h_eff_gen2 = new TH1D("h_eff_gen2", "h_eff_gen2", 100, 0., 3.4); //with bmuon filter
   TH1D *h_eff_reco = new TH1D("h_eff_reco", "h_eff_reco", 100, 0., 3.4);
   TH1D *h_eff_reco_nocuts = new TH1D("h_eff_reco_nocuts", "h_eff_reco_nocuts", 100, 0., 3.4);
+  */
 
   TString file1_string = "";
   TString file2_string = "";
@@ -50,36 +57,65 @@ int main(int argc, char** argv)
     file1_string = "/lstore/cms/brunogal/input_for_B_production_x_sec_13_TeV/new_inputs/myloop_gen_" + channel_to_ntuple_name(channel) + "_bfilter.root";
     file2_string = "/lstore/cms/brunogal/input_for_B_production_x_sec_13_TeV/new_inputs/myloop_gen_" + channel_to_ntuple_name(channel) +"_bmuonfilter.root";
     file3_string = "/lstore/cms/brunogal/input_for_B_production_x_sec_13_TeV/final_selection/reduced_myloop_new_mc_truth_" + channel_to_ntuple_name(channel) + "_with_cuts.root";
-    file4_string = "/lstore/cms/brunogal/input_for_B_production_x_sec_13_TeV/no_cuts/myloop_new_mc_truth_" + channel_to_ntuple_name(channel) + "_no_cuts.root";
-  }
+    file4_string = "/lstore/cms/brunogal/input_for_B_production_x_sec_13_TeV/no_cuts/myloop_new_mc_truth_" + channel_to_ntuple_name(channel) + "_no_cuts.root";  }
   else if(sample_kind == "data") {
     file1_string = "/lstore/cms/brunogal/input_for_B_production_x_sec_13_TeV/final_selection/myloop_new_data_" + channel_to_ntuple_name(channel) + "_with_cuts.root";
+    //file2_string = "/lstore/cms/brunogal/input_for_B_production_x_sec_13_TeV/no_cuts/myloop_new_data_" + channel_to_ntuple_name(channel) + "_no_cuts.root";
     if (particle == "B") {
-      h_data = SidebandSub(channel,file1_string,channel_to_ntuple_name(channel),"y","pt",nbinsx,nbinsy);
+      h_data = SidebandSub(channel,file1_string,channel_to_ntuple_name(channel),"y","pt",nbinsx,nbinsy,particle);
       h_data->GetYaxis()->SetTitle("p_{T} (GeV)");
+      /*h_data2 = SidebandSub(channel,file2_string,channel_to_ntuple_name(channel),"y","pt",nbinsx,nbinsy,particle);
+      h_data2->GetYaxis()->SetTitle("p_{T} (GeV)");
+      */
     }
     else if (particle == "muon") {
-      h_data = SidebandSub(channel,file1_string,channel_to_ntuple_name(channel),"mu1eta","mu1pt",nbinsx,nbinsy);
+      h_data = SidebandSub(channel,file1_string,channel_to_ntuple_name(channel),"mu1eta","mu1pt",nbinsx,nbinsy,particle);
       h_data->GetYaxis()->SetTitle("mu1pt (GeV)");
+      /*h_data2 = SidebandSub(channel,file2_string,channel_to_ntuple_name(channel),"mu1eta","mu1pt",nbinsx,nbinsy,particle);
+      h_data2->GetYaxis()->SetTitle("mu1pt (GeV)");
+      */
     }
     else std::cout << "Please define the kind of particle hwose map you would like to see." << std::endl;
     h_data->SetStats(kFALSE);
     h_data->SetTitle("");
     h_data->GetYaxis()->SetTitleOffset(1.1);
     h_data->GetZaxis()->SetTitle("");
+    /*    h_data2->SetStats(kFALSE);
+    h_data2->SetTitle("");
+    h_data2->GetYaxis()->SetTitleOffset(1.1);
+    h_data2->GetZaxis()->SetTitle("");
+    */
     TCanvas c1("c1","c1",1500,1100);
+    //c1.Divide(2,1);
     TCanvas c2("c2","c2",1500,1100);
-    c1.cd();
+    //c2.Divide(2,1);
+    c1.cd(1);
     TPad pad1("pad1", "pad1", 0, 0, 1, 1);
     pad1.Draw();
     pad1.cd();
     h_data->DrawCopy("colz1");
     pad1.SetRightMargin(5.);
-    c1.SaveAs("2D_"+channel_to_ntuple_name(channel)+"_"+sample_kind+"_"+particle+".png");
-    c2.cd();
-    if (particle == "B") h_data->GetYaxis()->SetRangeUser(7.0,14);
-    else if (particle == "muon") h_data->GetYaxis()->SetRangeUser(2.9,6);
     h_data->Draw("colz1");
+    /*c1.cd(2);
+    h_data2->Draw("colz1");
+    */
+    c1.SaveAs("2D_"+channel_to_ntuple_name(channel)+"_"+sample_kind+"_"+particle+".png");
+    c2.cd(1);
+    if (particle == "B") {
+      h_data->GetYaxis()->SetRangeUser(7.0,14);
+    }
+    else if (particle == "muon") {
+      h_data->GetYaxis()->SetRangeUser(2.9,6);
+    }
+    h_data->Draw("colz1");
+    /*c2.cd(2);
+    if (particle == "B") {
+      h_data2->GetYaxis()->SetRangeUser(7.0,14);
+    }
+    else if (particle == "muon") {
+      h_data2->GetYaxis()->SetRangeUser(2.9,6);
+    }
+    */
     c2.SetRightMargin(10.);
     c2.SaveAs("2D_Zoom_"+channel_to_ntuple_name(channel)+"_"+sample_kind+"_"+particle+".png");
   }
@@ -97,12 +133,14 @@ int main(int argc, char** argv)
       TTree* t4 = static_cast<TTree*>(f4->Get(channel_to_ntuple_name(channel)));
   
       double var1_1, var2_1, var1_2, var2_2, var1_3, var2_3, var1_4, var2_4;
-      TString var1_str = "y", var2_str = "pt";
+      TString var1_str = "", var2_str = "";
+      if(particle == "B") {var1_str = "y"; var2_str = "pt";}
+      if(particle == "muon") {var1_str = "mu1eta"; var2_str = "mu1pt";}
       t1->SetBranchAddress(var1_str,&var1_1);
       t1->SetBranchAddress(var2_str,&var2_1);
 
       //////2D Plots///////////////////////////////////////////////////////
-      int nentries1 = t1->GetEntries();
+      /*int nentries1 = t1->GetEntries();
       for(int entry=0; entry<nentries1; ++entry) {
 	t1->GetEntry(entry);
 	h1->Fill(var1_1,var2_1);
@@ -117,6 +155,7 @@ int main(int argc, char** argv)
 	h2->Fill(var1_2,var2_2);
 	h_eff_gen2->Fill(var1_2);
       }
+      */
       ///////////////////////////////////////////////////////////////////////
       /////1D Plots (I know the macro name is wrong!)////////////////////////
       ///////////////////////////////////////////////////////////////////////
@@ -126,7 +165,8 @@ int main(int argc, char** argv)
       int nentries3 = t3->GetEntries();
       for(int entry=0; entry<nentries3; ++entry) {
 	t3->GetEntry(entry);
-	h_eff_reco->Fill(var1_3);
+	h3->Fill(var1_3,var2_3);
+	//h_eff_reco->Fill(var1_3);
       }
 
       t4->SetBranchAddress(var1_str,&var1_4);
@@ -134,34 +174,56 @@ int main(int argc, char** argv)
       int nentries4 = t4->GetEntries();
       for(int entry=0; entry<nentries4; ++entry) {
 	t4->GetEntry(entry);
-	h_eff_reco_nocuts->Fill(var1_4);
-      }
+	h4->Fill(var1_4,var2_4);
+	//h_eff_reco_nocuts->Fill(var1_4);
+	}
 
       gStyle->SetOptStat(0);
       TCanvas *c = new TCanvas("c","c",1800,1100);
-      c->Divide(1,2);
-      c->cd(1);
-      h1->SetTitle(" ");
-      h1->GetXaxis()->SetTitleOffset(0.75);
-      h1->GetYaxis()->SetTitleOffset(1.05);
-      h1->GetXaxis()->SetTitle(var1_str);
-      h1->GetYaxis()->SetTitle(var2_str+"(GeV)");
-      h1->Draw("colz");
+      c->Divide(2,1);
       c->cd(2);
-      h2->SetTitle(" ");
-      h2->GetXaxis()->SetTitleOffset(0.75);
-      h2->GetYaxis()->SetTitleOffset(1.05);
-      h2->GetXaxis()->SetTitle(var1_str);
-      h2->GetYaxis()->SetTitle(var2_str+"(GeV)");
-      h2->Draw("colz");
+      h3->SetTitle(" ");
+      h3->GetXaxis()->SetTitleOffset(0.75);
+      h3->GetYaxis()->SetTitleOffset(1.05);
+      h3->GetXaxis()->SetTitle(var1_str);
+      h3->GetYaxis()->SetTitle(var2_str+"(GeV)");
+      h3->Draw("colz");
+      c->cd(1);
+      h4->SetTitle(" ");
+      h4->GetXaxis()->SetTitleOffset(0.75);
+      h4->GetYaxis()->SetTitleOffset(1.05);
+      h4->GetXaxis()->SetTitle(var1_str);
+      h4->GetYaxis()->SetTitle(var2_str+"(GeV)");
+      h4->Draw("colz");
       /*c->cd(3);
       TH2D* h3 = static_cast<TH2D*>(h1->Clone("h3"));
       h3->Divide(h2);
       h3->Draw("colz");
       */
-      c->SaveAs("2DPlot_"+channel_to_ntuple_name(channel)+"_"+sample_kind+"_"+particle+".png");
+      c->SaveAs("2D_"+channel_to_ntuple_name(channel)+"_"+sample_kind+"_"+particle+".png");
 
-      TCanvas *c_eff = new TCanvas("c_eff","c_eff",1800,1800);
+      TCanvas cZoom("cZoom","cZoom",1500,1100);
+      cZoom.Divide(2,1);
+      cZoom.cd(2);
+      /*    TPad pad1("pad1", "pad1", 0, 0, 1, 1);
+      pad1.Draw();
+      pad1.cd();
+      */
+      if (particle == "B") {
+	h3->GetYaxis()->SetRangeUser(1.,20.);
+	h4->GetYaxis()->SetRangeUser(1.,20.);
+      }
+      else if (particle == "muon") {
+	h3->GetYaxis()->SetRangeUser(1.5,6);
+	h4->GetYaxis()->SetRangeUser(1.5,6);
+      }
+      h3->Draw("colz1");
+      //pad1.SetRightMargin(5.);
+      cZoom.cd(1);
+      h4->Draw("colz1");
+      cZoom.SaveAs("2D_Zoom_"+channel_to_ntuple_name(channel)+"_"+sample_kind+"_"+particle+".png");
+    
+      /*TCanvas *c_eff = new TCanvas("c_eff","c_eff",1800,1800);
       c_eff->Divide(1,4);
       c_eff->cd(1);
       h_eff_gen->SetTitle("");
@@ -204,12 +266,13 @@ int main(int argc, char** argv)
       text_eff_reco_nocuts->SetLineWidth(2);
       text_eff_reco_nocuts->Draw("same");
       c_eff->SaveAs("Eff_GenvsReco_" + channel_to_ntuple_name(channel) + ".png");
+      */
     }
 
   return 0;
 }
 
-TH2D* SidebandSub(int channel, TString file_name, TString tree_name, TString var1_str, TString var2_str, int nbinsx, double nbinsy) {
+TH2D* SidebandSub(int channel, TString file_name, TString tree_name, TString var1_str, TString var2_str, int nbinsx, double nbinsy, TString particle) {
 
   TFile *f = new TFile(file_name,"READ");
   if(f == nullptr) std::cout << "ERROR! (f)" << std::endl;
@@ -318,9 +381,12 @@ TH2D* SidebandSub(int channel, TString file_name, TString tree_name, TString var
     reduceddata_side2 = (RooDataSet*)reduceddata_side2->reduce(Form("mass>%lf",min1));
   }
 
-  h1 = static_cast<TH2D*>(reduceddata_central->createHistogram("H1",var1, Binning(nbinsx,-2.55,2.55), YVar(var2, Binning(nbinsy,0.,45))));
-  h2 = static_cast<TH2D*>(reduceddata_side2->createHistogram("H2",var1, Binning(nbinsx,-2.55,2.55), YVar(var2, Binning(nbinsy,0.,45))));
-  h1->Add(h2,-factor);
+  double max_range = 0;
+  if(particle == "B") max_range = 45;
+  else if(particle == "muon") max_range = 15;
+  h1 = static_cast<TH2D*>(reduceddata_central->createHistogram("H1",var1, Binning(nbinsx,-2.55,2.55), YVar(var2, Binning(nbinsy,0.,max_range))));
+  //h2 = static_cast<TH2D*>(reduceddata_side2->createHistogram("H2",var1, Binning(nbinsx,-2.55,2.55), YVar(var2, Binning(nbinsy,0.,max_range))));
+  //h1->Add(h2,-factor);
 
   return h1;
 }

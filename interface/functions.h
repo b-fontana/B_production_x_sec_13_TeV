@@ -61,7 +61,8 @@ using namespace RooFit;
 #define LUMINOSITY          2.71
 #define NUMBER_OF_CPU       1
 #define VERSION             "v19"
-#define BASE_DIR            /*"/lstore/cms/balves/Jobs/Full_Dataset_2015_Rereco"*/ "/lstore/cms/balves/Jobs/"
+#define BASE_DIR            "/lstore/cms/brunogal/input_for_B_production_x_sec_13_TeV/"
+//#define BASE_DIR            /*"/lstore/cms/balves/Jobs/Full_Dataset_2015_Rereco"*/ "/lstore/cms/balves/Jobs/"
 
 //////////////////////////////////////////////
 // Definition of channel #                  //
@@ -915,7 +916,9 @@ RooRealVar* bin_mass_fit(RooWorkspace& w, int channel, double pt_min, double pt_
 //the input file must be produced with myloop_gen.cc to have the gen info. otherwise the signal needs to be extracted using a fit.
 RooRealVar* prefilter_efficiency(int channel, double pt_min, double pt_max, double y_min, double y_max)
 {
-  /*2015 gen MC*/ TString mc_gen_input_file = "/lstore/cms/brunogal/input_for_B_production_x_sec_13_TeV/new_inputs/reduced_myloop_gen_" + channel_to_ntuple_name(channel) + "_bfilter.root";
+
+  // /*2015 gen MC*/ TString mc_gen_input_file = "/lstore/cms/brunogal/input_for_B_production_x_sec_13_TeV/new_inputs/reduced_myloop_gen_" + channel_to_ntuple_name(channel) + "_bfilter.root";
+  TString mc_gen_input_file = TString::Format(BASE_DIR) + "/new_inputs/reduced_myloop_gen_" + channel_to_ntuple_name(channel) + "_bfilter.root";
   TFile *fin = new TFile(mc_gen_input_file);
   
   TString ntuple_name = channel_to_ntuple_name(channel) + "_gen";
@@ -1023,7 +1026,8 @@ RooRealVar* reco_efficiency(int channel, double pt_min, double pt_max, double y_
   TH1D *h_weights_passed = nullptr;
 
   //------------read monte carlo gen without cuts-----------------------------
-  /*2015 gen MC*/ TString mc_input_no_cuts = "/lstore/cms/brunogal/input_for_B_production_x_sec_13_TeV/new_inputs/reduced_myloop_gen_" + channel_to_ntuple_name(channel) + "_bmuonfilter.root";
+  // /*2015 gen MC*/ TString mc_input_no_cuts = "/lstore/cms/brunogal/input_for_B_production_x_sec_13_TeV/new_inputs/reduced_myloop_gen_" + channel_to_ntuple_name(channel) + "_bmuonfilter.root";
+  TString mc_input_no_cuts = TString::Format(BASE_DIR) + "/new_inputs/reduced_myloop_gen_" + channel_to_ntuple_name(channel) + "_bmuonfilter.root";
   TFile *fin_no_cuts = new TFile(mc_input_no_cuts);
 
   TString ntuple_name = channel_to_ntuple_name(channel) + "_gen";
@@ -1062,8 +1066,9 @@ RooRealVar* reco_efficiency(int channel, double pt_min, double pt_max, double y_
     }
 
     //--------------------------------read monte carlo with cuts------------------------
-  /*2015:*/ TString mc_input_with_cuts = "/lstore/cms/brunogal/input_for_B_production_x_sec_13_TeV/new_inputs/myloop_new_mc_truth_" + channel_to_ntuple_name(channel) + "_with_cuts.root";
+  // /*2015:*/ TString mc_input_with_cuts = "/lstore/cms/brunogal/input_for_B_production_x_sec_13_TeV/new_inputs/myloop_new_mc_truth_" + channel_to_ntuple_name(channel) + "_with_cuts.root";
   /*2016 TString mc_input_with_cuts = TString::Format(BASE_DIR) + "MC_2016/myloop_new_mc_truth_" + channel_to_ntuple_name(channel) + "_with_cuts.root";*/
+  TString mc_input:with_cuts = TString::Format(BASE_DIR) +"/ new_inputs/myloop_new_mc_truth_" + channel_to_ntuple_name(channel) + "_with_cuts.root";
     TFile *fin_with_cuts = new TFile(mc_input_with_cuts);
 
     TTree *tin_with_cuts = (TTree*)fin_with_cuts->Get(channel_to_ntuple_name(channel));

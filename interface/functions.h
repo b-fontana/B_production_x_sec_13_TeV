@@ -1068,7 +1068,7 @@ RooRealVar* reco_efficiency(int channel, double pt_min, double pt_max, double y_
     //--------------------------------read monte carlo with cuts------------------------
   // /*2015:*/ TString mc_input_with_cuts = "/lstore/cms/brunogal/input_for_B_production_x_sec_13_TeV/new_inputs/myloop_new_mc_truth_" + channel_to_ntuple_name(channel) + "_with_cuts.root";
   /*2016 TString mc_input_with_cuts = TString::Format(BASE_DIR) + "MC_2016/myloop_new_mc_truth_" + channel_to_ntuple_name(channel) + "_with_cuts.root";*/
-  TString mc_input:with_cuts = TString::Format(BASE_DIR) +"/ new_inputs/myloop_new_mc_truth_" + channel_to_ntuple_name(channel) + "_with_cuts.root";
+  TString mc_input_with_cuts = TString::Format(BASE_DIR) +"/new_inputs/reduced_myloop_new_mc_truth_" + channel_to_ntuple_name(channel) + "_with_cuts.root";
     TFile *fin_with_cuts = new TFile(mc_input_with_cuts);
 
     TTree *tin_with_cuts = (TTree*)fin_with_cuts->Get(channel_to_ntuple_name(channel));

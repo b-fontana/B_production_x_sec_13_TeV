@@ -1011,33 +1011,6 @@ RooRealVar* prefilter_efficiency(int channel, double pt_min, double pt_max, doub
 
   RooRealVar* eff1 = new RooRealVar("eff1","eff1",eff);
   eff1->setAsymError(eff_lo,eff_hi);
-
-  fin->Close();
-  delete fin;
-
-  return eff1; 
-}
-
-//the weights are correct only for 'mu1pt', 'mu2pt' and 'pt'; for the other variables we still have to imposed weight=1 in some points
-RooRealVar* reco_efficiency(int channel, double pt_min, double pt_max, double y_min, double y_max, bool syst, TString reweighting_var_str)
-{
-  double weight_passed = 0.; 
-  TFile* f_weights = nullptr;
-  TH1D *h_weights_passed = nullptr;
-
-  //------------read monte carlo gen without cuts-----------------------------
-  // /*2015 gen MC*/ TString mc_input_no_cuts = "/lstore/cms/brunogal/input_for_B_production_x_sec_13_TeV/new_inputs/reduced_myloop_gen_" + channel_to_ntuple_name(channel) + "_bmuonfilter.root";
-  TString mc_input_no_cuts = TString::Format(BASE_DIR) + "/new_inputs/reduced_myloop_gen_" + channel_to_ntuple_name(channel) + "_bmuonfilter.root";
-  TFile *fin_no_cuts = new TFile(mc_input_no_cuts);
-
-  TString ntuple_name = channel_to_ntuple_name(channel) + "_gen";
-  TTree *tin_no_cuts = (TTree*)fin_no_cuts->Get(ntuple_name);
-  
-  //set up the variables needed
-  double pt_b, eta_b, y_b, pt_mu1, pt_mu2, eta_mu1, eta_mu2;
-  double reweighting_variable;
-  double lxy, errxy;
-  
   //read the ntuple from selected_data
   tin_no_cuts->SetBranchAddress("eta", &eta_b);
   tin_no_cuts->SetBranchAddress("y", &y_b);
@@ -1065,17 +1038,17 @@ RooRealVar* reco_efficiency(int channel, double pt_min, double pt_max, double y_
 
     }
 
-    //--------------------------------read monte carlo with cuts------------------------
+  //--------------------------------read monte carlo with cuts------------------------
   // /*2015:*/ TString mc_input_with_cuts = "/lstore/cms/brunogal/input_for_B_production_x_sec_13_TeV/new_inputs/myloop_new_mc_truth_" + channel_to_ntuple_name(channel) + "_with_cuts.root";
   /*2016 TString mc_input_with_cuts = TString::Format(BASE_DIR) + "MC_2016/myloop_new_mc_truth_" + channel_to_ntuple_name(channel) + "_with_cuts.root";*/
-  TString mc_input_with_cuts = TString::Format(BASE_DIR) +"/new_inputs/reduced_myloop_new_mc_truth_" + channel_to_ntuple_name(channel) + "_with_cuts.root";
-    TFile *fin_with_cuts = new TFile(mc_input_with_cuts);
+  TString mc_input_with_cuts = TString::Format(BASE_DIR) + "/new_inputs/reduced_myloop_new_mc_truth_" + channel_to_ntuple_name(channel) + "_with_cuts.root";
+  TFile *fin_with_cuts = new TFile(mc_input_with_cuts);
 
-    TTree *tin_with_cuts = (TTree*)fin_with_cuts->Get(channel_to_ntuple_name(channel));
+  TTree *tin_with_cuts = (TTree*)fin_with_cuts->Get(channel_to_ntuple_name(channel));
    
-    //read the ntuple
-    tin_with_cuts->SetBranchAddress("eta", &eta_b);
-    tin_with_cuts->SetBranchAddress("y", &y_b);
+  //read the ntuple
+  tin_with_cuts->SetBranchAddress("eta", &eta_b);
+  tin_with_cuts->SetBranchAddress("y", &y_b);
     tin_with_cuts->SetBranchAddress("pt", &pt_b);
     tin_with_cuts->SetBranchAddress("mu1pt", &pt_mu1);
     tin_with_cuts->SetBranchAddress("mu2pt", &pt_mu2);

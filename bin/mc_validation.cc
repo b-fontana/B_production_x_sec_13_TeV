@@ -47,10 +47,11 @@
 #include "TPaveStats.h"
 
 #include "UserCode/B_production_x_sec_13_TeV/interface/BLooks.h"
+#include "UserCode/B_production_x_sec_13_TeV/interface/myloop.h"
 
 using namespace RooFit;
 
-#define VAR_NUMBER 17 //the variable 'mass' has to be the last one to be stored
+#define VAR_NUMBER 18 //the variable 'mass' has to be the last one to be stored
 #define BIN_NUMBER 100 
 
 //void newNtuple(std::string filename_open, std::string filename_save, int channel);
@@ -130,13 +131,13 @@ int main(int argc, char **argv) {
 
   if (input_data_flag!=1) {
     if(cuts)
-      input_data = "/lstore/cms/brunogal/input_for_B_production_x_sec_13_TeV/new_inputs/myloop_new_data_" + channel_to_ntuple_name(channel) + "_with_cuts.root";
+      input_data = "notktkmasscut_finalselection_myloop_new_data_" + channel_to_ntuple_name(channel) + "_with_cuts.root";
     else 
       input_data = "/lstore/cms/brunogal/input_for_B_production_x_sec_13_TeV/no_cuts/myloop_new_data_" + channel_to_ntuple_name(channel) + "_no_cuts.root";
   }
   if (input_mc_flag!=1) {
     if(cuts)
-      input_mc = "/lstore/cms/brunogal/input_for_B_production_x_sec_13_TeV/new_inputs/myloop_new_mc_truth_" +  channel_to_ntuple_name(channel) + "_with_cuts.root";
+      input_mc = "notktkmasscut_myloop_new_mc_truth_" +  channel_to_ntuple_name(channel) + "_with_cuts_no_tk_win_cut.root";
     else
       input_mc = "/lstore/cms/brunogal/input_for_B_production_x_sec_13_TeV/no_cuts/myloop_new_mc_truth_" + channel_to_ntuple_name(channel) + "_no_cuts.root";
   }
@@ -190,13 +191,14 @@ void read_data(RooWorkspace& w, std::string filename, int channel)
   arg_list1.add(*(w.var("errxy"))); 
   arg_list1.add(*(w.var("vtxprob")));
   arg_list1.add(*(w.var("cosalpha2d")));
+  arg_list1.add(*(w.var("tktkmass")));
   arg_list1.add(*(w.var("mass")));
 
   RooDataSet* data = new RooDataSet("data","data",nt1,arg_list1);
   TString formula1, formula2;
   if (filename.find("_mc_") != std::string::npos) {
-    formula1 = "1.14*errxy";
-    formula2 = "lxy/(1.14*errxy)";
+    formula1 = "errxy";
+    formula2 = "lxy/(errxy)";
   }
   else {
     formula1 = "errxy";
@@ -248,6 +250,7 @@ std::string channel_to_ntuple_name(int channel)
 void set_up_workspace_variables(RooWorkspace& w, int channel)
 {
   double mass_min, mass_max;
+  double tktkmass_min, tktkmass_max;
   double pt_min, pt_max;
   double y_min, y_max;
   double mu1pt_min, mu1pt_max;
@@ -309,6 +312,8 @@ void set_up_workspace_variables(RooWorkspace& w, int channel)
   vector = getBorder(w,channel,1);
   mass_min = vector.at(0);
   mass_max = vector.at(1);
+  tktkmass_min = vector.at(2);
+  tktkmass_max = vector.at(3);
 
   RooRealVar mass("mass","mass",mass_min,mass_max);
   RooRealVar pt("pt","pt",pt_min,pt_max);
@@ -325,7 +330,8 @@ void set_up_workspace_variables(RooWorkspace& w, int channel)
   RooRealVar errxy("errxy","errxy",errxy_min,errxy_max);
   RooRealVar vtxprob("vtxprob","vtxprob",vtxprob_min,vtxprob_max);
   RooRealVar cosalpha2d("cosalpha2d","cosalpha2d",cosalpha2d_min,cosalpha2d_max);
- 
+  RooRealVar tktkmass("tktkmass","tktkmass",tktkmass_min,tktkmass_max); 
+
   w.import(mass);
   w.import(pt);
   w.import(y);
@@ -341,6 +347,7 @@ void set_up_workspace_variables(RooWorkspace& w, int channel)
   w.import(errxy);
   w.import(vtxprob);
   w.import(cosalpha2d);
+  w.import(tktkmass);
 }
 
 //Scales histograms contained in v2 with respect to those contained in v1
@@ -465,6 +472,7 @@ double getSigma(RooWorkspace& w, int channel) {
 //options: 1 Data; 2 MC
 std::vector<double> getBorder(RooWorkspace& w, int channel, int option) {
   double mass_min = 0., mass_max = 0.;
+  double tktkmass_min = 0., tktkmass_max = 0.;
   std::vector<double> v;
 
   if (option != 1 && option != 2 && option != 3) 
@@ -497,6 +505,8 @@ std::vector<double> getBorder(RooWorkspace& w, int channel, int option) {
     if (option==1) {
       mass_min = 4.15; 
       mass_max = 6.55;
+      tktkmass_min = KSTAR_MASS-0.8;
+      tktkmass_max = KSTAR_MASS+0.8;
     }
     else if (option==2) {
       mass_min = 5.2;
@@ -517,20 +527,13 @@ std::vector<double> getBorder(RooWorkspace& w, int channel, int option) {
       //mass_max = getMass(channel)+6*getSigma(w,channel);
     }
     break;
-  case 3:
-    if (option==1) {
-      mass_min = 5.0; 
-      mass_max = 6.;
-    }
-    else if (option==2) {
-      mass_min = 5.0; 
-      mass_max = 6.;
-    }
-    break;
-  case 4: //nphi
+  case 3: break;
+  case 4: //phi
     if (option==1) {
       mass_min = 4.15; 
       mass_max = 6.55;
+      tktkmass_min = PHI_MASS-0.6;
+      tktkmass_max = PHI_MASS+0.6;
     }
     else if (option==2) {
       mass_min = 5.3;
@@ -551,49 +554,15 @@ std::vector<double> getBorder(RooWorkspace& w, int channel, int option) {
       //mass_max = getMass(channel)+6*getSigma(w,channel);
     }
     break;
-  case 5:
-    if (option==1) {
-      mass_min = 5.0; 
-      mass_max = 6.;
-    }
-    else if (option==2) {
-      mass_min = 5.0; 
-      mass_max = 6.;
-    }
-   else if (option==3) {
-      mass_min = getMass(channel)-6*getSigma(w,channel);
-      mass_max = getMass(channel)-4.5*getSigma(w,channel);
-    }
-    else if (option==4) {
-      mass_min = getMass(channel)+4.5*getSigma(w,channel);
-      mass_max = getMass(channel)+6*getSigma(w,channel);
-    }
-    break;
-  case 6:
-    if (option==1) {
-      mass_min = 5.0; 
-      mass_max = 6.;
-    }
-    else if (option==2) {
-      mass_min = 5.0; 
-      mass_max = 6.;
-    }
-   else if (option==3) {
-      mass_min = getMass(channel)-6*getSigma(w,channel);
-      mass_max = getMass(channel)-4.5*getSigma(w,channel);
-    }
-    else if (option==4) {
-      mass_min = getMass(channel)+4.5*getSigma(w,channel);
-      mass_max = getMass(channel)+6*getSigma(w,channel);
-    }
-    break;
-  default:
-    std::cout << "ERROR: The channel provided was not recognised." << std::endl;
-    break;
+  case 5: break;
+  case 6: break;
   }
 
   v.push_back(mass_min);
   v.push_back(mass_max);
+  v.push_back(tktkmass_min);
+  v.push_back(tktkmass_max);
+
   return v;
 }
 
@@ -999,6 +968,9 @@ std::string varName(int variable) {
     s = "propert";
     break;
   case 17:
+    s = "tktkmass";
+    break;
+  case 18:
     s = "mass";
     break;
   default:
@@ -1060,6 +1032,9 @@ std::string unitName(int variable) {
     s = "cm";
     break;
   case 17:
+    s = "GeV";
+    break;
+  case 18:
     s = "GeV";
     break;
   default:
@@ -1175,6 +1150,9 @@ TString canvasName(int channel, int variable, int flag, TString var_str) {
     s = s + "propert";
     break;
   case 17:
+    s = s + "tktkmass";
+    break;
+  case 18:
     s = s + "mass";
     break;
   default:
@@ -1255,7 +1233,23 @@ std::vector<double> getXRange(int var, int channel) {
     v.push_back(0.);
     v.push_back(0.2);
     break;
-  case 17: //mass
+  case 17: //tktkmass
+    switch(channel) {
+    case 1:
+      v.push_back(0.);
+      v.push_back(1.);
+      break;
+    case 2:
+      v.push_back(0.78);
+      v.push_back(1.02);
+      break;
+    case 4:
+      v.push_back(0.99);
+      v.push_back(1.06);
+      break;
+    }
+    break;
+  case 18: //mass
     switch(channel) {
     case 1:
       v.push_back(5.15);
@@ -1265,21 +1259,9 @@ std::vector<double> getXRange(int var, int channel) {
       v.push_back(5.12);
       v.push_back(5.45);
       break;
-    case 3:
-      v.push_back(5.15);
-      v.push_back(5.38);
-      break;
     case 4:
       v.push_back(5.23);
       v.push_back(5.52);
-      break;
-    case 5:
-      v.push_back(5.15);
-      v.push_back(5.38);
-      break;
-    case 6:
-      v.push_back(5.15);
-      v.push_back(5.38);
       break;
     }
     break;

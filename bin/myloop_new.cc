@@ -326,6 +326,8 @@ int main(int argc, char** argv)
 		//to select the reconstructed Bees that we save. This way we only save signal.
 		if (run_on_mc && mc_truth)
 		  {
+		    std::cout << "J/psi mother: " << GenInfo->mo1[GenInfo->mo1[MuonInfo->geninfo_index[mu1idx]]] << ", Track mother" <<  GenInfo->mo1[TrackInfo->geninfo_index[tk1idx]] << std::endl;
+		    std::cout << "321: " << GenInfo->pdgId[TrackInfo->geninfo_index[tk1idx]] << std::endl;
 		    if (abs(GenInfo->pdgId[MuonInfo->geninfo_index[mu1idx]]) != 13) continue; //skip any mu that was not generated as a mu+-
 		    if (abs(GenInfo->pdgId[MuonInfo->geninfo_index[mu2idx]]) != 13) continue; //skip any mu that was not generated as a mu+-
 		    if (GenInfo->mo1[MuonInfo->geninfo_index[mu1idx]] != GenInfo->mo1[MuonInfo->geninfo_index[mu2idx]]) continue; //skip if the two muons don't have the same index for the mother particle
@@ -369,7 +371,7 @@ int main(int argc, char** argv)
 		    if (abs(GenInfo->pdgId[MuonInfo->geninfo_index[mu2idx]]) != 13) continue; //skip any mu that was not generated as a mu+-    
 		    if (GenInfo->mo1[MuonInfo->geninfo_index[mu1idx]] != GenInfo->mo1[MuonInfo->geninfo_index[mu2idx]]) continue; //skip if the two muons don't have the same mother particle index
 		    if (abs(GenInfo->pdgId[GenInfo->mo1[MuonInfo->geninfo_index[mu1idx]]]) != 443) continue; //skip if the mother of the muons is not jpsi, this is redundant, in principle all come from jpsi	    
-		    if ((GenInfo->pdgId[TrackInfo->geninfo_index[tk1idx]]!=321 || GenInfo->pdgId[TrackInfo->geninfo_index[tk2idx]]!=-321) &&
+		    if ((GenInfo->pdgId[TrackInfo->geninfo_index[tk1idx]]!=321 || GenInfo->pdgId[TrackInfo->geninfo_index[tk2idx]]!=-321) && 
 			(GenInfo->pdgId[TrackInfo->geninfo_index[tk1idx]]!=-321 || GenInfo->pdgId[TrackInfo->geninfo_index[tk2idx]]!=321)) continue; //skip anything that is not k+k- or k-k+
 		    if (GenInfo->mo1[TrackInfo->geninfo_index[tk1idx]] != GenInfo->mo1[TrackInfo->geninfo_index[tk2idx]]) continue; //skip if the two tracks don't have the same mother particle index
 		    if (abs(GenInfo->pdgId[GenInfo->mo1[TrackInfo->geninfo_index[tk1idx]]]) != 333) continue; //skip if the mother of the tracks is not phi
@@ -391,7 +393,6 @@ int main(int argc, char** argv)
 	    // Find the target branching/ntuple to fill
 	    ReducedBranches *br = NULL;
 	    TTree *nt = NULL;
-	    
 	    switch (b_type)
 	      {
 	      case 1:
@@ -437,13 +438,24 @@ int main(int argc, char** argv)
 		  {
 		    if(run_on_mc)
 		      {
-			if (br->hltbook[HLT_DoubleMu4_JpsiTrk_Displaced_v1]!=1) continue;
+			if (br->hltbook[HLT_DoubleMu4_JpsiTrk_Displaced_v1]!=1 &&
+			    br->hltbook[HLT_DoubleMu4_JpsiTrk_Displaced_v2]!=1 &&
+			    br->hltbook[HLT_DoubleMu4_JpsiTrk_Displaced_v3]!=1 &&
+			    br->hltbook[HLT_DoubleMu4_JpsiTrk_Displaced_v4]!=1 &&
+			    br->hltbook[HLT_DoubleMu4_JpsiTrk_Displaced_v5]!=1 &&
+			    br->hltbook[HLT_DoubleMu4_JpsiTrk_Displaced_v6]!=1 &&
+			    br->hltbook[HLT_DoubleMu4_JpsiTrk_Displaced_v7]!=1)
+			   continue;
 		      }
 		    else
 		      {
 			if (br->hltbook[HLT_DoubleMu4_JpsiTrk_Displaced_v1]!=1 &&
 			    br->hltbook[HLT_DoubleMu4_JpsiTrk_Displaced_v2]!=1 &&
-			    br->hltbook[HLT_DoubleMu4_JpsiTrk_Displaced_v3]!=1) //for 2016 data
+			    br->hltbook[HLT_DoubleMu4_JpsiTrk_Displaced_v3]!=1 &&
+			    br->hltbook[HLT_DoubleMu4_JpsiTrk_Displaced_v4]!=1 &&
+			    br->hltbook[HLT_DoubleMu4_JpsiTrk_Displaced_v5]!=1 &&
+			    br->hltbook[HLT_DoubleMu4_JpsiTrk_Displaced_v6]!=1 &&
+			    br->hltbook[HLT_DoubleMu4_JpsiTrk_Displaced_v7]!=1) //for 2016 data
 			  continue;
 		      }
 		    
@@ -465,8 +477,9 @@ int main(int argc, char** argv)
 
 		// Muon selection
 		if (MuonInfo->pt[mu1idx]<=4.2) continue;
-		if(run_on_mc)
+		if(run_on_mc) {
 		  particle_flow_number[3]++;
+		  std::cout << particle_flow_number[3] << std::endl;}
 
 		if (MuonInfo->pt[mu2idx]<=4.2) continue;
 		if(run_on_mc)

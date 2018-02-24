@@ -7,17 +7,18 @@
 #include <fstream>
 
 using namespace RooFit;
-double getWeight(TFile *f, double muon_y, double muon_pt, std::string mode);
+double getWeight(TFile *f, double muon_eta, double muon_pt, std::string mode);
 std::pair<int,int> currentBin(int nbins_y, int nbins_pt, double b_y, double b_pt, int channel);
 std::pair<int,int> getBinpT(int channel, int bin_number);
 std::pair<float,float> getBiny(int channel, int bin_number);
-void printSystematics(int channel, TString name, std::vector<double>& systematics);
+void printSystematics(int channel, std::string bins, TString ModeTString, TString name, std::vector<double>& systematics);
 
-//Example: TPwSF --channel 4 --mode softmuonid
+//Example: TPwSF --channel 4 --mode softmuonid --bins pt
 int main(int argc, char** argv)
 {
   int channel = 1;
   std::string mode = "";
+  std::string bins = "";
   for(int i=1 ; i<argc ; ++i)
     {
       std::string argument = argv[i];
@@ -32,10 +33,17 @@ int main(int argc, char** argv)
           convert << argv[++i];
           convert >> mode;
         }
+      if(argument == "--bins")
+        {
+          convert << argv[++i];
+          convert >> bins;
+        }
     }
 
-  if(mode == "") {
+  if(mode == "" || bins == "") {
     std::cout << "Please insert the mode as one of the following string, preceded by '--mode': softmuonid, l1l2 or l3." << std::endl;
+    std::cout << "--OR--" << std::endl;
+    std::cout << "Please insert the bins as one of the following string, preceded by '--bins': pt or y." << std::endl;
     return 0;
   }
 
@@ -58,11 +66,8 @@ int main(int argc, char** argv)
     }
   }
 
-  //boost::numeric::ublas::matrix<double> systematics(nbins_y, nbins_pt);
-  std::vector<double> systematics(nbins_pt);
-
   //Open the MC analysis file and the file with the Tag and Probe weights
-  TString dir = "/lstore/cms/brunogal/input_for_B_production_x_sec_13_TeV/new_inputs/";
+  TString dir = "/lstore/cms/brunogal/input_for_B_production_x_sec_13_TeV/final_selection/";
   TFile *f = new TFile(dir + "myloop_new_mc_truth_" + channel_to_ntuple_name(channel) + "_with_cuts.root", "OPEN");
   TTree *t = static_cast<TTree*>(f->Get(channel_to_ntuple_name(channel)));
   TString dir_w = "TnP/recipe_740/CMSSW_7_4_0/src/MuonAnalysis/TagAndProbe/test/jpsi/fitTreeAnalyzer/ratio_files/25ns/";
@@ -73,13 +78,13 @@ int main(int argc, char** argv)
   TFile *f_w = new TFile(dir_w + ModeRootFileTString, "OPEN");
 
   //Access the needed variables
-  double b_pt, b_y, muon1_pt, muon1_y, muon2_pt, muon2_y;
+  double b_pt, b_y, muon1_pt, muon1_eta, muon2_pt, muon2_eta;
   t->SetBranchAddress("pt",&b_pt);
   t->SetBranchAddress("y",&b_y);
   t->SetBranchAddress("mu1pt",&muon1_pt);
-  t->SetBranchAddress("mu1eta",&muon1_y);
+  t->SetBranchAddress("mu1eta",&muon1_eta);
   t->SetBranchAddress("mu2pt",&muon2_pt);
-  t->SetBranchAddress("mu2eta",&muon2_y);
+  t->SetBranchAddress("mu2eta",&muon2_eta);
 
   //Loop trough the events of the MC analysis file to calculate both the number of events in each (pT,y) subsample and to calculate the muon efficiency for each muon pair coming from a certain B meson. Since the systematical error is going to be an average calculate with these two values, the values are incremented and are not separately stored per event
   int mu1_count = 0, mu2_count = 0;
@@ -87,39 +92,76 @@ int main(int argc, char** argv)
   for(int entry=0; entry<t->GetEntries(); ++entry)
     {
       //These two counters are checking how large the fraction of muons which do not have an associated weight is.
-      if(muon1_pt>40.) mu1_count += 1;
-      if(muon2_pt>40.) mu2_count += 1;
+      if(muon1_pt>40. || muon1_eta>1.6) mu1_count += 1;
+      if(muon2_pt>40. || muon2_eta>1.6) mu2_count += 1;
 
       t->GetEntry(entry);
       currBin = currentBin(subsample_entries.size1(),subsample_entries.size2(),b_y,b_pt,channel);
       subsample_entries(currBin.first,currBin.second) += 1;
-      weight_product(currBin.first,currBin.second) += getWeight(f_w,muon1_y,muon1_pt,mode)*getWeight(f_w,muon2_y,muon2_pt,mode); 
+      weight_product(currBin.first,currBin.second) += getWeight(f_w,muon1_eta,muon1_pt,mode)*getWeight(f_w,muon2_eta,muon2_pt,mode); 
 
     }
   
-  std::cout << "Fraction of muon1 with pT larger than 40 GeV: " <<
+  std::cout << "Fraction of muon1 with pT larger than 40 GeV and pseudorapidity larger than 1.6: " <<
     static_cast<double>(mu1_count)/static_cast<double>(t->GetEntries()) << std::endl;
-  std::cout << "Fraction of muon2 with pT larger than 40 GeV: " <<
+  std::cout << "Fraction of muon2 with pT larger than 40 GeV and pseudorapidity larger than 1.6: " <<
     static_cast<double>(mu2_count)/static_cast<double>(t->GetEntries()) << std::endl;
+
+  //double differential: boost::numeric::ublas::matrix<double> systematics(nbins_y, nbins_pt);
+  int nbins_syst = 0;
+  if(bins == "pt") nbins_syst = nbins_pt;
+  else if(bins == "y") nbins_syst = nbins_y;
+  std::vector<double> systematics(nbins_syst);  
 
   //calculate the systematical uncertainty per bin of pT and rapidity
   int subsample_entries_sum = 0;
   double  weight_product_sum = 0;
-  for(unsigned int i=0; i<weight_product.size2(); ++i) { //cycle over pT
-    subsample_entries_sum = 0; 
-    weight_product_sum = 0.;
-    for (unsigned int j=0; j<weight_product.size1(); ++j) { //cycle over y
-      subsample_entries_sum += subsample_entries(j,i);
-      weight_product_sum += weight_product(j,i);
+  if(bins == "pt")
+    {
+      for(unsigned int i=0; i<weight_product.size2(); ++i) { //cycle over pT
+	subsample_entries_sum = 0; 
+	weight_product_sum = 0.;
+	for (unsigned int j=0; j<weight_product.size1(); ++j) { //cycle over y
+	  subsample_entries_sum += subsample_entries(j,i);
+	  weight_product_sum += weight_product(j,i);
+	}
+	systematics.at(i) = (weight_product_sum/static_cast<double>(subsample_entries_sum) - 1);
+      }
     }
-    systematics.at(i) = (weight_product_sum/static_cast<double>(subsample_entries_sum) - 1);
-  }
+  else if(bins == "y") 
+    {
+      for(unsigned int i=0; i<weight_product.size1(); ++i) { //cycle over y
+	subsample_entries_sum = 0; 
+	weight_product_sum = 0.;
+	for (unsigned int j=0; j<weight_product.size2(); ++j) { //cycle over pt
+	  subsample_entries_sum += subsample_entries(i,j);
+	  weight_product_sum += weight_product(i,j);
+	}
+	systematics.at(i) = (weight_product_sum/static_cast<double>(subsample_entries_sum) - 1);
+      }
+    }
+  else if(bins == "global")
+    {
+      subsample_entries_sum = 0; 
+      weight_product_sum = 0.;
+      for(unsigned int i=0; i<weight_product.size2(); ++i) { //cycle over pT
+	for (unsigned int j=0; j<weight_product.size1(); ++j) { //cycle over y
+	  subsample_entries_sum += subsample_entries(j,i);
+	  weight_product_sum += weight_product(j,i);
+	}
+      }
+      std::cout << "Global " << mode << "error: " << TMath::Abs(weight_product_sum/static_cast<double>(subsample_entries_sum) - 1) << std::endl;
+      return 0;
+    }
 
   TString ModeTString;
-  if(mode == "softmuonid") ModeTString = "SoftMuonID";
+  if(mode == "softmuonid") ModeTString = "MuonID";
   else if(mode == "l1l2") ModeTString = "L1L2";
   else if(mode == "l3") ModeTString = "L3"; 
-  printSystematics(channel,"./Table_" + ModeTString + "_Syst_" + channel_to_ntuple_name(channel) + ".csv",systematics);
+  TString BinsTString;
+  if(bins == "pt") BinsTString = "PtBins";
+  else if(bins == "y") BinsTString = "RapBins";
+  printSystematics(channel, bins, ModeTString, "./Table_" + ModeTString + "_Syst_" + BinsTString + "_" + channel_to_ntuple_name(channel) + ".txt", systematics);
 
   return 0;
 }
@@ -138,21 +180,28 @@ std::pair<int,int> getBinpT(int channel, int bin_number)
   return pair;
 }
 
-void printSystematics(int channel, TString name, std::vector<double>& systematics) 
+void printSystematics(int channel, std::string bins, TString mode, TString name, std::vector<double>& systematics) 
 {
   std::ofstream Table;
   Table.open(name);
-
   Table << " ,"; //top left corner of the table
-  for (unsigned int i_pt=0; i_pt<systematics.size(); ++i_pt) {
-    Table << getBinpT(channel,i_pt).first << " - " << getBinpT(channel,i_pt).second << ",";
-  }
+
+  if(bins == "pt")
+    {
+      for (unsigned int i_pt=0; i_pt<systematics.size(); ++i_pt) 
+	Table << getBinpT(channel,i_pt).first << " - " << getBinpT(channel,i_pt).second << ",";
+    }
+  else if(bins == "y")
+    {
+      for (unsigned int i_y=0; i_y<systematics.size(); ++i_y) 
+	Table << getBiny(channel,i_y).first << " - " << getBiny(channel,i_y).second << ",";
+    }
+  
   Table << std::endl;
   for(unsigned int i=0; i<systematics.size(); ++i) {
-    //Table << getBiny(channel,i).first << " - " << getBiny(channel,i).second << ",";
     Table << TMath::Abs(systematics.at(i))*100 << ",";
   }
-
+  
   Table.close();
 }
 
@@ -170,24 +219,24 @@ std::pair<float,float> getBiny(int channel, int bin_number)
   return pair;
 }
 
-double getWeight(TFile *f, double muon_y, double muon_pt, std::string mode)
+double getWeight(TFile *f, double muon_eta, double muon_pt, std::string mode)
 {
   TGraphAsymmErrors* h = nullptr;
-  if(TMath::Abs(muon_y)>=0. && TMath::Abs(muon_y)<0.2) h = static_cast<TGraphAsymmErrors*>(f->Get("ratio_0to0p2"));
-  else if(TMath::Abs(muon_y)>=0.2 && TMath::Abs(muon_y)<0.3) h = static_cast<TGraphAsymmErrors*>(f->Get("ratio_0p2to0p3"));
-  else if(TMath::Abs(muon_y)>=0.3 && TMath::Abs(muon_y)<0.9) h = static_cast<TGraphAsymmErrors*>(f->Get("ratio_0p3to0p9"));
-  else if(TMath::Abs(muon_y)>=0.9 && TMath::Abs(muon_y)<1.2) h = static_cast<TGraphAsymmErrors*>(f->Get("ratio_0p9to1p2"));
-  else if(TMath::Abs(muon_y)>=1.2 && TMath::Abs(muon_y)<1.6) h = static_cast<TGraphAsymmErrors*>(f->Get("ratio_1p2to1p6"));
-  else if(TMath::Abs(muon_y)>=1.6 && TMath::Abs(muon_y)<2.1) {
+  if(TMath::Abs(muon_eta)>=0. && TMath::Abs(muon_eta)<0.2) h = static_cast<TGraphAsymmErrors*>(f->Get("ratio_0to0p2"));
+  else if(TMath::Abs(muon_eta)>=0.2 && TMath::Abs(muon_eta)<0.3) h = static_cast<TGraphAsymmErrors*>(f->Get("ratio_0p2to0p3"));
+  else if(TMath::Abs(muon_eta)>=0.3 && TMath::Abs(muon_eta)<0.9) h = static_cast<TGraphAsymmErrors*>(f->Get("ratio_0p3to0p9"));
+  else if(TMath::Abs(muon_eta)>=0.9 && TMath::Abs(muon_eta)<1.2) h = static_cast<TGraphAsymmErrors*>(f->Get("ratio_0p9to1p2"));
+  else if(TMath::Abs(muon_eta)>=1.2 && TMath::Abs(muon_eta)<1.6) h = static_cast<TGraphAsymmErrors*>(f->Get("ratio_1p2to1p6"));
+  else if(TMath::Abs(muon_eta)>=1.6 && TMath::Abs(muon_eta)<2.1) {
     if(mode == "softmuonid") h = static_cast<TGraphAsymmErrors*>(f->Get("ratio_1p6to2p1"));
   }
-  else if(TMath::Abs(muon_y)>=2.1 && TMath::Abs(muon_y)<2.4) {
+  else if(TMath::Abs(muon_eta)>=2.1 && TMath::Abs(muon_eta)<2.4) {
     if(mode == "softmuonid") h = static_cast<TGraphAsymmErrors*>(f->Get("ratio_2p1to2p4"));
   }
-  else std::cout << "The muon had a pseudo-rapidity of " << muon_y << "!" << std::endl;
+  else std::cout << "The muon had a pseudo-rapidity of " << muon_eta << "!" << std::endl;
 
   if (muon_pt>=2. && muon_pt<=40.) { //values considered inside the weight maps
-    if(TMath::Abs(muon_y)>=1.6 && mode != "softmuonid") return 1.; //not all the maps have weights for these y values
+    if(TMath::Abs(muon_eta)>=1.6 && mode != "softmuonid") return 1.; //not all the maps have weights for these y values
     else return h->Eval(muon_pt); 
   }
   else {/*std::cout << "The muon has a pT of " << muon_pt << "!" << std::endl;*/ return 1.;}  

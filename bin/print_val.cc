@@ -10,7 +10,7 @@
 // channel = 6: Lambda_b -> Jpsi + Lambda
 //-----------------------------------------------------------------
 
-//input example: print_val --file input_file.root
+//input example: print_val --input input_file.root
 int main(int argc, char** argv)
 {
   TString input_file = "";

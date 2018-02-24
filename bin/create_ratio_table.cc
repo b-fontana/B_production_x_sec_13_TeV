@@ -122,13 +122,13 @@ int main(int argc, char** argv)
       b_fraction[ch] = branch->getVal();
             
       if(vector == "yield")
-	read_vector(channel, "yield", var1_name , var2_name, n_var1_bins, n_var2_bins, var1_bins, var2_bins, yield[ch][0], yield_err_lo[ch][0], yield_err_hi[ch][0]);
+	read_vector(channel, "yield", var1_name , var2_name, n_var1_bins, n_var2_bins, var1_bins, var2_bins, yield[ch][0], "", yield_err_lo[ch][0], yield_err_hi[ch][0]);
 
       if(eff || vector == "ratioeff")
-        read_vector(channel, "totaleff", var1_name , var2_name, n_var1_bins, n_var2_bins, var1_bins, var2_bins, total_eff[ch][0], total_eff_err_lo[ch][0], total_eff_err_hi[ch][0]);
+        read_vector(channel, "totaleff", var1_name , var2_name, n_var1_bins, n_var2_bins, var1_bins, var2_bins, total_eff[ch][0], "", total_eff_err_lo[ch][0], total_eff_err_hi[ch][0]);
 
       if(syst)
-        read_vector(channel, "combined_syst", var1_name , var2_name, n_var1_bins, n_var2_bins, var1_bins, var2_bins, combined_syst[ch][0],combined_syst_lo[ch][0],combined_syst_hi[ch][0]);
+        read_vector(channel, "combined_syst", var1_name , var2_name, n_var1_bins, n_var2_bins, var1_bins, var2_bins, combined_syst[ch][0], "", combined_syst_lo[ch][0],combined_syst_hi[ch][0]);
             
     }//end of ch cicle
   

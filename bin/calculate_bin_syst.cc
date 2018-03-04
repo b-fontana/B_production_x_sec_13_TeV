@@ -489,13 +489,14 @@ double mass_window_syst(RooWorkspace& ws, int channel, double pt_min, double pt_
 double reweighting_syst(int channel, double pt_min, double pt_max, double y_min, double y_max, double nominal_quantity) {
   std::vector<double> range_syst;
   std::vector<TString> reweight_var_names;
-  reweight_var_names.push_back("mu1eta");
-  reweight_var_names.push_back("mu1pt");
-  reweight_var_names.push_back("lerrxy");
-  reweight_var_names.push_back("tk1pt");
-  reweight_var_names.push_back("tk1eta");	
+  //reweight_var_names.push_back("mu1eta");
+  //reweight_var_names.push_back("mu1pt");
+  //reweight_var_names.push_back("lerrxy");
+  //reweight_var_names.push_back("tk1pt");
+  //reweight_var_names.push_back("tk1eta");	
   //reweight_var_names.push_back("y");
   //reweight_var_names.push_back("pt");
+  if(channel!=1) reweight_var_names.push_back("tktkmass");
 
   RooRealVar* eff_corrected;
   int reweight_variables_number = static_cast<int>(reweight_var_names.size());  
@@ -503,6 +504,11 @@ double reweighting_syst(int channel, double pt_min, double pt_max, double y_min,
   for (int i=0; i<reweight_variables_number; ++i) {
     eff_corrected = reco_efficiency(channel, pt_min, pt_max, y_min, y_max, true, reweight_var_names.at(i));
     range_syst.push_back(static_cast<double>(eff_corrected->getVal()));
+    std::cout << std::endl;
+    std::cout << std::endl;
+    std::cout << "Corrected efficiency  " << i << ": "<< eff_corrected->getVal() << std::endl;
+    std::cout << std::endl;
+    std::cout << std::endl;
   }
 
   int i_max = 0;

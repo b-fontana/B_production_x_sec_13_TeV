@@ -1067,7 +1067,7 @@ RooRealVar* reco_efficiency(int channel, double pt_min, double pt_max, double y_
   //--------------------------------read monte carlo with cuts------------------------
   // /*2015:*/ TString mc_input_with_cuts = "/lstore/cms/brunogal/input_for_B_production_x_sec_13_TeV/new_inputs/myloop_new_mc_truth_" + channel_to_ntuple_name(channel) + "_with_cuts.root";
   /*2016 TString mc_input_with_cuts = TString::Format(BASE_DIR) + "MC_2016/myloop_new_mc_truth_" + channel_to_ntuple_name(channel) + "_with_cuts.root";*/
-  TString mc_input_with_cuts = TString::Format(BASE_DIR) + "/new_inputs/reduced_myloop_new_mc_truth_" + channel_to_ntuple_name(channel) + "_with_cuts.root";
+  TString mc_input_with_cuts = TString::Format(BASE_DIR) + "/final_selection/myloop_new_mc_truth_" + channel_to_ntuple_name(channel) + "_with_cuts.root";
   TFile *fin_with_cuts = new TFile(mc_input_with_cuts);
 
   TTree *tin_with_cuts = (TTree*)fin_with_cuts->Get(channel_to_ntuple_name(channel));
@@ -1075,100 +1075,100 @@ RooRealVar* reco_efficiency(int channel, double pt_min, double pt_max, double y_
   //read the ntuple
   tin_with_cuts->SetBranchAddress("eta", &eta_b);
   tin_with_cuts->SetBranchAddress("y", &y_b);
-    tin_with_cuts->SetBranchAddress("pt", &pt_b);
-    tin_with_cuts->SetBranchAddress("mu1pt", &pt_mu1);
-    tin_with_cuts->SetBranchAddress("mu2pt", &pt_mu2);
-    tin_with_cuts->SetBranchAddress("mu1eta", &eta_mu1);
-    tin_with_cuts->SetBranchAddress("mu2eta", &eta_mu2);
-    if(reweighting_var_str == "lerrxy") {
-      tin_with_cuts->SetBranchAddress("lxy", &lxy);
-      tin_with_cuts->SetBranchAddress("errxy", &errxy);
-    }
- 
-    if(syst) {
-      if (reweighting_var_str != "eta" && reweighting_var_str != "y" && reweighting_var_str != "pt" && reweighting_var_str != "mu1pt" && reweighting_var_str != "mu2pt" && reweighting_var_str != "mu1eta" && reweighting_var_str != "mu2eta" && reweighting_var_str != "lerrxy")
-	tin_with_cuts->SetBranchAddress(reweighting_var_str, &reweighting_variable);
-    }
-    TH1D* hist_passed = new TH1D("hist_passed","hist_passed",1,pt_min,pt_max);
-
-    if (syst) { 
-      f_weights = new TFile("weights/weights_" + channel_to_ntuple_name(channel) + ".root", "READ");
-      if (f_weights != nullptr) h_weights_passed = static_cast<TH1D*>( f_weights->Get(reweighting_var_str + "_with_cuts"));
-      else std::cout << "The file was not opened! (functions.h)" << std::endl;
-    }
-
-    for (int evt=0; evt < tin_with_cuts->GetEntries(); evt++)
-      {
-	tin_with_cuts->GetEntry(evt);
-	
-	if (fabs(eta_b) > 2.4) continue; //B mesons inside the detector region eta < 2.4
-	if (fabs(y_b)<y_min || fabs(y_b)>y_max) continue; // within the y binning
-	if (pt_b<pt_min || pt_b>pt_max) continue; //within the pt bin
+  tin_with_cuts->SetBranchAddress("pt", &pt_b);
+  tin_with_cuts->SetBranchAddress("mu1pt", &pt_mu1);
+  tin_with_cuts->SetBranchAddress("mu2pt", &pt_mu2);
+  tin_with_cuts->SetBranchAddress("mu1eta", &eta_mu1);
+  tin_with_cuts->SetBranchAddress("mu2eta", &eta_mu2);
+  if(reweighting_var_str == "lerrxy") {
+    tin_with_cuts->SetBranchAddress("lxy", &lxy);
+    tin_with_cuts->SetBranchAddress("errxy", &errxy);
+  }
+  
+  if(syst) {
+    if (reweighting_var_str != "eta" && reweighting_var_str != "y" && reweighting_var_str != "pt" && reweighting_var_str != "mu1pt" && reweighting_var_str != "mu2pt" && reweighting_var_str != "mu1eta" && reweighting_var_str != "mu2eta" && reweighting_var_str != "lerrxy")
+      tin_with_cuts->SetBranchAddress(reweighting_var_str, &reweighting_variable);
+  }
+  TH1D* hist_passed = new TH1D("hist_passed","hist_passed",1,pt_min,pt_max);
+  
+  if (syst) { 
+    f_weights = new TFile("weights_" + channel_to_ntuple_name(channel) + ".root", "READ");
+    if (f_weights != nullptr) h_weights_passed = static_cast<TH1D*>( f_weights->Get(reweighting_var_str + "_with_cuts"));
+    else std::cout << "The file was not opened! (functions.h)" << std::endl;
+  }
+  
+  for (int evt=0; evt < tin_with_cuts->GetEntries(); evt++)
+    {
+      tin_with_cuts->GetEntry(evt);
+      
+      if (fabs(eta_b) > 2.4) continue; //B mesons inside the detector region eta < 2.4
+      if (fabs(y_b)<y_min || fabs(y_b)>y_max) continue; // within the y binning
+      if (pt_b<pt_min || pt_b>pt_max) continue; //within the pt bin
 		
-	bool muon1Filter = fabs(eta_mu1) < 2.4 && pt_mu1 > 2.8;
-	bool muon2Filter = fabs(eta_mu2) < 2.4 && pt_mu2 > 2.8;
+      bool muon1Filter = fabs(eta_mu1) < 2.4 && pt_mu1 > 2.8;
+      bool muon2Filter = fabs(eta_mu2) < 2.4 && pt_mu2 > 2.8;
 
-	if (syst) {
-	  if (muon1Filter && muon2Filter) {
-	    if (reweighting_var_str != "eta" && reweighting_var_str != "y" && reweighting_var_str != "pt" && reweighting_var_str != "mu1pt" 
-		&& reweighting_var_str != "mu2pt" && reweighting_var_str != "mu1eta" && reweighting_var_str != "mu2eta" && reweighting_var_str != "lerrxy")
-	      weight_passed =+ h_weights_passed->GetBinContent( h_weights_passed->FindBin(reweighting_variable) );
-	    else if (reweighting_var_str == "eta") weight_passed += h_weights_passed->GetBinContent( h_weights_passed->FindBin(eta_b) );
-	    else if (reweighting_var_str == "y") weight_passed += h_weights_passed->GetBinContent( h_weights_passed->FindBin(y_b) );
-	    else if (reweighting_var_str == "pt") {
-	      if(pt_b >= 10. && pt_b <= 45.) weight_passed += h_weights_passed->GetBinContent( h_weights_passed->FindBin(pt_b) );
-	      else weight_passed += 1.;
-	    }
-	    else if (reweighting_var_str == "mu1pt") {
-	      if(pt_mu1 >= 4. && pt_mu1 <= 15.) weight_passed += h_weights_passed->GetBinContent( h_weights_passed->FindBin(pt_mu1) );
-	      else weight_passed += 1.;
+      if (syst) {
+	if (muon1Filter && muon2Filter) {
+	  if (reweighting_var_str != "eta" && reweighting_var_str != "y" && reweighting_var_str != "pt" && reweighting_var_str != "mu1pt" 
+	      && reweighting_var_str != "mu2pt" && reweighting_var_str != "mu1eta" && reweighting_var_str != "mu2eta" && reweighting_var_str != "lerrxy")
+	    weight_passed += h_weights_passed->GetBinContent( h_weights_passed->FindBin(reweighting_variable) );	    
+	  else if (reweighting_var_str == "eta") weight_passed += h_weights_passed->GetBinContent( h_weights_passed->FindBin(eta_b) );
+	  else if (reweighting_var_str == "y") weight_passed += h_weights_passed->GetBinContent( h_weights_passed->FindBin(y_b) );
+	  else if (reweighting_var_str == "pt") {
+	    if(pt_b >= 10. && pt_b <= 45.) weight_passed += h_weights_passed->GetBinContent( h_weights_passed->FindBin(pt_b) );
+	    else weight_passed += 1.;
 	  }
-	    else if (reweighting_var_str == "mu2pt") {
-	      if(pt_mu2 >= 4. && pt_mu2 <= 15.) weight_passed += h_weights_passed->GetBinContent( h_weights_passed->FindBin(pt_mu2) );
-	      else weight_passed += 1.;
-	    }
-	    else if (reweighting_var_str == "mu1eta") weight_passed += h_weights_passed->GetBinContent( h_weights_passed->FindBin(eta_mu1) );
-	    else if (reweighting_var_str == "mu2eta") weight_passed += h_weights_passed->GetBinContent( h_weights_passed->FindBin(eta_mu2) );
-	    else if (reweighting_var_str == "lerrxy") {
-	      if (lxy/errxy >= 8. && lxy/errxy <= 60.) weight_passed += h_weights_passed->GetBinContent( h_weights_passed->FindBin(lxy/errxy) );
-	      else weight_passed += 1.;
-	    }
+	  else if (reweighting_var_str == "mu1pt") {
+	    if(pt_mu1 >= 4.2 && pt_mu1 <= 15.) weight_passed += h_weights_passed->GetBinContent( h_weights_passed->FindBin(pt_mu1) );
+	    else weight_passed += 1.;
+	  }
+	  else if (reweighting_var_str == "mu2pt") {
+	    if(pt_mu2 >= 4.2 && pt_mu2 <= 15.) weight_passed += h_weights_passed->GetBinContent( h_weights_passed->FindBin(pt_mu2) );
+	    else weight_passed += 1.;
+	  }
+	  else if (reweighting_var_str == "mu1eta") weight_passed += h_weights_passed->GetBinContent( h_weights_passed->FindBin(eta_mu1) );
+	  else if (reweighting_var_str == "mu2eta") weight_passed += h_weights_passed->GetBinContent( h_weights_passed->FindBin(eta_mu2) );
+	  else if (reweighting_var_str == "lerrxy") {
+	    if (lxy/errxy >= 8. && lxy/errxy <= 60.) weight_passed += h_weights_passed->GetBinContent( h_weights_passed->FindBin(lxy/errxy) );
+	    else weight_passed += 1.;
 	  }
 	}
-
-	if (muon1Filter && muon2Filter) hist_passed->Fill(pt_b); //count only the events with the muon selection above
-	
       }
-    
-    //calculates the efficiency by dividing the histograms
-    TEfficiency* efficiency = nullptr;
-    if (!syst) efficiency = new TEfficiency(*hist_passed, *hist_tot);
 
-    double eff;
-    double eff_lo;
-    double eff_hi;
+      if (muon1Filter && muon2Filter) hist_passed->Fill(pt_b); //count only the events with the muon selection above
+	
+    }
     
-    if (!syst) {
-      eff = efficiency->GetEfficiency(1);
-      eff_lo = -(efficiency->GetEfficiencyErrorLow(1));
-      eff_hi = efficiency->GetEfficiencyErrorUp(1);
-    }
-    else {
-      eff = static_cast<double>(weight_passed)/hist_tot->GetEntries();
-      eff_lo = 0.01; //random value
-      eff_hi = 0.01; //random value
-    }
+  //calculates the efficiency by dividing the histograms
+  TEfficiency* efficiency = nullptr;
+  if (!syst) efficiency = new TEfficiency(*hist_passed, *hist_tot);
 
-    RooRealVar* eff2 = new RooRealVar("eff2","eff2",eff);
-    eff2->setAsymError(eff_lo,eff_hi);
+  double eff;
+  double eff_lo;
+  double eff_hi;
     
-    fin_no_cuts->Close();
-    delete fin_no_cuts;
+  if (!syst) {
+    eff = efficiency->GetEfficiency(1);
+    eff_lo = -(efficiency->GetEfficiencyErrorLow(1));
+    eff_hi = efficiency->GetEfficiencyErrorUp(1);
+  }
+  else {
+    eff = static_cast<double>(weight_passed)/hist_tot->GetEntries();
+    eff_lo = 0.01; //random value
+    eff_hi = 0.01; //random value
+  }
+
+  RooRealVar* eff2 = new RooRealVar("eff2","eff2",eff);
+  eff2->setAsymError(eff_lo,eff_hi);
     
-    fin_with_cuts->Close();
-    delete fin_with_cuts;
+  fin_no_cuts->Close();
+  delete fin_no_cuts;
     
-    return eff2;
+  fin_with_cuts->Close();
+  delete fin_with_cuts;
+    
+  return eff2;
 }
 
 RooRealVar* branching_fraction(TString measure, int channel)

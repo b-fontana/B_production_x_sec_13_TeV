@@ -1,25 +1,38 @@
 #include "UserCode/B_production_x_sec_13_TeV/interface/functions.h"
 
 //syst list
-std::vector<std::string> ntkp_syst_list    = {"signal_pdf_syst", "combinatorial_background_pdf_syst", "mass_window_syst", "mc_stat_syst", "recoeff_reweight_syst", "jpsipi_pdf_syst", "jpsiX_pdf_syst"}; // "b_fraction_syst"
-std::vector<std::string> ntkstar_syst_list = {"signal_pdf_syst", "combinatorial_background_pdf_syst", "mass_window_syst", "mc_stat_syst", "recoeff_reweight_syst"}; // "b_fraction_syst"
-std::vector<std::string> ntphi_syst_list   = {"signal_pdf_syst", "combinatorial_background_pdf_syst", "mass_window_syst", "mc_stat_syst", "recoeff_reweight_syst"}; // "b_fraction_syst"
+std::vector<std::string> ntkp_syst_list    = {"signal_pdf_syst", "combinatorial_background_pdf_syst", "mass_window_syst", "mc_stat_syst", "jpsipi_pdf_syst", "jpsiX_pdf_syst"}; //"recoeff_reweight_syst"
+std::vector<std::string> ntkstar_syst_list = {"signal_pdf_syst", "combinatorial_background_pdf_syst", "mass_window_syst", "mc_stat_syst"}; //"recoeff_reweight_syst"
+std::vector<std::string> ntphi_syst_list   = {"signal_pdf_syst", "combinatorial_background_pdf_syst", "mass_window_syst", "mc_stat_syst"}; //"recoeff_reweight_syst"
+
+std::vector<std::string> fsfu_syst_list = {"ratio_reweight_syst"};
+std::vector<std::string> fsfd_syst_list = {"ratio_reweight_syst"};
+std::vector<std::string> fdfu_syst_list = {"ratio_reweight_syst"};
 
 //global_syst_list
-std::vector<std::string> fsfu_global_syst_list = {"b_fraction_syst", "tracking_syst"};
-std::vector<std::string> fsfd_global_syst_list = {"b_fraction_syst", "tktk_width_syst"};
-std::vector<std::string> fdfu_global_syst_list = {"b_fraction_syst", "tracking_syst", "tktk_width_syst"};
+std::vector<std::string> fsfu_global_syst_list = {"pull_syst", "b_fraction_syst", "tracking_syst"};
+std::vector<std::string> fsfd_global_syst_list = {"pull_syst", "b_fraction_syst", "tktk_width_syst"};
+std::vector<std::string> fdfu_global_syst_list = {"pull_syst", "b_fraction_syst", "tracking_syst", "tktk_width_syst"};
 
 //global_syst_val
+double tracking_syst = 0.028;
+double tktk_width_syst = 0; //set to zero for now.
+
 RooRealVar* bu_branch = branching_fraction("ratio", 1);
 RooRealVar* bd_branch = branching_fraction("ratio", 2);
 RooRealVar* bs_branch = branching_fraction("ratio", 4);
 
-double tracking_syst = 0.028;
-double tktk_width_syst = 0; //set to zero for now.
+RooRealVar* bu_pull = new RooRealVar("bu_pull","bu_pull",0.00518);
+RooRealVar* bd_pull = new RooRealVar("bd_pull","bd_pull",0.00309);
+RooRealVar* bs_pull = new RooRealVar("bds_pull","bs_pull",0.00959);
+
 double fsfu_b_fraction_syst = sqrt( pow(bs_branch->getError()/bs_branch->getVal(),2) + pow(bu_branch->getError()/bu_branch->getVal(),2) ) ;
 double fsfd_b_fraction_syst = sqrt( pow(bs_branch->getError()/bs_branch->getVal(),2) + pow(bd_branch->getError()/bd_branch->getVal(),2) ) ;
 double fdfu_b_fraction_syst = sqrt( pow(bd_branch->getError()/bd_branch->getVal(),2) + pow(bu_branch->getError()/bu_branch->getVal(),2) ) ;
+
+double fsfu_pull_syst = sqrt( pow(bs_pull->getVal(),2) + pow(bu_pull->getVal(),2) );
+double fsfd_pull_syst = sqrt( pow(bs_pull->getVal(),2) + pow(bd_pull->getVal(),2) );
+double fdfu_pull_syst = sqrt( pow(bd_pull->getVal(),2) + pow(bu_pull->getVal(),2) );
 
 void setup_global_syst_val(std::vector<double>* global_syst_val, TString measure, TString ratio = "", int channel = 0)
 {
@@ -44,6 +57,9 @@ void setup_global_syst_val(std::vector<double>* global_syst_val, TString measure
 		    else
 		      if(fsfu_global_syst_list[i] == "tracking_syst")
 			global_syst_val->push_back(tracking_syst);
+		      else
+			if(fsfu_global_syst_list[i] == "pull_syst")
+			  global_syst_val->push_back(fsfu_pull_syst);
 		  }	      
 	      else
 		if(ratio == "fsfd")
@@ -54,6 +70,9 @@ void setup_global_syst_val(std::vector<double>* global_syst_val, TString measure
 		      else
 			if(fsfd_global_syst_list[i] == "tktk_width_syst")
 			  global_syst_val->push_back(tktk_width_syst);
+			else
+			  if(fsfd_global_syst_list[i] == "pull_syst")
+			    global_syst_val->push_back(fsfd_pull_syst);
 		    }
 		else
 		  if(ratio == "fdfu")
@@ -67,6 +86,9 @@ void setup_global_syst_val(std::vector<double>* global_syst_val, TString measure
 			  else
 			    if(fdfu_global_syst_list[i] == "tktk_width_syst")
 			      global_syst_val->push_back(tktk_width_syst);
+			    else
+			      if(fdfu_global_syst_list[i] == "pull_syst")
+				global_syst_val->push_back(fdfu_pull_syst);
 		      }
 	    } 
 	}
@@ -136,12 +158,33 @@ void setup_syst_list(int channel, std::vector<std::string>* syst_vector)
     }
 }
 
+void setup_syst_list(TString ratio, std::vector<std::string>* syst_vector)
+{
+  if(ratio== "fsfu")
+    for(int i=0; i<(int)fsfu_syst_list.size(); i++)
+      {
+	syst_vector->push_back(fsfu_syst_list[i]);
+      }
+  else
+    if(ratio== "fsfd")
+      for(int i=0; i<(int)fsfd_syst_list.size(); i++)
+	{
+	  syst_vector->push_back(fsfd_syst_list[i]);
+	}
+    else
+      if(ratio== "fdfu")
+	for(int i=0; i<(int)fdfu_syst_list.size(); i++)
+	  {
+	    syst_vector->push_back(fdfu_syst_list[i]);
+	  }
+}
+
 std::string syst_fancy_name(std::string syst_name)
 {
   std::string fancy_name = syst_name;
 
   if(syst_name == "combined_syst")
-    fancy_name = "Overall systematic";
+    fancy_name = "Overall syst.";
   else
     if(syst_name == "signal_pdf_syst")
       fancy_name = "signal shape";
@@ -161,14 +204,20 @@ std::string syst_fancy_name(std::string syst_name)
 	      if(syst_name == "recoeff_reweight_syst")
 		fancy_name = "MC reweight";
 	      else
-		if(syst_name == "tracking_syst")
-		  fancy_name = "Hadron tracking";
+		if(syst_name == "ratio_reweight_syst")
+		  fancy_name = "MC reweight";
 		else
-		  if(syst_name == "jpsipi_pdf_syst")
-		    fancy_name = "Jpsi pi";
+		  if(syst_name == "tracking_syst")
+		    fancy_name = "Hadron tracking";
 		  else
-		    if(syst_name == "jpsiX_pdf_syst")
-		      fancy_name = "Jpsi X";
-
+		    if(syst_name == "jpsipi_pdf_syst")
+		      fancy_name = "Jpsi pi";
+		    else
+		      if(syst_name == "jpsiX_pdf_syst")
+			fancy_name = "Jpsi X";
+		      else
+			if(syst_name == "pull_syst")
+			  fancy_name = "Pull syst.";
+  
   return fancy_name; 
 }

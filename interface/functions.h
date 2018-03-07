@@ -60,7 +60,7 @@ using namespace RooFit;
 
 #define LUMINOSITY          2.71
 #define NUMBER_OF_CPU       1
-#define VERSION             "v19"
+#define VERSION             "v22"
 #define BASE_DIR            "/lstore/cms/brunogal/input_for_B_production_x_sec_13_TeV/"
 //#define BASE_DIR            /*"/lstore/cms/balves/Jobs/Full_Dataset_2015_Rereco"*/ "/lstore/cms/balves/Jobs/"
 
@@ -93,9 +93,8 @@ RooRealVar* prefilter_efficiency(int channel, double pt_min, double pt_max, doub
 RooRealVar* reco_efficiency(int channel, double pt_min, double pt_max, double y_min, double y_max, bool syst = false, TString reweighting_var_str = "");
 RooRealVar* branching_fraction(TString measure, int channel);
 
-//void read_vector(TString measure, int channel, TString vector, TString var1_name , TString var2_name, int n_var1_bins, int n_var2_bins,  double* var1_bins, double* var2_bins, double* array, double* err_lo = NULL, double* err_hi = NULL);
-void read_vector(int channel, TString vector, TString var1_name , TString var2_name, int n_var1_bins, int n_var2_bins,  double* var1_bins, double* var2_bins, double* array, double* err_lo = NULL, double* err_hi = NULL);
-void print_table(TString title, int n_var1_bins, int n_var2_bins, TString var1_name, TString var2_name, double* var1_bin_edges, double* var2_bin_edges, double* array, double* stat_err_lo, double* stat_err_hi, double* syst_err_lo = NULL, double* syst_err_hi = NULL, double* BF_err = NULL);
+void read_vector(int channel, TString vector, TString var1_name , TString var2_name, int n_var1_bins, int n_var2_bins,  double* var1_bins, double* var2_bins, double* array, TString ratio = "", double* err_lo = NULL, double* err_hi = NULL);
+void print_table(TString title, int n_var1_bins, int n_var2_bins, TString var1_name, TString var2_name, double* var1_bin_edges, double* var2_bin_edges, double* array, double* stat_err_lo, double* stat_err_hi, double* syst_err_lo = NULL, double* syst_err_hi = NULL, double* BF_err = NULL, double* global_err = NULL);
 void latex_table(std::string filename, int n_col, int n_lin, std::vector<std::string> col_name, std::vector<std::string> labels, std::vector<std::vector<std::string> > numbers, std::string caption);
 
 void mc_study(RooWorkspace& w, int channel, double pt_min, double pt_max, double y_min, double y_max);
@@ -239,18 +238,6 @@ void build_pdf(RooWorkspace& w, int channel, std::string choice, std::string cho
 
   RooAddPdf* pdf_m_signal;
 
-  // use single Gaussian for low statistics
-  /*
-    if(n_signal_initial < 1000)
-  {
-    m_fraction.setVal(1.);
-    m_fraction.setConstant(kTRUE);
-    
-    m_fraction2.setVal(1.);
-    m_fraction2.setConstant(kTRUE);
-  }
-  */
-
   if(choice2=="signal" && choice=="crystal")
     {
       pdf_m_signal = new RooAddPdf("pdf_m_signal", "pdf_m_signal", RooArgList(m_crystal,m_gaussian2), RooArgList(m_fraction));
@@ -274,13 +261,14 @@ void build_pdf(RooWorkspace& w, int channel, std::string choice, std::string cho
   // combinatorial background PDF
   
   //One Exponential
-  RooRealVar m_exp("m_exp","m_exp",-0.,-4.,0.); //,-0.3,-4.,0.);
-
+  RooRealVar m_exp("m_exp","m_exp",0,-4.,0.); //,-0.3,-4.,0.);
   RooExponential pdf_m_combinatorial_exp("pdf_m_combinatorial_exp","pdf_m_combinatorial_exp",mass,m_exp);
 
-  //Two Exponentials
-  RooRealVar m_exp2("m_exp2","m_exp2",-0.3,-4.,0.);
-  RooExponential pdf_m_combinatorial_exp2("pdf_m_combinatorial_exp2","pdf_m_combinatorial_exp2",mass,m_exp2);
+  RooRealVar zero_var("zero_var","zero_var",0);
+  zero_var.setConstant(kTRUE);
+
+  RooGenericPdf const_zero("const_zero", "const_zero", "zero_var", RooArgSet(zero_var));
+
   RooRealVar m_fraction_exp("m_fraction_exp", "m_fraction_exp", 1.);
 
   //Bernstein
@@ -296,31 +284,28 @@ void build_pdf(RooWorkspace& w, int channel, std::string choice, std::string cho
 
   RooAddPdf* pdf_m_combinatorial = nullptr;
 
-  if(choice2=="background" && choice=="2exp")
-    pdf_m_combinatorial=new RooAddPdf("pdf_m_combinatorial","pdf_m_combinatorial",RooArgList(pdf_m_combinatorial_exp,pdf_m_combinatorial_exp2),RooArgList(m_fraction_exp));
-  else
-    if(choice2=="background" && choice=="bern")
+  if(choice2=="background" && choice=="bern")
+    {
+      pdf_m_combinatorial=new RooAddPdf("pdf_m_combinatorial","pdf_m_combinatorial",RooArgList(pdf_m_combinatorial_bern,pdf_m_combinatorial_exp),RooArgList(m_fraction_exp));
+      m_fraction_exp.setVal(1.);
+      m_fraction_exp.setConstant(kTRUE);
+    }
+  else 
+    if(choice2=="background" && choice=="power")
       {
-	pdf_m_combinatorial=new RooAddPdf("pdf_m_combinatorial","pdf_m_combinatorial",RooArgList(pdf_m_combinatorial_bern,pdf_m_combinatorial_exp),RooArgList(m_fraction_exp));
+	pdf_m_combinatorial=new RooAddPdf("pdf_m_combinatorial","pdf_m_combinatorial",RooArgList(pdf_m_power,pdf_m_combinatorial_exp),RooArgList(m_fraction_exp));
 	m_fraction_exp.setVal(1.);
 	m_fraction_exp.setConstant(kTRUE);
       }
-    else 
-      if(choice2=="background" && choice=="power")
-	{
-	  pdf_m_combinatorial=new RooAddPdf("pdf_m_combinatorial","pdf_m_combinatorial",RooArgList(pdf_m_power,pdf_m_combinatorial_exp),RooArgList(m_fraction_exp));
-	  m_fraction_exp.setVal(1.);
-	  m_fraction_exp.setConstant(kTRUE);
-	}
-  else //this is the nominal bkg
-	{
-	  pdf_m_combinatorial=new RooAddPdf("pdf_m_combinatorial","pdf_m_combinatorial",RooArgList(pdf_m_combinatorial_exp,pdf_m_combinatorial_exp2),RooArgList(m_fraction_exp));
-	  m_fraction_exp.setVal(1.);
-	  m_fraction_exp.setConstant(kTRUE);
-	  m_exp2.setVal(0.);
-	  m_exp2.setConstant(kTRUE);
-  }
-
+    else //this is the nominal bkg
+      {
+	//pdf_m_combinatorial=new RooAddPdf("pdf_m_combinatorial","pdf_m_combinatorial",RooArgList(pdf_m_combinatorial_exp));
+	
+	pdf_m_combinatorial=new RooAddPdf("pdf_m_combinatorial","pdf_m_combinatorial",RooArgList(pdf_m_combinatorial_exp,const_zero),RooArgList(m_fraction_exp));
+      m_fraction_exp.setVal(1.);
+      m_fraction_exp.setConstant(kTRUE);
+      }
+  
   ////////////////////////////////////////////////////////////////////////////////////////////
   //The components below have no systematic variation yet, they are part of the nominal fit.//
   ////////////////////////////////////////////////////////////////////////////////////////////
@@ -757,7 +742,7 @@ void plot_mass_fit(RooWorkspace& w, int channel, TString directory, int pt_high,
   
   double chi_square = frame_m->chiSquare("thePdf","theData");
  
-  TLatex* tex8 = new TLatex(0.17, 0.5, Form("#frac{#chi^2} = %.3lf", chi_square));
+  TLatex* tex8 = new TLatex(0.17, 0.5, Form("#frac{#chi^{2}}{ndf} = %.3lf", chi_square));
   tex8->SetNDC(kTRUE);
   tex8->SetTextFont(42);
   tex8->SetTextSize(0.035);
@@ -1080,30 +1065,31 @@ RooRealVar* reco_efficiency(int channel, double pt_min, double pt_max, double y_
   tin_with_cuts->SetBranchAddress("mu2pt", &pt_mu2);
   tin_with_cuts->SetBranchAddress("mu1eta", &eta_mu1);
   tin_with_cuts->SetBranchAddress("mu2eta", &eta_mu2);
-  if(reweighting_var_str == "lerrxy") {
-    tin_with_cuts->SetBranchAddress("lxy", &lxy);
-    tin_with_cuts->SetBranchAddress("errxy", &errxy);
-  }
-  
+  tin_with_cuts->SetBranchAddress("lxy", &lxy);
+  tin_with_cuts->SetBranchAddress("errxy", &errxy);
+     
   if(syst) {
     if (reweighting_var_str != "eta" && reweighting_var_str != "y" && reweighting_var_str != "pt" && reweighting_var_str != "mu1pt" && reweighting_var_str != "mu2pt" && reweighting_var_str != "mu1eta" && reweighting_var_str != "mu2eta" && reweighting_var_str != "lerrxy")
       tin_with_cuts->SetBranchAddress(reweighting_var_str, &reweighting_variable);
   }
   TH1D* hist_passed = new TH1D("hist_passed","hist_passed",1,pt_min,pt_max);
-  
+
   if (syst) { 
-    f_weights = new TFile("weights_" + channel_to_ntuple_name(channel) + ".root", "READ");
+    f_weights = new TFile("weights/weights_" + channel_to_ntuple_name(channel) + ".root", "READ");
     if (f_weights != nullptr) h_weights_passed = static_cast<TH1D*>( f_weights->Get(reweighting_var_str + "_with_cuts"));
     else std::cout << "The file was not opened! (functions.h)" << std::endl;
   }
-  
+
   for (int evt=0; evt < tin_with_cuts->GetEntries(); evt++)
     {
       tin_with_cuts->GetEntry(evt);
-      
+	
       if (fabs(eta_b) > 2.4) continue; //B mesons inside the detector region eta < 2.4
       if (fabs(y_b)<y_min || fabs(y_b)>y_max) continue; // within the y binning
       if (pt_b<pt_min || pt_b>pt_max) continue; //within the pt bin
+
+      //shift correction of errxy
+      if((lxy/(1.14*errxy)) <= 3.5)continue;
 		
       bool muon1Filter = fabs(eta_mu1) < 2.4 && pt_mu1 > 2.8;
       bool muon2Filter = fabs(eta_mu2) < 2.4 && pt_mu2 > 2.8;
@@ -1243,7 +1229,7 @@ RooRealVar* branching_fraction(TString measure, int channel)
   return b_fraction;
 }
 
-void read_vector(int channel, TString vector, TString var1_name , TString var2_name, int n_var1_bins, int n_var2_bins,  double* var1_bins, double* var2_bins, double* array, double* err_lo, double* err_hi)
+void read_vector(int channel, TString vector, TString var1_name , TString var2_name, int n_var1_bins, int n_var2_bins, double* var1_bins, double* var2_bins, double* array, TString ratio, double* err_lo, double* err_hi)
 {
   //input_file_name
   TString bins_str = "";
@@ -1259,7 +1245,8 @@ void read_vector(int channel, TString vector, TString var1_name , TString var2_n
       if(vector.Contains("eff"))
 	dir += "efficiencies_root/";
   
-  dir += channel_to_ntuple_name(channel) + "/";
+  if(vector != "ratio_reweight_syst")
+    dir += channel_to_ntuple_name(channel) + "/";
   
   for(int j=0; j<n_var2_bins; j++)
     {
@@ -1271,8 +1258,11 @@ void read_vector(int channel, TString vector, TString var1_name , TString var2_n
 	  else
 	    bins_str = TString::Format("pt_from_%d_to_%d_y_from_%.2f_to_%.2f", (int)var2_bins[j], (int)var2_bins[j+1], var1_bins[i], var1_bins[i+1]);
 	  
-	  in_file_name = dir + vector + "_" + channel_to_ntuple_name(channel) + "_" + bins_str + ".root";
-	  
+	  if(vector != "ratio_reweight_syst")
+	    in_file_name = dir + vector + "_" + channel_to_ntuple_name(channel) + "_" + bins_str + ".root";
+	  else
+	    in_file_name = dir + ratio + "_" + vector + "_" + bins_str + ".root";
+
 	  //debug
 	  std::cout << "Reading: " << in_file_name << std::endl;
 	  
@@ -1312,8 +1302,13 @@ void read_vector(int channel, TString vector, TString var1_name , TString var2_n
                   y_max = TString::Format("%.2f", var1_bins[i+1]);
                 }
 
-              opt = " --channel " + TString::Format("%d", channel) + " --ptmin " + pt_min + " --ptmax " + pt_max + " --ymin " +  y_min + " --ymax " + y_max;
+	      if(vector != "ratio_reweight_syst")
+		opt = " --channel " + TString::Format("%d", channel) + " --ptmin " + pt_min + " --ptmax " + pt_max + " --ymin " +  y_min + " --ymax " + y_max;
+	      else
+		opt = " --ratio " + ratio + " --ptmin " + pt_min + " --ptmax " + pt_max + " --ymin " +  y_min + " --ymax " + y_max;
 
+	      //add special opt case for ratio_reweight_syst
+	      
               if(vector == "yield")
                 {
                   command += "yield";
@@ -1410,7 +1405,7 @@ void read_vector(int channel, TString vector, TString var1_name , TString var2_n
   ce.SaveAs(save_eff);
 } 
 
-void print_table(TString title, int n_var1_bins, int n_var2_bins, TString var1_name, TString var2_name, double* var1_bin_edges, double* var2_bin_edges, double* array, double* stat_err_lo, double* stat_err_hi, double* syst_err_lo, double* syst_err_hi, double* BF_err)
+void print_table(TString title, int n_var1_bins, int n_var2_bins, TString var1_name, TString var2_name, double* var1_bin_edges, double* var2_bin_edges, double* array, double* stat_err_lo, double* stat_err_hi, double* syst_err_lo, double* syst_err_hi, double* BF_err, double* global_err)
 {
   std::cout << title << " : " << std::endl;
   for(int j=0; j<n_var2_bins; j++)
@@ -1419,17 +1414,16 @@ void print_table(TString title, int n_var1_bins, int n_var2_bins, TString var1_n
 
       for(int i=0; i<n_var1_bins; i++)
         {
-	  if(syst_err_lo == NULL || syst_err_hi == NULL || BF_err == NULL)
-	    {
-	      std::cout << "BIN: " << var1_name << " " << var1_bin_edges[i] << " to " << var1_bin_edges[i+1] << " : " << *(array + j*n_var1_bins + i) << " +" << *(stat_err_hi + j*n_var1_bins + i) << " -" << *(stat_err_lo + j*n_var1_bins + i) << " (stat)" << std::endl;
-	    }
+	  if(syst_err_lo == NULL || syst_err_hi == NULL || BF_err == NULL || global_err == NULL)
+	    std::cout << "BIN: " << var1_name << " " << var1_bin_edges[i] << " to " << var1_bin_edges[i+1] << " : " << *(array + j*n_var1_bins + i) << " +" << *(stat_err_hi + j*n_var1_bins + i) << " -" << *(stat_err_lo + j*n_var1_bins + i) << " (stat)" << std::endl;
 	  else
-	    if(BF_err == NULL)
-	      {
-		std::cout << "BIN: " << var1_name << " " << var1_bin_edges[i] << " to " << var1_bin_edges[i+1] << " : " << *(array + j*n_var1_bins + i) << " +" << *(stat_err_hi + j*n_var1_bins + i) << " -" << *(stat_err_lo + j*n_var1_bins + i) << " (stat) +" << *(syst_err_hi + j*n_var1_bins + i) << " -" << *(syst_err_lo + j*n_var1_bins + i) << " (syst)" << std::endl;
-	      }
+	    if(BF_err == NULL || global_err == NULL)
+	      std::cout << "BIN: " << var1_name << " " << var1_bin_edges[i] << " to " << var1_bin_edges[i+1] << " : " << *(array + j*n_var1_bins + i) << " +" << *(stat_err_hi + j*n_var1_bins + i) << " -" << *(stat_err_lo + j*n_var1_bins + i) << " (stat) +" << *(syst_err_hi + j*n_var1_bins + i) << " -" << *(syst_err_lo + j*n_var1_bins + i) << " (syst)" << std::endl;
 	    else
-	      std::cout << "BIN: " << var1_name << " " << var1_bin_edges[i] << " to " << var1_bin_edges[i+1] << " : " << *(array + j*n_var1_bins + i) << " +" << *(stat_err_hi + j*n_var1_bins + i) << " -" << *(stat_err_lo + j*n_var1_bins + i) << " (stat) +" << *(syst_err_hi + j*n_var1_bins + i) << " -" << *(syst_err_lo + j*n_var1_bins + i) << " (syst) +-" << *(BF_err + j*n_var1_bins + i) << " (BF)" << std::endl;
+	      if(global_err == NULL)
+		std::cout << "BIN: " << var1_name << " " << var1_bin_edges[i] << " to " << var1_bin_edges[i+1] << " : " << *(array + j*n_var1_bins + i) << " +" << *(stat_err_hi + j*n_var1_bins + i) << " -" << *(stat_err_lo + j*n_var1_bins + i) << " (stat) +" << *(syst_err_hi + j*n_var1_bins + i) << " -" << *(syst_err_lo + j*n_var1_bins + i) << " (syst) +-" << *(BF_err + j*n_var1_bins + i) << " (BF)" << std::endl;
+	      else
+		std::cout << "BIN: " << var1_name << " " << var1_bin_edges[i] << " to " << var1_bin_edges[i+1] << " : " << *(array + j*n_var1_bins + i) << " +" << *(stat_err_hi + j*n_var1_bins + i) << " -" << *(stat_err_lo + j*n_var1_bins + i) << " (stat) +" << *(syst_err_hi + j*n_var1_bins + i) << " -" << *(syst_err_lo + j*n_var1_bins + i) << " (syst) +-" << *(BF_err + j*n_var1_bins + i) << " (BF) +-" << *global_err << " ([%%]Global syst)" << std::endl;
 	}
       std::cout << std::endl;
     }

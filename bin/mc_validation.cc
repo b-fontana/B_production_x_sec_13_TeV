@@ -72,6 +72,7 @@ std::string histoName(int channel/*, int variable*/);
 TString canvasName(int channel, int variable, int flag, TString var_str = "");
 std::string varName(int variable);
 std::string unitName(int variable);
+std::string unitNameX(int variable);
 
 //channels: 1. B+ -> J/psi K+; 2. Bd -> J/psi K*0; 4. Bs -> J/psi phi
 //example: valid --channel 1 --cuts 0
@@ -131,13 +132,15 @@ int main(int argc, char **argv) {
 
   if (input_data_flag!=1) {
     if(cuts)
-      input_data = "notktkmasscut_finalselection_myloop_new_data_" + channel_to_ntuple_name(channel) + "_with_cuts.root";
+      //input_data = "/lstore/cms/brunogal/input_for_B_production_x_sec_13_TeV/final_selection/myloop_new_data_"+channel_to_ntuple_name(channel)+"_with_cuts.root";
+    input_data = "/lstore/cms/balves/Jobs/Full_Dataset_2015_Rereco/myloop_new_data_"+channel_to_ntuple_name(channel)+"_with_cuts_hadd.root";
     else 
-      input_data = "/lstore/cms/brunogal/input_for_B_production_x_sec_13_TeV/no_cuts/myloop_new_data_" + channel_to_ntuple_name(channel) + "_no_cuts.root";
+      //input_data = "/lstore/cms/brunogal/input_for_B_production_x_sec_13_TeV/no_cuts/myloop_new_data_" + channel_to_ntuple_name(channel) + "_no_cuts.root";
+    input_data = "/lstore/cms/balves/Jobs/Full_Dataset_2015_Rereco/myloop_new_data_"+channel_to_ntuple_name(channel)+"_no_cuts_hadd_OldSelection.root";
   }
   if (input_mc_flag!=1) {
     if(cuts)
-      input_mc = "notktkmasscut_myloop_new_mc_truth_" +  channel_to_ntuple_name(channel) + "_with_cuts_no_tk_win_cut.root";
+      input_mc = "/lstore/cms/brunogal/input_for_B_production_x_sec_13_TeV/final_selection/myloop_new_mc_truth_"+channel_to_ntuple_name(channel)+"_with_cuts.root";
     else
       input_mc = "/lstore/cms/brunogal/input_for_B_production_x_sec_13_TeV/no_cuts/myloop_new_mc_truth_" + channel_to_ntuple_name(channel) + "_no_cuts.root";
   }
@@ -150,9 +153,10 @@ int main(int argc, char **argv) {
   read_data(*ws_mc, input_mc, channel);
   
   std::string extension1 = "_ssdata", extension2 = "_mc";
+  std::cout << "CHECK!!" << std::endl;  
   std::vector<TH1D*> h1 = sideband_sub(*ws, *ws_mc, channel, extension1);
   std::vector<TH1D*> h2;
-  
+
   if (corrected_mc_flag!=1) {
     h2 = histoBuild(*ws_mc, channel, extension2);
     h2 = histoScale(h1,h2); 
@@ -194,11 +198,13 @@ void read_data(RooWorkspace& w, std::string filename, int channel)
   arg_list1.add(*(w.var("tktkmass")));
   arg_list1.add(*(w.var("mass")));
 
+  std::cout << "CHECK!" << std::endl;
   RooDataSet* data = new RooDataSet("data","data",nt1,arg_list1);
+  std::cout << "CHECK!" << std::endl;
   TString formula1, formula2;
   if (filename.find("_mc_") != std::string::npos) {
-    formula1 = "errxy";
-    formula2 = "lxy/(errxy)";
+    formula1 = "errxy";//"1.14*errxy";
+    formula2 = "lxy/errxy";//"lxy/(1.14*errxy)";
   }
   else {
     formula1 = "errxy";
@@ -207,6 +213,7 @@ void read_data(RooWorkspace& w, std::string filename, int channel)
   RooFormulaVar errxyFunc("errxy_shifted","errxy_shifted",formula1,RooArgList(*(w.var("errxy"))));
   RooFormulaVar lerrxyFunc("lerrxy","lerrxy",formula2, RooArgList( *(w.var("errxy")), *(w.var("lxy")) ));
   RooFormulaVar propertFunc("propert","propert","mass*lxy/pt", RooArgList( *(w.var("mass")),*(w.var("lxy")),*(w.var("pt"))));
+
   data->addColumn(errxyFunc);
   data->addColumn(lerrxyFunc);
   data->addColumn(propertFunc);  
@@ -299,7 +306,7 @@ void set_up_workspace_variables(RooWorkspace& w, int channel)
   lxy_min=0.;
   lxy_max=3.;
 
-  errxy_min=0.;
+  errxy_min=0.002;
   errxy_max=2.5;
 
   vtxprob_min=0.;
@@ -628,7 +635,7 @@ std::vector<TH1D*> sideband_sub(RooWorkspace& w, RooWorkspace& w_mc, int channel
   massframe->GetXaxis()->SetTitle(B + " meson mass (GeV)");
 
   //Fit ao background nas zonas laterais do espectro de massa necessário para estimar a mesma quantidade na zona central
-  TLatex* tex11 = new TLatex(0.68,0.8,"2.71 fb^{-1} (13 TeV)");
+  TLatex* tex11 = new TLatex(0.68,0.8,"2.54 fb^{-1} (13 TeV)");
   tex11->SetNDC(kTRUE);
   tex11->SetLineWidth(2);
   tex11->SetTextSize(0.04);
@@ -730,7 +737,6 @@ std::vector<TH1D*> sideband_sub(RooWorkspace& w, RooWorkspace& w_mc, int channel
   for (int i=0; i<variables; ++i) {
     aux1 = (TH1D*) reduceddata_central->createHistogram((varName(i+1)+extension).c_str(),*(vars.at(i)),Binning(BIN_NUMBER,getXRange(i+1,channel).at(0),getXRange(i+1,channel).at(1)));
     aux2 = (TH1D*) reduceddata_side2->createHistogram("",*(vars.at(i)),Binning(BIN_NUMBER,getXRange(i+1,channel).at(0),getXRange(i+1,channel).at(1)));
-    
     /*f_side->cd();
     aux2->SetName( (channel_to_ntuple_name(channel)+varName(i+1)+"_6_10").c_str() );
     aux2->Draw();
@@ -801,10 +807,11 @@ void histoPlot(std::vector<TH1D*> v1, std::vector<TH1D*> v2, int channel, int fl
   std::string histo_data = "_histo_data";
   std::string histo_mc = "_histo_mc";
   TH1D* h_aux;
+  h_aux->SetDefaultSumw2(kTRUE);
   TLine *l1; 
   //TFile *f_weights = new TFile(("weights_nminus1_" + channel_to_ntuple_name(channel) + ".root").c_str(),"RECREATE");
   TFile *f_weights = nullptr;
-  if(!flag) f_weights = new TFile(("weights_" + channel_to_ntuple_name(channel) + ".root").c_str(),"UPDATE");
+  if(!flag) f_weights = new TFile(("weights_2015rereco_" + channel_to_ntuple_name(channel) + ".root").c_str(),"UPDATE");
   for (int j=0; j<variables; ++j) {
     c.push_back(new TCanvas());
   }
@@ -831,7 +838,7 @@ void histoPlot(std::vector<TH1D*> v1, std::vector<TH1D*> v2, int channel, int fl
     v1.at(i)->GetXaxis()->SetRangeUser(getXRange(i+1,channel).at(0), getXRange(i+1,channel).at(1));
     v1.at(i)->GetXaxis()->SetTitleSize(0.06);
     v1.at(i)->GetYaxis()->SetTitleSize(0.045);
-    v1.at(i)->GetYaxis()->SetTitleOffset(0.9);
+    v1.at(i)->GetYaxis()->SetTitleOffset(1.1);
     v1.at(i)->SetLabelSize(0., "x");
     v1.at(i)->SetLabelSize(0.05, "y");
     double bin_width = TMath::Abs( (v1.at(i)->GetBinCenter(1)-v1.at(i)->GetBinCenter(BIN_NUMBER)) / (BIN_NUMBER-1) );
@@ -883,11 +890,10 @@ void histoPlot(std::vector<TH1D*> v1, std::vector<TH1D*> v2, int channel, int fl
     h_aux->GetYaxis()->SetTitleOffset(0.26);
     h_aux->GetYaxis()->SetTitle("Data / MC");
     if (i==11) h_aux->GetXaxis()->SetTitle("errxy (cm)");
-    else h_aux->GetXaxis()->SetTitle((varName(i+1) + " (" + unitName(i+1) + ")").c_str());
+    else h_aux->GetXaxis()->SetTitle((varName(i+1) + " " + unitNameX(i+1)).c_str());
     h_aux->GetYaxis()->SetNdivisions(4.5);
     h_aux->Divide(v2.at(i));
     if(!flag) {
-      std::cout << "Gravou mais pesos!" << std::endl;
       f_weights->cd();
       h_aux->Write();
     }
@@ -953,7 +959,7 @@ std::string varName(int variable) {
     s = "lxy";
     break;
   case 12:
-    s = "errxy_shifted"; //one can replace this string by "errxy" to use the non-shifted variable
+    s = "errxy"; //one can replace this string by "errxy" to use the non-shifted variable
     break;
   case 13:
     s = "vtxprob";
@@ -1036,6 +1042,70 @@ std::string unitName(int variable) {
     break;
   case 18:
     s = "GeV";
+    break;
+  default:
+    s = "ERROR";
+  }
+
+  return s;
+}
+
+std::string unitNameX(int variable) {
+  std::string s;
+  switch (variable) {
+  case 1:
+    s = "(GeV)";
+    break;
+  case 2:
+    s = "";
+    break;
+  case 3:
+    s = "(GeV)";
+    break;
+  case 4:
+    s = "(GeV)";
+    break;
+  case 5:
+    s = "";
+    break;
+  case 6:
+    s = "";
+    break;
+  case 7:
+    s = "(GeV)";
+    break;
+  case 8:
+    s = "(GeV)";
+    break;
+  case 9:
+    s = "(GeV)";
+    break;
+  case 10:
+    s = "";
+    break;
+  case 11:
+    s = "(cm)";
+    break;
+  case 12:
+    s = "(cm)";
+    break;
+  case 13:
+    s = "";
+    break;
+  case 14:
+    s = "";
+    break;
+  case 15:
+    s = "";
+    break;
+  case 16:
+    s = "(cm)";
+    break;
+  case 17:
+    s = "(GeV)";
+    break;
+  case 18:
+    s = "(GeV)";
     break;
   default:
     s = "ERROR";
@@ -1170,7 +1240,7 @@ std::vector<double> getXRange(int var, int channel) {
   std::vector<double> v;
   switch(var) {
   case 1: //pt
-    v.push_back(0.);
+    v.push_back(7.);
     v.push_back(90.);
     break;
   case 2: //y
@@ -1178,11 +1248,11 @@ std::vector<double> getXRange(int var, int channel) {
     v.push_back(2.9);
     break;
   case 3: //mu1pt
-    v.push_back(0.);
+    v.push_back(3.);
     v.push_back(35.);
     break;
   case 4: //mu2pt
-    v.push_back(0.);
+    v.push_back(3.);
     v.push_back(35.);
     break;
   case 5: //mu1eta
@@ -1194,11 +1264,11 @@ std::vector<double> getXRange(int var, int channel) {
     v.push_back(2.9);
     break; 
   case 7: //tk1pt
-    v.push_back(0.);
+    v.push_back(0.5);
     v.push_back(13.);
     break;
   case 8: //tk2pt
-    v.push_back(0.);
+    v.push_back(0.5);
     v.push_back(13.);
     break;
   case 9: //tk1eta
@@ -1218,8 +1288,8 @@ std::vector<double> getXRange(int var, int channel) {
     v.push_back(0.025);
     break;
   case 13: //vtxprob
-    v.push_back(0.);
-    v.push_back(1.2);
+    v.push_back(0.05);
+    v.push_back(1.05);
     break;
   case 14: //cosalpha2d
     v.push_back(0.999996);
@@ -1240,8 +1310,8 @@ std::vector<double> getXRange(int var, int channel) {
       v.push_back(1.);
       break;
     case 2:
-      v.push_back(0.78);
-      v.push_back(1.02);
+      v.push_back(0.65);
+      v.push_back(1.2);
       break;
     case 4:
       v.push_back(0.99);

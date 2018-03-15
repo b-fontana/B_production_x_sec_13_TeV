@@ -1,4 +1,4 @@
-//this script is used to estimate the ammout of "signal" in the B0->jpsi K*0 channel, in which the k and pi are swapped.
+//this script is used to estimate the amount of "signal" in the B0->jpsi K*0 channel, in which the k and pi are swapped.
 //for this we look at an MC sample where we separate between true signal and swapped signal.
 //here we fit each of these two categories separately and extract the relative magnitude and width of the pdf's.
 //This is then introduced in the pdf to extract the signal of B0->jpsi K*0, in other sripts in the cross sections studies.
@@ -26,8 +26,8 @@ int main(int argc, char** argv)
         }
     }
 
-  double mass_min = 4.90;
-  double mass_max = 5.6;
+  double mass_min = 5.;
+  double mass_max = 5.52;
   double pt_min = 0;
   double pt_max = 300;
   double y_min = -3;
@@ -52,7 +52,7 @@ int main(int argc, char** argv)
   RooRealVar pt("pt","pt",pt_min,pt_max);
   RooRealVar y("y","y",y_min,y_max);
   
-  TString input_file = TString::Format(BASE_DIR) + "/new_inputs/myloop_new_mc_truth_ntkstar_with_cuts.root";
+  TString input_file = TString::Format(BASE_DIR) + "/final_selection/myloop_new_mc_truth_ntkstar_with_cuts.root";
 
   TFile *fin = new TFile(input_file);
   TString directory = "";
@@ -76,9 +76,9 @@ int main(int argc, char** argv)
   TH1D* histo_full = (TH1D*)data_full->createHistogram("histo_full", mass, Binning(bins));
   TH1D* histo_signal = (TH1D*)data_signal->createHistogram("histo_signal", mass, Binning(bins));
   TH1D* histo_swapped = (TH1D*)data_swapped->createHistogram("histo_swapped", mass, Binning(bins));
-  histo_signal->GetYaxis()->SetTitleOffset(1.4);
-  histo_swapped->GetYaxis()->SetTitleOffset(1.4);
-  histo_full->GetYaxis()->SetTitleOffset(1.4);  
+  histo_signal->GetYaxis()->SetTitleOffset(1.6);
+  histo_swapped->GetYaxis()->SetTitleOffset(1.6);
+  histo_full->GetYaxis()->SetTitleOffset(1.6);  
 
   for (int i=1; i<=channel_to_nbins(2); i++)
     {
@@ -98,8 +98,8 @@ int main(int argc, char** argv)
   RooRealVar n3_signal("n3_signal","n3_signal",100000,0,500000);
   */
 
-  RooRealVar r1_signal("r1_signal","r1_signal",0.45,0.00,1.00);
-  RooRealVar r2_signal("r2_signal","r2_signal",0.25,0.00,1.00);
+  RooRealVar r1_signal("r1_signal","r1_signal",0.5,0.00,1.00);
+  RooRealVar r2_signal("r2_signal","r2_signal",0.4,0.00,1.00);
 
   RooRealVar sigma1_signal("#sigma_{1,signal}","sigma1_signal", 0.014, 0.001, 0.150);
   RooRealVar sigma2_signal("#sigma_{2,signal}","sigma2_signal", 0.040, 0.001, 0.150);
@@ -108,15 +108,17 @@ int main(int argc, char** argv)
   RooRealVar alpha1_signal("#alpha_{1,signal}","alpha1_signal", B0_MASS, 0.01000, B0_MASS+6.00000);
   RooRealVar alpha2_signal("#alpha_{2,signal}","alpha2_signal", B0_MASS, 0.01000, B0_MASS+6.00000);
   RooRealVar alpha3_signal("#alpha_{3,signal}","alpha3_signal", -B0_MASS, -4.00000*B0_MASS, -0.01000);
-  RooRealVar n1_parameter_signal("n1_parameter_signal", "n1_parameter_signal", 14.8, 0.01, 15.0);
-  RooRealVar n2_parameter_signal("n2_parameter_signal", "n2_parameter_signal", 1.906, 0.01, 15.0);  
-  RooRealVar n3_parameter_signal("n3_parameter_signal", "n3_parameter_signal", 3.14, 0.01, 15.0);
+  RooRealVar n1_parameter_signal("n1_parameter_signal", "n1_parameter_signal", 14.8, 0.01, 200.0);
+  RooRealVar n2_parameter_signal("n2_parameter_signal", "n2_parameter_signal", 1.906, 0.01, 200.0);  
+  RooRealVar n3_parameter_signal("n3_parameter_signal", "n3_parameter_signal", 3.14, 0.01, 200.0);
   RooCBShape crystball1_signal("crystball1_signal","crystball1_signal", mass, mean, sigma1_signal, alpha1_signal, n1_parameter_signal);
   RooCBShape crystball2_signal("crystball2_signal","crystball2_signal", mass, mean, sigma2_signal, alpha2_signal, n2_parameter_signal);
   RooCBShape crystball3_signal("crystball3_signal","crystball3_signal", mass, mean, sigma3_signal, alpha3_signal, n3_parameter_signal);
   RooAddPdf signal("signal","signal", RooArgList(crystball1_signal,crystball2_signal,crystball3_signal), RooArgList(r1_signal,r2_signal) /*RooArgList(n1_signal,n2_signal,n3_signal)*/);
   
-  RooPlot* frame1 = mass.frame(Title("True signal fit"));
+  RooPlot* frame1 = mass.frame(Title(" "));
+  frame1->SetTitleOffset(1.3,"Y");
+  frame1->SetMarkerSize(.3);
   data_signal->plotOn(frame1,Name("theSignal"),Binning(bins));
     
   signal.fitTo(*data_signal);
@@ -124,36 +126,21 @@ int main(int argc, char** argv)
   signal.plotOn(frame1,Components("crystball1_signal"),LineColor(8),LineWidth(2),LineStyle(2));
   signal.plotOn(frame1,Components("crystball2_signal"),LineColor(5),LineWidth(2),LineStyle(2));  
   signal.plotOn(frame1,Components("crystball3_signal"),LineColor(6),LineWidth(2),LineStyle(2));
+  frame1->SetXTitle("B^{0} invariant mass (GeV)");
 
   TCanvas c1;
   c1.SetLogy();
   c1.cd();
   frame1->Draw();
 
-  /*double chi_square1 = frame1->chiSquare("thePdf1","theSignal");
-  TLatex* tex1 = new TLatex(0.17, 0.97, Form("#chi^{2} = %.3lf", chi_square1));
-  tex1->SetNDC(kTRUE);
-  tex1->SetTextFont(42);
-  tex1->SetTextSize(0.035);  
-  tex1->Draw();
-  */
-
   directory = output + "mass_signal_logy.png";
   c1.SaveAs(directory);
 
   TCanvas c1_new;
   c1_new.cd();
-  signal.paramOn(frame1, Layout(0.65,0.99,0.99));
+  signal.paramOn(frame1, Layout(0.63,0.99,0.99));
   frame1->getAttText()->SetTextSize(0.027);
   frame1->Draw();
-
-  /*  double chi_square1_new = frame1->chiSquare("thePdf1","theSignal");
-  TLatex* tex1_new = new TLatex(0.17, 0.6, Form("#chi^{2} = %.3lf", chi_square1_new));
-  tex1_new->SetNDC(kTRUE);
-  tex1_new->SetTextFont(42);
-  tex1_new->SetTextSize(0.035);  
-  tex1_new->Draw();
-  */
 
   directory = output + "mass_signal.png";
   c1_new.SaveAs(directory);  
@@ -179,17 +166,17 @@ int main(int argc, char** argv)
   RooRealVar n2_swapped("n2_swapped","n2_swapped",40000,0,200000);
   RooRealVar n3_swapped("n3_swapped","n3_swapped",20000,0,100000);
   */
-  RooRealVar r1_swapped("r1_swapped","r1_swapped",0.45,0.00,1.00);
-  RooRealVar r2_swapped("r2_swapped","r2_swapped",0.25,0.00,1.00);
-  RooRealVar sigma1_swapped("#sigma_{1,swapped}","sigma1_swapped",0.110, 0.005, 0.200);
+  RooRealVar r1_swapped("r1_swapped","r1_swapped",0.5,0.00,1.00);
+  RooRealVar r2_swapped("r2_swapped","r2_swapped",0.4,0.00,1.00);
+  RooRealVar sigma1_swapped("#sigma_{1,swapped}","sigma1_swapped",0.100, 0.005, 0.200);
   RooRealVar sigma2_swapped("#sigma_{2,swapped}","sigma2_swapped",0.030, 0.005, 0.150);
   RooRealVar sigma3_swapped("#sigma_{3,swapped}","sigma3_swapped",0.030, 0.001, 0.100);
   RooRealVar alpha1("#alpha_{1}","alpha1", B0_MASS, 0.01000, B0_MASS+6.00000);
   RooRealVar alpha2("#alpha_{2}","alpha2", B0_MASS, 0.01000, B0_MASS+6.00000);
   RooRealVar alpha3("#alpha_{3}","alpha3", -B0_MASS, -4.00000*B0_MASS, 0.00000);
-  RooRealVar n1_parameter_swapped("n1_parameter_swapped", "n1_parameter_swapped", 7.00, 0.01, 150.00);
-  RooRealVar n2_parameter_swapped("n2_parameter_swapped", "n2_parameter_swapped", 12.88, 0.01, 150.00);  
-  RooRealVar n3_parameter_swapped("n3_parameter_swapped", "n3_parameter_swapped", 183.00, 50.00, 250.00);
+  RooRealVar n1_parameter_swapped("n1_parameter_swapped", "n1_parameter_swapped", 5.00, 0.01, 250.00);
+  RooRealVar n2_parameter_swapped("n2_parameter_swapped", "n2_parameter_swapped", 5, 0.01, 250.00);  
+  RooRealVar n3_parameter_swapped("n3_parameter_swapped", "n3_parameter_swapped", 5.00, 0.01, 250.00);
 
   RooCBShape crystball1_swapped("crystball1_swapped","crystball1_swapped", mass, mean, sigma1_swapped, alpha1, n1_parameter_swapped);
   RooCBShape crystball2_swapped("crystball2_swapped","crystball2_swapped", mass, mean, sigma2_swapped, alpha2, n2_parameter_swapped);
@@ -198,14 +185,17 @@ int main(int argc, char** argv)
 
   RooAddPdf swapped("swapped","swapped", RooArgList(crystball1_swapped, crystball2_swapped, crystball3_swapped), RooArgList(r1_swapped,r2_swapped));//*RooArgList(n1_swapped,n2_swapped,n3_swapped)*/);
 
-  RooPlot* frame2 = mass.frame(Title("Swapped signal fit"));
+  RooPlot* frame2 = mass.frame(Title(" "));
+  frame2->SetTitleOffset(1.3,"Y");
+  frame2->SetMarkerSize(.3);
   data_swapped->plotOn(frame2,Name("theSwapped"),Binning(bins));
   swapped.fitTo(*data_swapped);
   swapped.plotOn(frame2, Name("thePdf2"), LineColor(7), LineWidth(2.5), LineStyle(1));
   swapped.plotOn(frame2,Components("crystball1_swapped"),LineColor(8),LineWidth(2),LineStyle(2));
   swapped.plotOn(frame2,Components("crystball2_swapped"),LineColor(5),LineWidth(2),LineStyle(2));
   swapped.plotOn(frame2,Components("crystball3_swapped"),LineColor(6),LineWidth(2),LineStyle(2));
- 
+  frame2->SetXTitle("B^{0} invariant mass (GeV)");
+
   TCanvas c2;
   c2.SetLogy();
   c2.cd();
@@ -224,7 +214,7 @@ int main(int argc, char** argv)
 
   TCanvas c2_new;
   c2_new.cd();
-  swapped.paramOn(frame2, Layout(0.65,0.99,0.99));
+  swapped.paramOn(frame2, Layout(0.63,0.99,0.99));
   frame2->getAttText()->SetTextSize(0.027);
   frame2->Draw();
 
@@ -260,15 +250,17 @@ int main(int argc, char** argv)
   RooRealVar r_final("r_final","r_final",0.15, 0.00, 1.00);  
   RooAddPdf full("full","full", RooArgList(swapped,signal), r_final);
 
-  RooPlot* frame3 = mass.frame(Title("Full signal fit"));
+  RooPlot* frame3 = mass.frame(Title(" "));
+  frame3->SetTitleOffset(1.3,"Y");
+  frame3->SetMarkerSize(.3);
   data_full->plotOn(frame3,Name("theFull"),Binning(bins));
-
   full.fitTo(*data_full);
-  full.paramOn(frame3,Layout(0.58,0.88,0.8));
+  full.paramOn(frame3,Layout(0.63,0.88,0.8));
   frame3->getAttText()->SetTextSize(0.027);
   full.plotOn(frame3, Name("thePdf3"), LineColor(7), LineWidth(2.5), LineStyle(1));
   full.plotOn(frame3,Components("swapped"),LineColor(8),LineWidth(2),LineStyle(2));
   full.plotOn(frame3,Components("signal"),LineColor(5),LineWidth(2),LineStyle(2));
+  frame3->SetXTitle("B^{0} invariant mass (GeV)");
 
   TCanvas c3;
   c3.SetLogy();

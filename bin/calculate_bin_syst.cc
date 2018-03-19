@@ -444,7 +444,7 @@ int main(int argc, char** argv)
 		  
 		  TString ntuple_name = channel_to_ntuple_name(channel);
 	  
-		  TString in_file_name = TString::Format(VERSION) + "/efficiencies_root/" + ntuple_name + "/totaleff_" + ntuple_name + bins_str + ".root";
+		  TString in_file_name = TString::Format(VERSION) + "/efficiencies_root/" + ntuple_name + "/recoeff_" + ntuple_name + bins_str + ".root";
 	  
 		  std::cout << "reading nominal val from : " << std::endl;
 		  std::cout << in_file_name << std::endl;
@@ -456,7 +456,7 @@ int main(int argc, char** argv)
 		      std::cout << "The nominal val file " << in_file_name << " was not found." << std::endl;
 		      std::cout << "No problem, it will be calculated" << std::endl;
 	      
-		      command = "calculate_bin_eff --eff totaleff";
+		      command = "calculate_bin_eff --eff recoeff";
 	      
 		      command += " --channel " + TString::Format("%d", channel) + opt;
 	      
@@ -691,7 +691,9 @@ double reweighting_syst(int channel, double pt_min, double pt_max, double y_min,
   reweight_var_names.push_back("mu1eta");
   reweight_var_names.push_back("mu1pt");
   reweight_var_names.push_back("lerrxy");
-  if(channel!=1) reweight_var_names.push_back("tktkmass");
+  reweight_var_names.push_back("tk1pt");
+  reweight_var_names.push_back("tk1eta");
+  //if(channel!=1) reweight_var_names.push_back("tktkmass");
 
   RooRealVar* eff_corrected;
   int reweight_variables_number = static_cast<int>(reweight_var_names.size());  

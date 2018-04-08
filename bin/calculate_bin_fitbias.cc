@@ -51,8 +51,11 @@ int main(int argc, char** argv)
   */
   int params_size = params_names.size();
   //here I will use the ptmin and ptmax according to the bin I am reading
-  TString file_string = TString::Format(VERSION) + "/mass_fits/" + channel_to_ntuple_name(channel) + "/workspace/" +\
-    channel_to_ntuple_name(channel) + "_mass_fit_pt_from_" + TString::Format("%d_to_%d", (int)pt_min, (int)pt_max) + "_y_from_" + TString::Format("%.2f_to_%.2f", y_min, y_max) + ".root";
+  TString ptFormat = TString::Format("%d_to_%d", (int)pt_min, (int)pt_max);
+  TString yFormat = TString::Format("%.2f_to_%.2f", y_min, y_max);
+  yFormat[1] = '_';
+  yFormat[9] = '_';
+  TString file_string = "/lstore/cms/balves/Jobs/" + TString::Format(VERSION) + "/mass_fits/" + channel_to_ntuple_name(channel) + "/workspace/" + channel_to_ntuple_name(channel) + "_mass_fit_pt_from_" + ptFormat + "_y_from_" + yFormat + ".root";
   TFile file_open(file_string, "OPEN");
 
   RooWorkspace *w_open = static_cast<RooWorkspace*>(file_open.Get("ws_bin"));
@@ -66,7 +69,7 @@ int main(int argc, char** argv)
 
   RooMCStudy* mcstudy = new RooMCStudy(*model_open,mass_open,Binned(kTRUE),Silence(),Extended(),FitOptions(Save(kTRUE),PrintEvalErrors(0)));
 
-  mcstudy->generateAndFit(10000);
+  mcstudy->generateAndFit(100);
 
   // Make plots of the distributions of the pull of each parameter
   std::vector<RooPlot*> frames, framesParam;
@@ -110,11 +113,7 @@ int main(int argc, char** argv)
 
   }
   
-  TString ptFormat = TString::Format("%d_to_%d", (int)pt_min, (int)pt_max);
-  TString yFormat = TString::Format("%.2f_to_%.2f", y_min, y_max);
-  yFormat[1] = '_';
-  yFormat[9] = '_';
-  c->SaveAs("pulls_poisson_" + channel_to_ntuple_name(channel) + "_pt_from_" + ptFormat + "_y_from_" + yFormat + ".png");
+  c->SaveAs("/lstore/cms/balves/Jobs/v22/Pulls/pulls_poisson_" + channel_to_ntuple_name(channel) + "_pt_from_" + ptFormat + "_y_from_" + yFormat + ".png");
   
   TCanvas* c_params = new TCanvas("c_params", "c_params",900,800);
   for (int i=0; i<params_size; ++i) {
@@ -122,7 +121,6 @@ int main(int argc, char** argv)
     framesParam.at(i)->GetYaxis()->SetTitleOffset(1.4);
     framesParam.at(i)->Draw();
   }
-  c_params->SaveAs("pulls_params_poisson_" + channel_to_ntuple_name(channel) + "_pt_from_" + ptFormat + "_y_from_" + yFormat + ".png");
-
+  c_params->SaveAs("/lstore/cms/balves/Jobs/v22/Pulls/pulls_params_poisson_" + channel_to_ntuple_name(channel) + "_pt_from_" + ptFormat + "_y_from_" + yFormat + ".png");
 }
 

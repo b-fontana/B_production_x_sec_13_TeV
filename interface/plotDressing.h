@@ -33,6 +33,7 @@ TCanvas *canvasDressing(TString name = "c1")
   gStyle->SetTitleFont(42,"y");
   gStyle->SetTitleFont(42,"z");
   gStyle->SetEndErrorSize(1);
+  gStyle->SetTitleYOffset(1.3);
     
   TCanvas *c1 = new TCanvas(name,name,800,600);
   //c1->Range(4.819967,-13.30288,6.070376,78.37912);
@@ -58,7 +59,7 @@ void Legend(int channel, int pt_min, int pt_max, double y_min, double y_max, boo
   double x_pt_lable = 0.13;
   double y_pt_lable = 0.84;
 
-  TLatex * tex = new TLatex(x_top_2,y_top,"2.71 fb^{-1} (13 TeV)");
+  TLatex * tex = new TLatex(x_top_2,y_top,"2.54 fb^{-1} (13 TeV)");
   tex->SetNDC(kTRUE);
   tex->SetLineWidth(2);
   tex->Draw();

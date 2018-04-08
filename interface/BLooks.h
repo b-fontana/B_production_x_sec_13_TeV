@@ -18,7 +18,7 @@ class BLooks {
 std::pair<TLatex*,TLatex*> BLooks::StandardLatexEntries()
 {
   std::pair<TLatex*,TLatex*> pair;
-  TLatex* tex1 = new TLatex(0.7,0.93,"2.71 fb^{-1} (13 TeV)");
+  TLatex* tex1 = new TLatex(0.7,0.93,"2.54 fb^{-1} (13 TeV)");
   tex1->SetNDC(kTRUE);
   tex1->SetLineWidth(2);
   TLatex* tex2 = new TLatex(0.1,0.93,"CMS Preliminary");

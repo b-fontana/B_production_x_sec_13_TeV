@@ -10,13 +10,15 @@ std::vector<std::string> fsfd_syst_list = {"ratio_reweight_syst"};
 std::vector<std::string> fdfu_syst_list = {"ratio_reweight_syst"};
 
 //global_syst_list
-std::vector<std::string> fsfu_global_syst_list = {"pull_syst", "b_fraction_syst", "tracking_syst"};
+std::vector<std::string> fsfu_global_syst_list = {"pull_syst", "b_fraction_syst", "tracking_syst",  "tktk_width_syst"};
 std::vector<std::string> fsfd_global_syst_list = {"pull_syst", "b_fraction_syst", "tktk_width_syst"};
 std::vector<std::string> fdfu_global_syst_list = {"pull_syst", "b_fraction_syst", "tracking_syst", "tktk_width_syst"};
 
 //global_syst_val
 double tracking_syst = 0.028;
-double tktk_width_syst = 0; //set to zero for now.
+double fsfu_tktk_width_syst = 0.051; //set to zero for now.
+double fsfd_tktk_width_syst = 0.051;
+double fdfu_tktk_width_syst = 0.004;
 
 RooRealVar* bu_branch = branching_fraction("ratio", 1);
 RooRealVar* bd_branch = branching_fraction("ratio", 2);
@@ -58,8 +60,11 @@ void setup_global_syst_val(std::vector<double>* global_syst_val, TString measure
 		      if(fsfu_global_syst_list[i] == "tracking_syst")
 			global_syst_val->push_back(tracking_syst);
 		      else
-			if(fsfu_global_syst_list[i] == "pull_syst")
-			  global_syst_val->push_back(fsfu_pull_syst);
+			if(fdfu_global_syst_list[i] == "tktk_width_syst")
+			  global_syst_val->push_back(fsfu_tktk_width_syst);
+			else
+			  if(fsfu_global_syst_list[i] == "pull_syst")
+			    global_syst_val->push_back(fsfu_pull_syst);
 		  }	      
 	      else
 		if(ratio == "fsfd")
@@ -69,7 +74,7 @@ void setup_global_syst_val(std::vector<double>* global_syst_val, TString measure
 			global_syst_val->push_back(fsfd_b_fraction_syst);
 		      else
 			if(fsfd_global_syst_list[i] == "tktk_width_syst")
-			  global_syst_val->push_back(tktk_width_syst);
+			  global_syst_val->push_back(fsfd_tktk_width_syst);
 			else
 			  if(fsfd_global_syst_list[i] == "pull_syst")
 			    global_syst_val->push_back(fsfd_pull_syst);
@@ -85,7 +90,7 @@ void setup_global_syst_val(std::vector<double>* global_syst_val, TString measure
 			    global_syst_val->push_back(tracking_syst);
 			  else
 			    if(fdfu_global_syst_list[i] == "tktk_width_syst")
-			      global_syst_val->push_back(tktk_width_syst);
+			      global_syst_val->push_back(fdfu_tktk_width_syst);
 			    else
 			      if(fdfu_global_syst_list[i] == "pull_syst")
 				global_syst_val->push_back(fdfu_pull_syst);
@@ -187,28 +192,28 @@ std::string syst_fancy_name(std::string syst_name)
     fancy_name = "Overall syst.";
   else
     if(syst_name == "signal_pdf_syst")
-      fancy_name = "signal shape";
+      fancy_name = "signal\\newline shape";
     else
       if(syst_name == "combinatorial_background_pdf_syst")
-	fancy_name = "comb. bkg shape";
+	fancy_name = "comb.\\newline bkg shape";
       else
 	if(syst_name == "mass_window_syst")
-	  fancy_name = "mass fit window";
+	  fancy_name = "mass\\newline fit window";
 	else
 	  if(syst_name == "b_fraction_syst")
 	    fancy_name = "Branching ratio";
 	  else
 	    if(syst_name == "mc_stat_syst")
-	      fancy_name = "MC statistics";
+	      fancy_name = "MC\\newline statistics";
 	    else
 	      if(syst_name == "recoeff_reweight_syst")
 		fancy_name = "MC reweight";
 	      else
 		if(syst_name == "ratio_reweight_syst")
-		  fancy_name = "MC reweight";
+		  fancy_name = "MC\\newline reweight";
 		else
 		  if(syst_name == "tracking_syst")
-		    fancy_name = "Hadron tracking";
+		    fancy_name = "Hadron\\newline tracking";
 		  else
 		    if(syst_name == "jpsipi_pdf_syst")
 		      fancy_name = "Jpsi pi";

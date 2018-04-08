@@ -157,8 +157,9 @@ int main(int argc, char** argv)
 	read_vector(channel, "totaleff", var1_name , var2_name, n_var1_bins, n_var2_bins, var1_bins, var2_bins, total_eff[ch][0], "", total_eff_err_lo[ch][0], total_eff_err_hi[ch][0]);
       
       //read syst
-      if(syst)
+      if(syst) {
 	read_vector(channel, "combined_syst", var1_name , var2_name, n_var1_bins, n_var2_bins, var1_bins, var2_bins, combined_syst[ch][0], ratio, combined_syst_lo[ch][0], combined_syst_hi[ch][0]);
+      }
       else
 	for(int j=0; j<n_var2_bins; j++)
 	  {
@@ -292,7 +293,7 @@ int main(int argc, char** argv)
       no_eff_ratio = "BsBu";
       
       if(eff)
-	ratio_title = "#frac{f_s}{f_u}";
+	ratio_title = "#frac{f_{s}}{f_{u}}";
       else
 	ratio_title = "#frac{N(B^0_s)}{N(B^+)}";
     }
@@ -302,7 +303,7 @@ int main(int argc, char** argv)
 	no_eff_ratio = "BsBd";
 	
 	if(eff)
-	  ratio_title = "#frac{f_s}{f_d}";
+	  ratio_title = "#frac{f_{s}}{f_{d}}";
 	else
 	  ratio_title = "#frac{N(B^0_s)}{N(B^0)}";
       }
@@ -312,7 +313,7 @@ int main(int argc, char** argv)
 	  no_eff_ratio = "BdBu";
 	  
 	  if(eff)
-	    ratio_title = "#frac{f_d}{f_u}";
+	    ratio_title = "#frac{f_{d}}{f_{u}}";
 	  else
 	    ratio_title = "#frac{N(B^0)}{N(B^+)}";
 	}
@@ -350,10 +351,9 @@ int main(int argc, char** argv)
 		  TGraphAsymmErrors* graph2 = new TGraphAsymmErrors(n_var1_bins, var1_bin_centre, ratio_array[j], var1_bin_centre_lo, var1_bin_centre_hi, ratio_total_err_lo[j], ratio_total_err_hi[j]);
 		  
 		  graph2->SetTitle("");
-		  
-		  //graph2->GetYaxis()->SetTitle(ratio_title);
-		  //graph2->GetYaxis()->SetRangeUser(0.5*ratio_min, 2*ratio_max);
-		  //graph2->GetXaxis()->SetTitle(x_axis_name);
+		  graph2->GetYaxis()->SetTitle(ratio_title);
+		  graph2->GetYaxis()->SetRangeUser(0.5*ratio_min, 2*ratio_max);
+		  graph2->GetXaxis()->SetTitle(x_axis_name);
 		  
 		  graph2->Fit("pol0","W","");
                   graph2->GetFunction("pol0")->SetLineColor(1);
@@ -431,7 +431,7 @@ int main(int argc, char** argv)
 
   if(eff && syst)
     {
-      TLatex *syst_tex = new TLatex(0.1,0.85,TString::Format("global systematic uncertainty %.2f %%", 100*global_syst_err));
+      TLatex *syst_tex=new TLatex(0.15,0.85,TString::Format("Global Systematic Uncertainty: %.2f %%", 100*global_syst_err));
       syst_tex->SetNDC(kTRUE);
       syst_tex->SetTextSize(0.03);
       syst_tex->Draw("same");

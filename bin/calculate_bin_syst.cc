@@ -330,6 +330,7 @@ int main(int argc, char** argv)
     {
       if(syst == "combined_syst")
 	{
+	  std::cout << "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW" << std::endl;
 	  std::cout << "calculate ratio combined_syst" << std::endl;
 	  
 	  setup_syst_list(ratio, &syst_list);
@@ -410,8 +411,6 @@ int main(int argc, char** argv)
 	      delete f_syst;
 
 	      syst_list_val.push_back(in_err_hi[0][0]);
-	  
-	      sqrt_err += pow(in_err_hi[0][0],2);
 	    }
 
 	  absolute_syst_val = sqrt(sqrt_err);
@@ -498,7 +497,7 @@ int main(int argc, char** argv)
 	      std::cout << "ratio_nominal_val: " << ratio_nominal_val << std::endl;
 	      std::cout << "ratio_alternative_val: " << ratio_alternative_val << std::endl;
 
-	      absolute_syst_val = (ratio_alternative_val- ratio_nominal_val) / ratio_nominal_val;
+	      absolute_syst_val = (ratio_alternative_val - ratio_nominal_val) / ratio_nominal_val;
 	    }
 	  else
 	    {
@@ -688,11 +687,11 @@ double mass_window_syst(RooWorkspace& ws, int channel, double pt_min, double pt_
 double reweighting_syst(int channel, double pt_min, double pt_max, double y_min, double y_max, double nominal_quantity) {
   std::vector<double> range_syst;
   std::vector<TString> reweight_var_names;
-  reweight_var_names.push_back("mu1eta");
   reweight_var_names.push_back("mu1pt");
-  reweight_var_names.push_back("lerrxy");
+  reweight_var_names.push_back("mu1eta");
   reweight_var_names.push_back("tk1pt");
   reweight_var_names.push_back("tk1eta");
+  reweight_var_names.push_back("lerrxy");
   //if(channel!=1) reweight_var_names.push_back("tktkmass");
 
   RooRealVar* eff_corrected;

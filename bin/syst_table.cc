@@ -100,11 +100,10 @@ int main(int argc, char** argv)
 
   std::string var1_str = "";
 
-  if(var1_name == "pt")
+  if(var1_name == "pt") 
     var1_str = "pT [GeV]";
-  else
-    if(var1_name == "y")
-      var1_str = "|y|";
+  else if(var1_name == "y")
+    var1_str = "$|$y$|$";
   
   col_name.push_back(var1_str);
   
@@ -116,7 +115,7 @@ int main(int argc, char** argv)
 
   for(int k=0; k< (int)syst_list.size(); k++)
     {
-      col_name.push_back(syst_fancy_name(syst_list[k]).append("[\\%]"));
+      col_name.push_back(syst_fancy_name(syst_list[k])/*.append("[\\%]")*/);
     }
   
   //read the arrays

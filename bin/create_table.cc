@@ -167,9 +167,12 @@ int main(int argc, char** argv)
 	ntuple_name = "";
       else
 	ntuple_name = channel_to_ntuple_name(channel) + "_";
-      
-      if(var1_name == "pt")
+
+      if(var1_name == "pt") {
 	bins_str = TString::Format("%.2f_to_%.2f", var2_bins[j], var2_bins[j+1]);
+	bins_str[1] = '_';
+        bins_str[9] = '_';
+      }
       else
 	bins_str = TString::Format("%d_to_%d", (int)var2_bins[j], (int)var2_bins[j+1]);
 

@@ -90,7 +90,7 @@ int main(int argc, char** argv)
         }
     }
 
-    TChain *root = new TChain("demo/root");
+    TChain *root = new TChain("analysis/root");
     TChain *HltTree = new TChain("hltanalysis/HltTree");
 
     if(input_file == "")
@@ -101,8 +101,20 @@ int main(int argc, char** argv)
 	      {
 	      default:
 	      case 1:
+		//2016 MC Bu sample
+		root->Add("/gstore/t3cms/store/user/bfontana/Bfinder_Bu_MC2016_Moriond_v4/BuToJpsiK_BMuonFilter_SoftQCDnonD_TuneCUEP8M1_13TeV-pythia8-evtgen/Bu/180222_095935/0000/bfinder_1*.root");
+		HltTree->Add("/gstore/t3cms/store/user/bfontana/Bfinder_Bu_MC2016_Moriond_v4/BuToJpsiK_BMuonFilter_SoftQCDnonD_TuneCUEP8M1_13TeV-pythia8-evtgen/Bu/180222_095935/0000/bfinder_1*.root");
 		//for BMuonFilter processed with Bfinder_mc	    
-		root->Add("/gstore/t3cms/store/user/martinsg/Bfinder_mc_Bu_muonfilter_ext_v1/BuToJpsiKV2_BMuonFilter_TuneCUEP8M1_13TeV-pythia8-evtgen/crab_Bfinder_mc_Bu_muonfilter_ext_v1/170515_161931/0000/Bfinder_mc_*.root");
+		/*root->Add("/gstore/t3cms/store/user/martinsg/DumpGenInfo_Bu_Bfilter_ext_v1/BuToJpsiKV2_BFilter_TuneCUEP8M1_13TeV-pythia8-evtgen/crab_DumpGenInfo_Bu_Bfilter_ext_v1/170929_092549/0000/DumpGenInfo_*.root");
+		root->Add("/gstore/t3cms/store/user/martinsg/DumpGenInfo_Bu_Bfilter_ext_v1/BuToJpsiKV2_BFilter_TuneCUEP8M1_13TeV-pythia8-evtgen/crab_DumpGenInfo_Bu_Bfilter_ext_v1/170929_092549/0001/DumpGenInfo_*.root");
+		root->Add("/gstore/t3cms/store/user/martinsg/DumpGenInfo_Bu_Bfilter_ext_v1/BuToJpsiKV2_BFilter_TuneCUEP8M1_13TeV-pythia8-evtgen/crab_DumpGenInfo_Bu_Bfilter_ext_v1/170929_092549/0002/DumpGenInfo_*.root");
+		HltTree->Add("/gstore/t3cms/store/user/martinsg/DumpGenInfo_Bu_Bfilter_ext_v1/BuToJpsiKV2_BFilter_TuneCUEP8M1_13TeV-pythia8-evtgen/crab_DumpGenInfo_Bu_Bfilter_ext_v1/170929_092549/0000/DumpGenInfo_*.root");
+		HltTree->Add("/gstore/t3cms/store/user/martinsg/DumpGenInfo_Bu_Bfilter_ext_v1/BuToJpsiKV2_BFilter_TuneCUEP8M1_13TeV-pythia8-evtgen/crab_DumpGenInfo_Bu_Bfilter_ext_v1/170929_092549/0001/DumpGenInfo_*.root");
+		HltTree->Add("/gstore/t3cms/store/user/martinsg/DumpGenInfo_Bu_Bfilter_ext_v1/BuToJpsiKV2_BFilter_TuneCUEP8M1_13TeV-pythia8-evtgen/crab_DumpGenInfo_Bu_Bfilter_ext_v1/170929_092549/0002/DumpGenInfo_*.root");
+		*/
+
+		//for BMuonFilter processed with Bfinder_mc
+		/*root->Add("/gstore/t3cms/store/user/martinsg/Bfinder_mc_Bu_muonfilter_ext_v1/BuToJpsiKV2_BMuonFilter_TuneCUEP8M1_13TeV-pythia8-evtgen/crab_Bfinder_mc_Bu_muonfilter_ext_v1/170515_161931/0000/Bfinder_mc_*.root");
 		root->Add("/gstore/t3cms/store/user/martinsg/Bfinder_mc_Bu_muonfilter_ext_v1/BuToJpsiKV2_BMuonFilter_TuneCUEP8M1_13TeV-pythia8-evtgen/crab_Bfinder_mc_Bu_muonfilter_ext_v1/170515_161931/0001/Bfinder_mc_*.root");
 		root->Add("/gstore/t3cms/store/user/martinsg/Bfinder_mc_Bu_muonfilter_ext_v1/BuToJpsiKV2_BMuonFilter_TuneCUEP8M1_13TeV-pythia8-evtgen/crab_Bfinder_mc_Bu_muonfilter_ext_v1/170515_161931/0002/Bfinder_mc_*.root");
 		root->Add("/gstore/t3cms/store/user/martinsg/Bfinder_mc_Bu_muonfilter_ext_v1/BuToJpsiKV2_BMuonFilter_TuneCUEP8M1_13TeV-pythia8-evtgen/crab_Bfinder_mc_Bu_muonfilter_ext_v1/170515_161931/0003/Bfinder_mc_*.root");
@@ -111,12 +123,17 @@ int main(int argc, char** argv)
 		HltTree->Add("/gstore/t3cms/store/user/martinsg/Bfinder_mc_Bu_muonfilter_ext_v1/BuToJpsiKV2_BMuonFilter_TuneCUEP8M1_13TeV-pythia8-evtgen/crab_Bfinder_mc_Bu_muonfilter_ext_v1/170515_161931/0001/Bfinder_mc_*.root");
 		HltTree->Add("/gstore/t3cms/store/user/martinsg/Bfinder_mc_Bu_muonfilter_ext_v1/BuToJpsiKV2_BMuonFilter_TuneCUEP8M1_13TeV-pythia8-evtgen/crab_Bfinder_mc_Bu_muonfilter_ext_v1/170515_161931/0002/Bfinder_mc_*.root");
 		HltTree->Add("/gstore/t3cms/store/user/martinsg/Bfinder_mc_Bu_muonfilter_ext_v1/BuToJpsiKV2_BMuonFilter_TuneCUEP8M1_13TeV-pythia8-evtgen/crab_Bfinder_mc_Bu_muonfilter_ext_v1/170515_161931/0003/Bfinder_mc_*.root");
+		*/
 		break;
 
 	      case 2:
 		//for BMuonFilter processed with Bfinder_mc
-		root->Add("/gstore/t3cms/store/user/martinsg/Bfinder_mc_Bd_muonfilter_ext_v1/BdToJpsiKstarV2_BMuonFilter_TuneCUEP8M1_13TeV-pythia8-evtgen/crab_Bfinder_mc_Bd_muonfilter_ext_v1/170516_100548/0000/Bfinder_mc_*.root");
-		HltTree->Add("/gstore/t3cms/store/user/martinsg/Bfinder_mc_Bd_muonfilter_ext_v1/BdToJpsiKstarV2_BMuonFilter_TuneCUEP8M1_13TeV-pythia8-evtgen/crab_Bfinder_mc_Bd_muonfilter_ext_v1/170516_100548/0000/Bfinder_mc_*.root");
+		//root->Add("/gstore/t3cms/store/user/martinsg/Bfinder_mc_Bd_muonfilter_ext_v1/BdToJpsiKstarV2_BMuonFilter_TuneCUEP8M1_13TeV-pythia8-evtgen/crab_Bfinder_mc_Bd_muonfilter_ext_v1/170516_100548/0000/Bfinder_mc_*.root");
+		//HltTree->Add("/gstore/t3cms/store/user/martinsg/Bfinder_mc_Bd_muonfilter_ext_v1/BdToJpsiKstarV2_BMuonFilter_TuneCUEP8M1_13TeV-pythia8-evtgen/crab_Bfinder_mc_Bd_muonfilter_ext_v1/170516_100548/0000/Bfinder_mc_*.root");
+
+		//2016 MC Bd sample
+		root->Add("/gstore/t3cms/store/user/bfontana/Bfinder_Bd_MC2016_Moriond_v4/BdToJpsiKstar_BMuonFilter_SoftQCDnonD_TuneCUEP8M1_13TeV-pythia8-evtgen/Bd/180222_095843/0000/bfinder_1.root");
+		HltTree->Add("/gstore/t3cms/store/user/bfontana/Bfinder_Bd_MC2016_Moriond_v4/BdToJpsiKstar_BMuonFilter_SoftQCDnonD_TuneCUEP8M1_13TeV-pythia8-evtgen/Bd/180222_095843/0000/bfinder_1.root");
 		break;
 
 	      case 3:
@@ -196,9 +213,9 @@ int main(int argc, char** argv)
     int HltTree_Run;
     int hlt_size = N_HLT_BOOKINGS;
 
-    if(run_on_mc)
+    /*if(run_on_mc)
       hlt_size = N_HLT_BOOKINGS - 2; //to ignore the last two HLT paths in the list in myloop.h, as they are only for data
-    
+    */
     int HLT_book[hlt_size];
     
     HltTree->SetBranchAddress("Event",&HltTree_Event);
@@ -326,8 +343,8 @@ int main(int argc, char** argv)
 		//to select the reconstructed Bees that we save. This way we only save signal.
 		if (run_on_mc && mc_truth)
 		  {
-		    std::cout << "J/psi mother: " << GenInfo->mo1[GenInfo->mo1[MuonInfo->geninfo_index[mu1idx]]] << ", Track mother" <<  GenInfo->mo1[TrackInfo->geninfo_index[tk1idx]] << std::endl;
-		    std::cout << "321: " << GenInfo->pdgId[TrackInfo->geninfo_index[tk1idx]] << std::endl;
+		    //std::cout << "J/psi mother: " << GenInfo->mo1[GenInfo->mo1[MuonInfo->geninfo_index[mu1idx]]] << ", Track mother" <<  GenInfo->mo1[TrackInfo->geninfo_index[tk1idx]] << std::endl;
+		    //std::cout << "321: " << GenInfo->pdgId[TrackInfo->geninfo_index[tk1idx]] << std::endl;
 		    if (abs(GenInfo->pdgId[MuonInfo->geninfo_index[mu1idx]]) != 13) continue; //skip any mu that was not generated as a mu+-
 		    if (abs(GenInfo->pdgId[MuonInfo->geninfo_index[mu2idx]]) != 13) continue; //skip any mu that was not generated as a mu+-
 		    if (GenInfo->mo1[MuonInfo->geninfo_index[mu1idx]] != GenInfo->mo1[MuonInfo->geninfo_index[mu2idx]]) continue; //skip if the two muons don't have the same index for the mother particle
@@ -477,9 +494,8 @@ int main(int argc, char** argv)
 
 		// Muon selection
 		if (MuonInfo->pt[mu1idx]<=4.2) continue;
-		if(run_on_mc) {
-		  particle_flow_number[3]++;
-		  std::cout << particle_flow_number[3] << std::endl;}
+		if(run_on_mc) particle_flow_number[3]++;
+		  
 
 		if (MuonInfo->pt[mu2idx]<=4.2) continue;
 		if(run_on_mc)

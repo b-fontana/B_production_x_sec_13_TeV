@@ -33,9 +33,9 @@ int main(int argc, char **argv) {
       return 0;
     }
 
-  TString file_data = "notktkmasscut_finalselection_myloop_new_data_" + channel_to_ntuple_name(channel) + "_with_cuts.root";
-  TString file_mc = "notktkmasscut_myloop_new_mc_truth_" + channel_to_ntuple_name(channel) + 
-    "_with_cuts_no_tk_win_cut.root";
+  TString PATH = "/lstore/cms/balves/Jobs/Full_Dataset_2015_Rereco/";
+  TString file_data = PATH + "myloop_new_data_" + channel_to_ntuple_name(channel) + "_with_cuts_no_tk_win_cut.root";
+  TString file_mc = "notktkmasscut_myloop_new_mc_truth_" + channel_to_ntuple_name(channel) + "_with_cuts_no_tk_win_cut.root";
 
   std::pair<double,double> cuts = mass_cuts(channel);
   std::pair<double,double> limits = histo_limits(channel);

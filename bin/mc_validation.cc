@@ -1281,7 +1281,7 @@ std::vector<double> getXRange(int var, int channel) {
     break; 
   case 11: //lxy
     v.push_back(0.);
-    v.push_back(0.65);
+    v.push_back(0.6);
     break;
   case 12: //errxy
     v.push_back(0.);
@@ -1297,7 +1297,7 @@ std::vector<double> getXRange(int var, int channel) {
     break;
   case 15: //lerrxy
     v.push_back(0.);
-    v.push_back(110.);
+    v.push_back(70.);
     break;
   case 16: //propert
     v.push_back(0.);

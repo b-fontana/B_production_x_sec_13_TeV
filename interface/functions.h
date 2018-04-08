@@ -58,11 +58,11 @@
 
 using namespace RooFit;
 
-#define LUMINOSITY          2.71
+#define LUMINOSITY          2.54
 #define NUMBER_OF_CPU       1
 #define VERSION             "v22"
 #define BASE_DIR            "/lstore/cms/brunogal/input_for_B_production_x_sec_13_TeV/"
-//#define BASE_DIR            /*"/lstore/cms/balves/Jobs/Full_Dataset_2015_Rereco"*/ "/lstore/cms/balves/Jobs/"
+extern bool RERECO = true;
 
 //////////////////////////////////////////////
 // Definition of channel #                  //
@@ -419,7 +419,7 @@ void build_pdf(RooWorkspace& w, int channel, std::string choice, std::string cho
   RooRealVar n_combinatorial("n_combinatorial","n_combinatorial",n_combinatorial_initial,0.,data->sumEntries());
   RooRealVar n_x3872("n_x3872","n_x3872",200.,0.,data->sumEntries());
 
-  RooRealVar f_swap("f_swap","f_swap", 0.1409,/*0.,1.*/0.1408,0.1410); //for the k pi swap component of channel 2
+  RooRealVar f_swap("f_swap","f_swap", 0.1291,/*0.,1.*/0.1290,0.1292); //for the k pi swap component of channel 2
   f_swap.setConstant(kTRUE);
   //set n_swap like n_jpsipi in case we want to count the k_pi_swap component as background.
   
@@ -869,11 +869,16 @@ RooRealVar* bin_mass_fit(RooWorkspace& w, int channel, double pt_min, double pt_
     syst_info = "_syst_" + choice + "_" + choice2;
   
   TString mass_info = "";
- 
-  if(mass_min!=0.0 && mass_max!=0.0)
-    mass_info = TString::Format("_mass_from_%.2f_to_%.2f",mass_min,mass_max);
-    
-  TString plot_dir = base_dir + channel_to_ntuple_name(channel) + "/" + channel_to_ntuple_name(channel) + syst_info + "_mass_fit_" + TString::Format("pt_from_%d_to_%d_y_from_%.2f_to_%.2f",(int)pt_min,(int)pt_max,y_min,y_max) + mass_info;
+  if(mass_min!=0.0 && mass_max!=0.0) 
+    mass_info = TString::Format("_mass_from_%.2f_to_%.2f",mass_min,mass_max); 
+  mass_info[12] = '_';
+  mass_info[20] = '_';    
+
+  TString ptFormat = TString::Format("%d_to_%d", (int)pt_min, (int)pt_max);
+  TString yFormat = TString::Format("%.2f_to_%.2f", y_min, y_max);
+  yFormat[1] = '_';
+  yFormat[9] = '_';
+  TString plot_dir = base_dir + channel_to_ntuple_name(channel) + "/" + channel_to_ntuple_name(channel) + syst_info + "_mass_fit_pt_from_" + ptFormat + "_y_from_" + yFormat + mass_info;
   
   plot_mass_fit(ws_cut, channel, plot_dir, (int) pt_max, (int) pt_min, y_min, y_max);
 
@@ -887,7 +892,7 @@ RooRealVar* bin_mass_fit(RooWorkspace& w, int channel, double pt_min, double pt_
   std::cout << std::endl;
   std::cout << std::endl;
   
-  TString fout_name = ws_dir + channel_to_ntuple_name(channel) + syst_info + "_mass_fit_" + TString::Format("pt_from_%d_to_%d_y_from_%.2f_to_%.2f",(int)pt_min,(int)pt_max,y_min,y_max) + mass_info + ".root";
+  TString fout_name = ws_dir + channel_to_ntuple_name(channel) + syst_info + "_mass_fit_pt_from_" + ptFormat + "_y_from_" + yFormat + mass_info + ".root";
 
   TFile* fout = new TFile(fout_name,"RECREATE");
   
@@ -1018,7 +1023,7 @@ RooRealVar* reco_efficiency(int channel, double pt_min, double pt_max, double y_
   TString ntuple_name = channel_to_ntuple_name(channel) + "_gen";
   TTree *tin_no_cuts = (TTree*)fin_no_cuts->Get(ntuple_name);
   //set up all the variables needed
-  double pt_b, eta_b, y_b, pt_mu1, pt_mu2, eta_mu1, eta_mu2;
+  double pt_b, eta_b, y_b, pt_mu1, pt_mu2, eta_mu1, eta_mu2, pt_tk1;
   double reweighting_variable;
   double lxy, errxy;
 
@@ -1050,8 +1055,6 @@ RooRealVar* reco_efficiency(int channel, double pt_min, double pt_max, double y_
     }
 
   //--------------------------------read monte carlo with cuts------------------------
-  // /*2015:*/ TString mc_input_with_cuts = "/lstore/cms/brunogal/input_for_B_production_x_sec_13_TeV/new_inputs/myloop_new_mc_truth_" + channel_to_ntuple_name(channel) + "_with_cuts.root";
-  /*2016 TString mc_input_with_cuts = TString::Format(BASE_DIR) + "MC_2016/myloop_new_mc_truth_" + channel_to_ntuple_name(channel) + "_with_cuts.root";*/
   TString mc_input_with_cuts = TString::Format(BASE_DIR) + "/final_selection/myloop_new_mc_truth_" + channel_to_ntuple_name(channel) + "_with_cuts.root";
   TFile *fin_with_cuts = new TFile(mc_input_with_cuts);
 
@@ -1067,15 +1070,18 @@ RooRealVar* reco_efficiency(int channel, double pt_min, double pt_max, double y_
   tin_with_cuts->SetBranchAddress("mu2eta", &eta_mu2);
   tin_with_cuts->SetBranchAddress("lxy", &lxy);
   tin_with_cuts->SetBranchAddress("errxy", &errxy);
+  tin_with_cuts->SetBranchAddress("tk1pt", &pt_tk1);
      
   if(syst) {
-    if (reweighting_var_str != "eta" && reweighting_var_str != "y" && reweighting_var_str != "pt" && reweighting_var_str != "mu1pt" && reweighting_var_str != "mu2pt" && reweighting_var_str != "mu1eta" && reweighting_var_str != "mu2eta" && reweighting_var_str != "lerrxy")
+    if (reweighting_var_str != "eta" && reweighting_var_str != "y" && reweighting_var_str != "pt" && reweighting_var_str != "mu1pt" && reweighting_var_str != "mu2pt" && reweighting_var_str != "mu1eta" && reweighting_var_str != "mu2eta" && reweighting_var_str != "lerrxy" &&  reweighting_var_str != "tk1pt")
       tin_with_cuts->SetBranchAddress(reweighting_var_str, &reweighting_variable);
   }
   TH1D* hist_passed = new TH1D("hist_passed","hist_passed",1,pt_min,pt_max);
 
   if (syst) { 
-    f_weights = new TFile("weights/weights_" + channel_to_ntuple_name(channel) + ".root", "READ");
+    if(RERECO) f_weights = new TFile("weights/weights_2015rereco_" + channel_to_ntuple_name(channel) + ".root", "READ");
+    else f_weights = new TFile("weights/weights_" + channel_to_ntuple_name(channel) + ".root", "READ");
+
     if (f_weights != nullptr) h_weights_passed = static_cast<TH1D*>( f_weights->Get(reweighting_var_str + "_with_cuts"));
     else std::cout << "The file was not opened! (functions.h)" << std::endl;
   }
@@ -1089,15 +1095,15 @@ RooRealVar* reco_efficiency(int channel, double pt_min, double pt_max, double y_
       if (pt_b<pt_min || pt_b>pt_max) continue; //within the pt bin
 
       //shift correction of errxy
-      if((lxy/(1.14*errxy)) <= 3.5)continue;
+      if(!RERECO) {if((lxy/(1.14*errxy)) <= 3.5)continue;}
+      else {if((lxy/errxy) <= 3.5)continue;}
 		
       bool muon1Filter = fabs(eta_mu1) < 2.4 && pt_mu1 > 2.8;
       bool muon2Filter = fabs(eta_mu2) < 2.4 && pt_mu2 > 2.8;
 
       if (syst) {
 	if (muon1Filter && muon2Filter) {
-	  if (reweighting_var_str != "eta" && reweighting_var_str != "y" && reweighting_var_str != "pt" && reweighting_var_str != "mu1pt" 
-	      && reweighting_var_str != "mu2pt" && reweighting_var_str != "mu1eta" && reweighting_var_str != "mu2eta" && reweighting_var_str != "lerrxy")
+	  if (reweighting_var_str != "eta" && reweighting_var_str != "y" && reweighting_var_str != "pt" && reweighting_var_str != "mu1pt" && reweighting_var_str != "mu2pt" && reweighting_var_str != "mu1eta" && reweighting_var_str != "mu2eta" && reweighting_var_str != "lerrxy" &&  reweighting_var_str != "tk1pt")
 	    weight_passed += h_weights_passed->GetBinContent( h_weights_passed->FindBin(reweighting_variable) );	    
 	  else if (reweighting_var_str == "eta") weight_passed += h_weights_passed->GetBinContent( h_weights_passed->FindBin(eta_b) );
 	  else if (reweighting_var_str == "y") weight_passed += h_weights_passed->GetBinContent( h_weights_passed->FindBin(y_b) );
@@ -1106,17 +1112,21 @@ RooRealVar* reco_efficiency(int channel, double pt_min, double pt_max, double y_
 	    else weight_passed += 1.;
 	  }
 	  else if (reweighting_var_str == "mu1pt") {
-	    if(pt_mu1 >= 4.2 && pt_mu1 <= 15.) weight_passed += h_weights_passed->GetBinContent( h_weights_passed->FindBin(pt_mu1) );
+	    if(pt_mu1 >= 4.5 && pt_mu1 <= 15.) weight_passed += h_weights_passed->GetBinContent( h_weights_passed->FindBin(pt_mu1) );
 	    else weight_passed += 1.;
 	  }
 	  else if (reweighting_var_str == "mu2pt") {
-	    if(pt_mu2 >= 4.2 && pt_mu2 <= 15.) weight_passed += h_weights_passed->GetBinContent( h_weights_passed->FindBin(pt_mu2) );
+	    if(pt_mu2 >= 4.5 && pt_mu2 <= 15.) weight_passed += h_weights_passed->GetBinContent( h_weights_passed->FindBin(pt_mu2) );
 	    else weight_passed += 1.;
 	  }
 	  else if (reweighting_var_str == "mu1eta") weight_passed += h_weights_passed->GetBinContent( h_weights_passed->FindBin(eta_mu1) );
 	  else if (reweighting_var_str == "mu2eta") weight_passed += h_weights_passed->GetBinContent( h_weights_passed->FindBin(eta_mu2) );
 	  else if (reweighting_var_str == "lerrxy") {
-	    if (lxy/errxy >= 8. && lxy/errxy <= 60.) weight_passed += h_weights_passed->GetBinContent( h_weights_passed->FindBin(lxy/errxy) );
+	    if (lxy/errxy >= 8 && lxy/errxy <= 60.) weight_passed += h_weights_passed->GetBinContent( h_weights_passed->FindBin(lxy/errxy) );
+	    else weight_passed += 1.;
+	  }
+	  else if (reweighting_var_str == "tk1pt") {
+	    if (pt_tk1 >= 1.5 && pt_tk1 <= 9.) weight_passed += h_weights_passed->GetBinContent( h_weights_passed->FindBin(pt_tk1) );
 	    else weight_passed += 1.;
 	  }
 	}
@@ -1260,8 +1270,9 @@ void read_vector(int channel, TString vector, TString var1_name , TString var2_n
 	  
 	  if(vector != "ratio_reweight_syst")
 	    in_file_name = dir + vector + "_" + channel_to_ntuple_name(channel) + "_" + bins_str + ".root";
-	  else
+	  else 
 	    in_file_name = dir + ratio + "_" + vector + "_" + bins_str + ".root";
+	  
 
 	  //debug
 	  std::cout << "Reading: " << in_file_name << std::endl;
@@ -1302,12 +1313,18 @@ void read_vector(int channel, TString vector, TString var1_name , TString var2_n
                   y_max = TString::Format("%.2f", var1_bins[i+1]);
                 }
 
-	      if(vector != "ratio_reweight_syst")
-		opt = " --channel " + TString::Format("%d", channel) + " --ptmin " + pt_min + " --ptmax " + pt_max + " --ymin " +  y_min + " --ymax " + y_max;
-	      else
+	      if(vector != "ratio_reweight_syst") {
+		if(vector == "combined_syst" && ratio != "")
+		  opt = " --ratio " + ratio + " --ptmin " + pt_min + " --ptmax " + pt_max + " --ymin " 
+		    +  y_min + " --ymax " + y_max;
+		else 
+		  opt = " --channel " + TString::Format("%d", channel) + " --ptmin " + pt_min + " --ptmax " 
+		    + pt_max + " --ymin " +  y_min + " --ymax " + y_max;
+	      }
+	      else {
+		if(vector == "ratio_reweight_syst" && ratio == "") std::cout << "ERROR!!!!!" << std::endl;
 		opt = " --ratio " + ratio + " --ptmin " + pt_min + " --ptmax " + pt_max + " --ymin " +  y_min + " --ymax " + y_max;
-
-	      //add special opt case for ratio_reweight_syst
+	      }
 	      
               if(vector == "yield")
                 {
@@ -1355,7 +1372,7 @@ void read_vector(int channel, TString vector, TString var1_name , TString var2_n
 }
 	    
 
-  void plot_eff(TString measure, TString eff_name, int channel, int n_var1_bins, TString var2_name, double var2_min, double var2_max, TString x_axis_name, TString b_title, double* var1_bin_centre, double* var1_bin_centre_lo, double* var1_bin_centre_hi, double* eff_array, double* eff_err_lo_array, double* eff_err_hi_array)
+void plot_eff(TString measure, TString eff_name, int channel, int n_var1_bins, TString var2_name, double var2_min, double var2_max, TString x_axis_name, TString b_title, double* var1_bin_centre, double* var1_bin_centre_lo, double* var1_bin_centre_hi, double* eff_array, double* eff_err_lo_array, double* eff_err_hi_array)
   {  
   TCanvas ce;
   TGraphAsymmErrors* graph_pre_eff = new TGraphAsymmErrors(n_var1_bins, var1_bin_centre, eff_array, var1_bin_centre_lo, var1_bin_centre_hi, eff_err_lo_array, eff_err_hi_array);
@@ -1380,24 +1397,32 @@ void read_vector(int channel, TString vector, TString var1_name , TString var2_n
       eff_name = b_title + "_ratioeff";
       
       if(b_title == "fsfu")
-	eff_title = "#frac{#epsilon_u}{#epsilon_s}";
+	eff_title = "#frac{#epsilon_{u}}{#epsilon_{s}}";
       else
 	if(b_title == "fsfd")
-	  eff_title = "#frac{#epsilon_d}{#epsilon_s}";
+	  eff_title = "#frac{#epsilon_{d}}{#epsilon_{s}}";
 	else
 	  if(b_title == "fdfu")
-	    eff_title = "#frac{#epsilon_u}{#epsilon_d}";
+	    eff_title = "#frac{#epsilon_{u}}{#epsilon_{d}}";
     }
 
-  //graph_pre_eff->SetTitle(eff_title);
+  graph_pre_eff->SetTitle("");
   graph_pre_eff->GetXaxis()->SetTitle(x_axis_name);
   graph_pre_eff->GetYaxis()->SetTitle(eff_title);
   graph_pre_eff->Draw("AP");
 
   if(measure != "x_sec" && measure != "ratio")
     return;
-  
-  TString save_eff = TString::Format(VERSION) + "/efficiencies/" + measure + "_" + eff_name + "_" + ntuple + var2_name + TString::Format("_from_%.2f_to_%.2f", var2_min, var2_max) + ".png";
+
+  TString ptFormat = TString::Format("%d_to_%d", (int)var2_min, (int)var2_max);
+  TString yFormat = TString::Format("%.2f_to_%.2f", var2_min, var2_max);
+  yFormat[1] = '_';
+  yFormat[9] = '_';
+  TString varFormat = "";
+  if(var2_name=="pt") varFormat = ptFormat;
+  else if(var2_name=="y") varFormat = yFormat;
+
+  TString save_eff = TString::Format(VERSION) + "/efficiencies/" + measure + "_" + eff_name + "_" + ntuple + var2_name + "_format_" + varFormat + ".png";
   
   if(n_var1_bins == 1)
     save_eff = TString::Format(VERSION) + "/efficiencies/" + measure + "_" + eff_name + "_" + ntuple + "full_bins.png";
@@ -1447,8 +1472,9 @@ void latex_table(std::string filename, int n_col, int n_lin, std::vector<std::st
   TString col = "|c|";
 
   for(int i=1; i<n_col; i++)
-    col+="c|"; //col+= TString::Format("|S[round-precision= %d ]", precision[i-1]);
+    col+="p{19mm}|"; //col+= TString::Format("|S[round-precision= %d ]", precision[i-1]);
 
+  file << "\\begin{center}" << std::endl;
   file << "\\begin{tabular}{" + col + "}" << std::endl;
   file << "\\hline" << std::endl;
 
@@ -1471,6 +1497,7 @@ void latex_table(std::string filename, int n_col, int n_lin, std::vector<std::st
 
   //End Table                                                                                                                                
   file << "\\end{tabular}" << std::endl;
+  file << "\\end{center}" << std::endl;
 
   //if(vertical)
     //file << "\\end{adjustbox}" << std::endl;

@@ -62,10 +62,8 @@ int main(int argc, char** argv)
       else
 	{
 	  //for BMuonfilter processed with DumpGenInfo.cc
-	  root->Add("/gstore/t3cms/store/user/martinsg/DumpGenInfo_Bu_muonfilter_ext_v1/BuToJpsiKV2_BMuonFilter_TuneCUEP8M1_13TeV-pythia8-evtgen/crab_DumpGenInfo_Bu_muonfilter_ext_v1/170927_180738/0000/DumpGenInfo_*.root");
-	  root->Add("/gstore/t3cms/store/user/martinsg/DumpGenInfo_Bu_muonfilter_ext_v1/BuToJpsiKV2_BMuonFilter_TuneCUEP8M1_13TeV-pythia8-evtgen/crab_DumpGenInfo_Bu_muonfilter_ext_v1/170927_180738/0001/DumpGenInfo_*.root");
-	  root->Add("/gstore/t3cms/store/user/martinsg/DumpGenInfo_Bu_muonfilter_ext_v1/BuToJpsiKV2_BMuonFilter_TuneCUEP8M1_13TeV-pythia8-evtgen/crab_DumpGenInfo_Bu_muonfilter_ext_v1/170927_180738/0002/DumpGenInfo_*.root");
-	  root->Add("/gstore/t3cms/store/user/martinsg/DumpGenInfo_Bu_muonfilter_ext_v1/BuToJpsiKV2_BMuonFilter_TuneCUEP8M1_13TeV-pythia8-evtgen/crab_DumpGenInfo_Bu_muonfilter_ext_v1/170927_180738/0003/DumpGenInfo_*.root");
+	  root->Add("/gstore/t3cms/store/user/bfontana/DumpGenInfo_Bu_MC2016_Moriond_v2/BuToJpsiK_BMuonFilter_SoftQCDnonD_TuneCUEP8M1_13TeV-pythia8-evtgen/Bu/180301_150357/0000/DumpGenInfo_*.root");
+	  root->Add("/gstore/t3cms/store/user/bfontana/DumpGenInfo_Bu_MC2016_Moriond_v2/BuToJpsiK_BMuonFilter_SoftQCDnonD_TuneCUEP8M1_13TeV-pythia8-evtgen/Bu/180301_150357/0001/DumpGenInfo_*.root");
 	}
       break;
     case 2:
@@ -77,7 +75,14 @@ int main(int argc, char** argv)
       else
 	{
 	  //for BMuonfilter processed with DumpGenInfo.cc
-	  root->Add("/gstore/t3cms/store/user/martinsg/DumpGenInfo_Bd_muonfilter_ext_v1/BdToJpsiKstarV2_BMuonFilter_TuneCUEP8M1_13TeV-pythia8-evtgen/crab_DumpGenInfo_Bd_muonfilter_ext_v1/170929_084003/0000/DumpGenInfo_*.root");
+	  //DumGenInfo 2015: root->Add("/gstore/t3cms/store/user/martinsg/DumpGenInfo_Bd_muonfilter_ext_v1/BdToJpsiKstarV2_BMuonFilter_TuneCUEP8M1_13TeV-pythia8-evtgen/crab_DumpGenInfo_Bd_muonfilter_ext_v1/170929_084003/0000/DumpGenInfo_*.root");
+	  root->Add("/gstore/t3cms/store/user/bfontana/DumpGenInfo_Bd_MC2016_Moriond_v2/BdToJpsiKstar_BMuonFilter_SoftQCDnonD_TuneCUEP8M1_13TeV-pythia8-evtgen/Bd/180301_150321/0000/DumpGenInfo_*.root");
+	  root->Add("/gstore/t3cms/store/user/bfontana/DumpGenInfo_Bd_MC2016_Moriond_v2/BdToJpsiKstar_BMuonFilter_SoftQCDnonD_TuneCUEP8M1_13TeV-pythia8-evtgen/Bd/180301_150321/0001/DumpGenInfo_*.root");
+	  root->Add("/gstore/t3cms/store/user/bfontana/DumpGenInfo_Bd_MC2016_Moriond_v2/BdToJpsiKstar_BMuonFilter_SoftQCDnonD_TuneCUEP8M1_13TeV-pythia8-evtgen/Bd/180301_150321/0002/DumpGenInfo_*.root");
+	  root->Add("/gstore/t3cms/store/user/bfontana/DumpGenInfo_Bd_MC2016_Moriond_v2/BdToJpsiKstar_BMuonFilter_SoftQCDnonD_TuneCUEP8M1_13TeV-pythia8-evtgen/Bd/180301_150321/0003/DumpGenInfo_*.root");
+	  root->Add("/gstore/t3cms/store/user/bfontana/DumpGenInfo_Bd_MC2016_Moriond_v2/BdToJpsiKstar_BMuonFilter_SoftQCDnonD_TuneCUEP8M1_13TeV-pythia8-evtgen/Bd/180301_150321/0004/DumpGenInfo_*.root");
+	  root->Add("/gstore/t3cms/store/user/bfontana/DumpGenInfo_Bd_MC2016_Moriond_v2/BdToJpsiKstar_BMuonFilter_SoftQCDnonD_TuneCUEP8M1_13TeV-pythia8-evtgen/Bd/180301_150321/0005/DumpGenInfo_*.root");
+	  root->Add("/gstore/t3cms/store/user/bfontana/DumpGenInfo_Bd_MC2016_Moriond_v2/BdToJpsiKstar_BMuonFilter_SoftQCDnonD_TuneCUEP8M1_13TeV-pythia8-evtgen/Bd/180301_150321/0006/DumpGenInfo_*.root");
 	}
       break;
     case 3:
@@ -91,7 +96,15 @@ int main(int argc, char** argv)
       else
 	{
 	  //for BMuonfilter processed with Bfinder_mc.cc
-	  root->Add("/gstore/t3cms/store/user/martinsg/DumpGenInfo_Bs_muonfilter_ext_v1/BsToJpsiPhi_BMuonFilter_TuneCUEP8M1_13TeV-pythia8-evtgen/crab_DumpGenInfo_Bs_muonfilter_ext_v1/170929_085951/0000/DumpGenInfo_*.root");
+	  root->Add("/gstore/t3cms/store/user/bfontana/DumpGenInfo_Bs_MC2016_Moriond_v2/BsToJpsiPhi_BMuonFilter_SoftQCDnonD_TuneCUEP8M1_13TeV-pythia8-evtgen/Bs/180301_150447/0000/DumpGenInfo_*.root");
+	  root->Add("/gstore/t3cms/store/user/bfontana/DumpGenInfo_Bs_MC2016_Moriond_v2/BsToJpsiPhi_BMuonFilter_SoftQCDnonD_TuneCUEP8M1_13TeV-pythia8-evtgen/Bs/180301_150447/0001/DumpGenInfo_*.root");
+	  root->Add("/gstore/t3cms/store/user/bfontana/DumpGenInfo_Bs_MC2016_Moriond_v2/BsToJpsiPhi_BMuonFilter_SoftQCDnonD_TuneCUEP8M1_13TeV-pythia8-evtgen/Bs/180301_150447/0002/DumpGenInfo_*.root");
+	  root->Add("/gstore/t3cms/store/user/bfontana/DumpGenInfo_Bs_MC2016_Moriond_v2/BsToJpsiPhi_BMuonFilter_SoftQCDnonD_TuneCUEP8M1_13TeV-pythia8-evtgen/Bs/180301_150447/0003/DumpGenInfo_*.root");
+	  root->Add("/gstore/t3cms/store/user/bfontana/DumpGenInfo_Bs_MC2016_Moriond_v2/BsToJpsiPhi_BMuonFilter_SoftQCDnonD_TuneCUEP8M1_13TeV-pythia8-evtgen/Bs/180301_150447/0004/DumpGenInfo_*.root");
+	  root->Add("/gstore/t3cms/store/user/bfontana/DumpGenInfo_Bs_MC2016_Moriond_v2/BsToJpsiPhi_BMuonFilter_SoftQCDnonD_TuneCUEP8M1_13TeV-pythia8-evtgen/Bs/180301_150447/0005/DumpGenInfo_*.root");
+	  root->Add("/gstore/t3cms/store/user/bfontana/DumpGenInfo_Bs_MC2016_Moriond_v2/BsToJpsiPhi_BMuonFilter_SoftQCDnonD_TuneCUEP8M1_13TeV-pythia8-evtgen/Bs/180301_150447/0006/DumpGenInfo_*.root");
+	  root->Add("/gstore/t3cms/store/user/bfontana/DumpGenInfo_Bs_MC2016_Moriond_v2/BsToJpsiPhi_BMuonFilter_SoftQCDnonD_TuneCUEP8M1_13TeV-pythia8-evtgen/Bs/180301_150447/0007/DumpGenInfo_*.root");
+	  root->Add("/gstore/t3cms/store/user/bfontana/DumpGenInfo_Bs_MC2016_Moriond_v2/BsToJpsiPhi_BMuonFilter_SoftQCDnonD_TuneCUEP8M1_13TeV-pythia8-evtgen/Bs/180301_150447/0008/DumpGenInfo_*.root");
 	}
       break;
     case 5:

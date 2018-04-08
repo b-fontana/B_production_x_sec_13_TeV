@@ -82,7 +82,7 @@ int main(int argc, char** argv)
     var1_str = "pT [GeV]";
   else
     if(var1_name == "y")
-      var1_str = "|y|";
+      var1_str = "$|$y$|$";
   
   col_name.push_back(var1_str);
   
@@ -101,8 +101,9 @@ int main(int argc, char** argv)
   
   for(int k=0; k< (int)syst_list.size(); k++)
     {
-      col_name.push_back(syst_fancy_name(syst_list[k]).append("[\\%]"));
+      col_name.push_back(syst_fancy_name(syst_list[k])/*.append("[\\%]")*/);
     }
+  
   
   //read the arrays
   for(int j=0; j<n_var2_bins; j++)

@@ -18,6 +18,7 @@ int main(int argc, char** argv)
   int poly = 1;
   int eff = 1;
   int syst = 0;
+  bool precise_BF_only = false;
 
   for(int i=1 ; i<argc ; ++i)
     {
@@ -49,8 +50,15 @@ int main(int argc, char** argv)
 	  convert << argv[++i];
 	  convert >> poly;
 	}
+      if(argument == "--precise_BF_only")
+	{
+	  convert << argv[++i];
+	  convert >> precise_BF_only;
+	}
     }
-  
+
+  if(precise_BF_only == true && bins != "full") std::cout << "The 'precise_BF_only' option can only be used when the full bin is being considered!" << std::endl;
+
   //to create the directories to save the .png files
   std::vector<std::string> dir_list;  
   dir_list.push_back(static_cast<const char*>(TString::Format(VERSION) + "/ratio"));
@@ -122,7 +130,41 @@ int main(int argc, char** argv)
   //calculate bin centre
   for(int i=0; i<n_var1_bins; i++)
     {
-      var1_bin_centre[i] = var1_bins[i] + (var1_bins[i+1]-var1_bins[i])/2;
+      if(ratio == "fsfu") {
+	if(!RERECO)
+	  {
+	    if(var1_name == "pt") var1_bin_centre[i] = (ntkp_pt_bins_average_2016[i]+ntphi_pt_bins_average_2016[i])/2;
+	    else if(var1_name == "y") var1_bin_centre[i] = (ntkp_y_bins_average_2016[i]+ntphi_y_bins_average_2016[i])/2;
+	  }
+	else 
+	  {	    
+	    if(var1_name == "pt") var1_bin_centre[i] = (ntkp_pt_bins_average_2015[i]+ntphi_pt_bins_average_2015[i])/2;
+	    else if(var1_name == "y") var1_bin_centre[i] = (ntkp_y_bins_average_2015[i]+ntphi_y_bins_average_2015[i])/2;
+	  }
+      }
+      else if(ratio == "fsfd") {
+	if(!RERECO)
+	  {
+	    if(var1_name == "pt") var1_bin_centre[i] = (ntkstar_pt_bins_average_2016[i]+ntphi_pt_bins_average_2016[i])/2;
+	    else if(var1_name == "y") var1_bin_centre[i] = (ntkstar_y_bins_average_2016[i]+ntphi_y_bins_average_2016[i])/2;
+	  }
+	else
+	  {
+	    if(var1_name == "pt") var1_bin_centre[i] = (ntkstar_pt_bins_average_2015[i]+ntphi_pt_bins_average_2015[i])/2;
+	    else if(var1_name == "y") var1_bin_centre[i] = (ntkstar_y_bins_average_2015[i]+ntphi_y_bins_average_2015[i])/2;
+	  }
+      }
+      else if(ratio == "fdfu") {
+	if(!RERECO) {
+	  if(var1_name == "pt") var1_bin_centre[i] = (ntkp_pt_bins_average_2016[i]+ntkstar_pt_bins_average_2016[i])/2;
+	  else if(var1_name == "y") var1_bin_centre[i] = (ntkp_y_bins_average_2016[i]+ntkstar_y_bins_average_2016[i])/2;
+	}
+	else
+	  {
+	    if(var1_name == "pt") var1_bin_centre[i] = (ntkp_pt_bins_average_2015[i]+ntkstar_pt_bins_average_2015[i])/2;
+	    else if(var1_name == "y") var1_bin_centre[i] = (ntkp_y_bins_average_2015[i]+ntkstar_y_bins_average_2015[i])/2;
+	  }
+      }
       var1_bin_centre_lo[i] = var1_bin_centre[i] - var1_bins[i];
       var1_bin_centre_hi[i] = var1_bins[i+1] - var1_bin_centre[i];
     }
@@ -141,11 +183,12 @@ int main(int argc, char** argv)
             channel= ch+1; //fd_fu: if ch=0 -> channel=1, if ch=1 -> channel=2
 	  else
             {
-              printf("ERROR: The ratio you asked for is not deffined. Only fsfu, fsfd, fdfu are deffined. Please check in the code.");
+              printf("ERROR: The ratio you asked for is not defined. Only fsfu, fsfd, fdfu are defined. Please check in the code.");
               return 0;
             }
-      
-      RooRealVar* branch = branching_fraction(measure, channel);
+     
+      std::cout << "FUNCTION: " << precise_BF_only << std::endl;
+      RooRealVar* branch = branching_fraction(measure, channel, precise_BF_only);
       b_fraction[ch] = branch->getVal();
       b_fraction_err[ch] = branch->getError();
       
@@ -158,7 +201,8 @@ int main(int argc, char** argv)
       
       //read syst
       if(syst) {
-	read_vector(channel, "combined_syst", var1_name , var2_name, n_var1_bins, n_var2_bins, var1_bins, var2_bins, combined_syst[ch][0], ratio, combined_syst_lo[ch][0], combined_syst_hi[ch][0]);
+	if(ch==0) //Bruno Alves: The systematics are stored in some files which take into account both channels
+	  read_vector(channel, "combined_syst", var1_name , var2_name, n_var1_bins, n_var2_bins, var1_bins, var2_bins, combined_syst[ch][0], ratio, combined_syst_lo[ch][0], combined_syst_hi[ch][0]);
       }
       else
 	for(int j=0; j<n_var2_bins; j++)
@@ -197,9 +241,7 @@ int main(int argc, char** argv)
 	  ratio_array[j][i]  *= pow(10,j);
           	  
           if(eff)
-	    {
-	      ratio_array[j][i] *= ratio_eff[j][i] * (b_fraction[0]/b_fraction[1]);
-	    }
+	    ratio_array[j][i] *= ratio_eff[j][i] * (b_fraction[0]/b_fraction[1]);
 	    	  
 	  ratio_err_lo[j][i] = ratio_array[j][i] * sqrt(pow(yield_err_lo[0][j][i]/yield[0][j][i],2) + pow(yield_err_lo[1][j][i]/yield[1][j][i],2));
 	  ratio_err_hi[j][i] = ratio_array[j][i] * sqrt(pow(yield_err_hi[0][j][i]/yield[0][j][i],2) + pow(yield_err_hi[1][j][i]/yield[1][j][i],2));
@@ -209,8 +251,12 @@ int main(int argc, char** argv)
 
 	  if(syst)
 	    {
-	      ratio_syst_lo[j][i]  = ratio_array[j][i] * sqrt( pow(combined_syst_lo[0][j][i],2) + pow(combined_syst_lo[1][j][i],2) );
-	      ratio_syst_hi[j][i]  = ratio_array[j][i] * sqrt( pow(combined_syst_hi[0][j][i],2) + pow(combined_syst_hi[1][j][i],2) );
+	      //Bruno Alves: the systematics are stored in files which already include the contributions from both channels
+	      //Bruno Alves: there is no need to add the 'combined_syst_lo/hi' quadratically
+	      ratio_syst_lo[j][i]  = ratio_array[j][i] * combined_syst_lo[0][j][i]; 
+	      //ratio_syst_lo[j][i]  = ratio_array[j][i] * sqrt( pow(combined_syst_lo[0][j][i],2) + pow(combined_syst_lo[1][j][i],2) );
+	      ratio_syst_hi[j][i]  = ratio_array[j][i] * combined_syst_hi[0][j][i];
+	      //ratio_syst_hi[j][i]  = ratio_array[j][i] * sqrt( pow(combined_syst_hi[0][j][i],2) + pow(combined_syst_hi[1][j][i],2) );
 	      	      
 	      //total error for fitting the ratio in the plot later
 	      ratio_total_err_lo[j][i] = sqrt( pow(ratio_err_lo[j][i],2) + pow(ratio_syst_lo[j][i],2) );
@@ -224,9 +270,8 @@ int main(int argc, char** argv)
     {
       for(int i=0; i<n_var1_bins; i++)
 	{
-	  if(syst)
-	    ratio_BF_err[j][i] = ratio_array[j][i] * sqrt( pow(b_fraction_err[0]/b_fraction[0],2) + pow(b_fraction_err[1]/b_fraction[1],2) );
-	}
+	  if(syst) ratio_BF_err[j][i] = ratio_array[j][i] * sqrt( pow(b_fraction_err[0]/b_fraction[0],2) + pow(b_fraction_err[1]/b_fraction[1],2) );
+       	}
     }
 
   //adding the global uncertainties
@@ -285,6 +330,9 @@ int main(int argc, char** argv)
 	ratio_min = ratio_array[0][i] - ratio_syst_lo[0][i];
     }
 
+  std::cout << "RATIO_MIN: " << ratio_min << std::endl;
+  std::cout << "RATIO_MAX: " << ratio_max << std::endl;
+
   TString ratio_title = "";
   TString no_eff_ratio = "";
   
@@ -336,7 +384,7 @@ int main(int argc, char** argv)
 	  graph->SetTitle("");
 	  graph->GetXaxis()->SetTitle(x_axis_name);
 	  graph->GetYaxis()->SetTitle(ratio_title);
-	  graph->GetYaxis()->SetRangeUser(0.5*ratio_min, 2*ratio_max);
+	  graph->GetYaxis()->SetRangeUser(0.55*ratio_min, 1.45*ratio_max);
 
 	  //to set the range of the plot, it takes the min and max value of ratio.
 	  if(n_var2_bins > 1)
@@ -348,29 +396,41 @@ int main(int argc, char** argv)
 		  gStyle->SetOptStat();
 		  gStyle->SetOptFit();
 		  
-		  TGraphAsymmErrors* graph2 = new TGraphAsymmErrors(n_var1_bins, var1_bin_centre, ratio_array[j], var1_bin_centre_lo, var1_bin_centre_hi, ratio_total_err_lo[j], ratio_total_err_hi[j]);
+		  TGraphAsymmErrors* graph2_stat = new TGraphAsymmErrors(n_var1_bins, var1_bin_centre, ratio_array[j], var1_bin_centre_lo, var1_bin_centre_hi, ratio_err_lo[j], ratio_err_hi[j]);		  
+		  graph2_stat->SetTitle("");
+		  graph2_stat->GetYaxis()->SetTitle(ratio_title);
+		  graph2_stat->GetYaxis()->SetRangeUser(0.55*ratio_min, 1.45*ratio_max);
+		  graph2_stat->GetXaxis()->SetTitle(x_axis_name);
+		  graph2_stat->SetMarkerSize(3);
+		  graph2_stat->SetFillColor(kRed-9);
+                  graph2_stat->Draw("a||2");
+                  graph2_stat->Draw("p");
 		  
-		  graph2->SetTitle("");
-		  graph2->GetYaxis()->SetTitle(ratio_title);
-		  graph2->GetYaxis()->SetRangeUser(0.5*ratio_min, 2*ratio_max);
-		  graph2->GetXaxis()->SetTitle(x_axis_name);
-		  
-		  graph2->Fit("pol0","W","");
-                  graph2->GetFunction("pol0")->SetLineColor(1);
-                  graph2->Draw("ap");
+		  TGraphAsymmErrors* graph2_total = new TGraphAsymmErrors(n_var1_bins, var1_bin_centre, ratio_array[j], var1_bin_centre_lo, var1_bin_centre_hi, ratio_total_err_lo[j], ratio_total_err_hi[j]);
+		  graph2_total->SetTitle("");
+		  graph2_total->GetYaxis()->SetTitle(ratio_title);
+		  graph2_total->GetYaxis()->SetRangeUser(0.55*ratio_min, 1.45*ratio_max);
+		  graph2_total->GetXaxis()->SetTitle(x_axis_name);
+		  graph2_total->SetMarkerSize(1);
+
+		  graph2_total->Fit("pol0","EM","");
+                  graph2_total->GetFunction("pol0")->SetLineColor(1);
+                  graph2_total->GetFunction("pol0")->SetLineWidth(2);
+                  graph2_total->Draw("p same");
 		  gPad->Update();
 
-		  TPaveStats* tps1 = (TPaveStats*) graph2->FindObject("stats");
+		  TPaveStats* tps1 = (TPaveStats*) graph2_total->FindObject("stats");
 		  tps1->SetTextColor(1);
 		  tps1->SetLineColor(1);		  
-		  tps1->Draw("same");
+		  tps1->Draw("a same");
 
-		  ///////////////////////////////////////////////////////
-		  TGraphAsymmErrors* graph3 = (TGraphAsymmErrors*)graph2->Clone("graph3");
-		  
+		  TGraphAsymmErrors* graph3 = (TGraphAsymmErrors*)graph2_total->Clone("graph3");		  
+		  TF1 *mypol1 = new TF1("mypol1","[0] + [1]*x", 0, 100);
+		  mypol1->SetLineColor(4);
+		  mypol1->SetLineWidth(2);
 		  graph3->SetTitle("");
-		  graph3->Fit("pol1","W","");
-		  graph3->GetFunction("pol1")->SetLineColor(4);
+		  graph3->Fit("mypol1","EM","");
+		  //graph3->GetFunction("mypol1")->SetLineColor(4);
 		  graph3->Draw("pX same");
 		  gPad->Update();
 		  		  
@@ -387,6 +447,7 @@ int main(int argc, char** argv)
 		  tps2->SetY1NDC(Y1-(Y2-Y1));
 		  tps2->SetY2NDC(Y1);
 		  tps2->Draw("same");
+		  
 		  //////////////////////////////////////////////////////
 
 		  cz.Update();

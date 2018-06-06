@@ -35,6 +35,8 @@
 #include <RooWorkspace.h>
 #include <RooAddPdf.h>
 #include <RooGenericPdf.h>
+#include <RooBreitWigner.h>
+#include <RooVoigtian.h>
 #include <RooCBShape.h>
 #include <RooArgusBG.h>
 #include <TGraphAsymmErrors.h>
@@ -58,11 +60,12 @@
 
 using namespace RooFit;
 
-#define LUMINOSITY          2.54
+#define LUMINOSITY          2.54 //2016 rereco: 17.748
 #define NUMBER_OF_CPU       1
-#define VERSION             "v22"
-#define BASE_DIR            "/lstore/cms/brunogal/input_for_B_production_x_sec_13_TeV/"
-extern bool RERECO = true;
+#define VERSION             "v22" //2016 rereco: "v1_2016"
+#define BASE_DIR_2015       "/lstore/cms/brunogal/input_for_B_production_x_sec_13_TeV/"
+#define BASE_DIR_2016       "/lstore/cms/balves/Jobs/"
+extern bool RERECO = true; //true for 2015 rereco; false for 2016
 
 //////////////////////////////////////////////
 // Definition of channel #                  //
@@ -79,7 +82,8 @@ void create_dir(std::vector<std::string> list);
 void set_up_workspace_variables(RooWorkspace& w, int channel, double mass_min = 0.0 , double mass_max = 0.0);
 void read_data(RooWorkspace& w, TString filename,int channel);
 void read_data_cut(RooWorkspace& w, RooAbsData* data);
-void build_pdf(RooWorkspace& w, int channel, std::string choice = "", std::string choice2 = "");
+void build_pdf(RooWorkspace& w, int channel, std::pair<double,double> pt_pair, std::pair<double,double> y_pair, 
+	       bool lowstat = false, std::string choice = "", std::string choice2 = "");
 void setup_bins(TString measure, int channel, TString bins, TString* var1_name, int* n_var1_bins, TString* var2_name, int* n_var2_bins, double** var1_bins, double** var2_bins);
 
 double var_mean_value(RooWorkspace& w, TString var1_name, double var1_min, double var1_max, TString var2_name, double var2_min, double var2_max);
@@ -90,8 +94,8 @@ void plot_eff(TString measure, TString eff_name, int channel, int n_var1_bins, T
 RooRealVar* bin_mass_fit(RooWorkspace& w, int channel, double pt_min, double pt_max, double y_min, double y_max, std::string choice = "", std::string choice2 = "", double mass_min = 0.0, double mass_max = 0.0, Bool_t verb = kFALSE);
 
 RooRealVar* prefilter_efficiency(int channel, double pt_min, double pt_max, double y_min, double y_max);
-RooRealVar* reco_efficiency(int channel, double pt_min, double pt_max, double y_min, double y_max, bool syst = false, TString reweighting_var_str = "");
-RooRealVar* branching_fraction(TString measure, int channel);
+RooRealVar* reco_efficiency(int channel, double pt_min, double pt_max, double y_min, double y_max, bool syst = false, std::vector<TString> reweighting_var_str = {});
+RooRealVar* branching_fraction(TString measure, int channel, bool precise_only);
 
 void read_vector(int channel, TString vector, TString var1_name , TString var2_name, int n_var1_bins, int n_var2_bins,  double* var1_bins, double* var2_bins, double* array, TString ratio = "", double* err_lo = NULL, double* err_hi = NULL);
 void print_table(TString title, int n_var1_bins, int n_var2_bins, TString var1_name, TString var2_name, double* var1_bin_edges, double* var2_bin_edges, double* array, double* stat_err_lo, double* stat_err_hi, double* syst_err_lo = NULL, double* syst_err_hi = NULL, double* BF_err = NULL, double* global_err = NULL);
@@ -167,7 +171,8 @@ void read_data_cut(RooWorkspace& w, RooAbsData* data)
   w.import(*data);
 }
 
-void build_pdf(RooWorkspace& w, int channel, std::string choice, std::string choice2)
+void build_pdf(RooWorkspace& w, int channel, std::pair<double,double> pt_pair, std::pair<double,double> y_pair, 
+	       bool lowstat, std::string choice, std::string choice2)
 {
   //choice is either signal or background
   //choice2 is the function to describe signal or background
@@ -215,53 +220,73 @@ void build_pdf(RooWorkspace& w, int channel, std::string choice, std::string cho
 
   //Two Gaussians
   RooRealVar m_mean("m_mean","m_mean",mass_peak,mass_peak-0.09,mass_peak+0.09);
-  RooRealVar m_sigma1("m_sigma1","m_sigma1",0.015,0.001,0.050); //,0.020,0.010,0.050);
+  RooRealVar m_sigma1("m_sigma1","m_sigma1",0.016,0.001,0.050); //,0.020,0.010,0.050);
   
-  //RooRealVar m_sigma2("m_sigma2","m_sigma2",0.010,0.005,0.025);
-  RooRealVar m_sig2scale("m_sig2scale","m_sig2scale",2.0,0.0,5.0);
+  //RooRealVar m_sigma2("m_sigma2","m_sigma2",0.015,0.001,0.050);
+  std::string m_sig2scale_string;
+  if(choice=="3gauss") m_sig2scale_string = "m_sig2scale_3gauss";
+  else m_sig2scale_string = "m_sig2scale";
+  std::tuple<double,double,double> m_sig2scale_tuple = get_fit_params(channel, pt_pair, y_pair, m_sig2scale_string);
+  RooRealVar m_sig2scale("m_sig2scale","m_sig2scale",std::get<0>(m_sig2scale_tuple),std::get<1>(m_sig2scale_tuple),std::get<2>(m_sig2scale_tuple));
   RooProduct m_sigma2("m_sigma2","m_sigma2",RooArgList(m_sigma1,m_sig2scale));
   
   RooGaussian m_gaussian1("m_gaussian1","m_gaussian1",mass,m_mean,m_sigma1);
   RooGaussian m_gaussian2("m_gaussian2","m_gaussian2",mass,m_mean,m_sigma2);
-
-  RooRealVar m_fraction("m_fraction","m_fraction", 0.5, 0, 1);
   
   //Crystal Ball
   RooRealVar m_alpha("m_alpha", "m_alpha", mass_peak-0.015/2, mass_peak-0.08, mass_peak-0.003);
-  RooRealVar m_n("m_n", "m_n", 2.7, 1, 7);
+  RooRealVar m_n("m_n", "m_n", 5.00);
+  m_n.setConstant(kTRUE);
   RooCBShape m_crystal("m_crystal", "m_crystal", mass, m_mean, m_sigma1, m_alpha, m_n);
 
   //Three Gaussians
-  RooRealVar m_sigma3("m_sigma3","m_sigma3",0.030,0.001,0.100);
+  RooRealVar m_sigma3("m_sigma3","m_sigma3",0.020,0.001,0.200);
   RooGaussian m_gaussian3("m_gaussian3","m_gaussian3",mass,m_mean,m_sigma3);
-  RooRealVar m_fraction2("m_fraction2","m_fraction2",0.5);
+  RooRealVar* m_fraction;
+  RooRealVar* m_fraction2;
 
   RooAddPdf* pdf_m_signal;
 
   if(choice2=="signal" && choice=="crystal")
     {
-      pdf_m_signal = new RooAddPdf("pdf_m_signal", "pdf_m_signal", RooArgList(m_crystal,m_gaussian2), RooArgList(m_fraction));
-      m_fraction.setVal(1.);
-      m_fraction.setConstant(kTRUE);
+      m_fraction = new RooRealVar("m_fraction","m_fraction",0.5,0.,1.);
+      pdf_m_signal = new RooAddPdf("pdf_m_signal","pdf_m_signal",RooArgList(m_crystal,m_gaussian2),RooArgList(*m_fraction));
+      m_fraction->setVal(1.); m_fraction->setConstant(kTRUE);
     }
-  else 
-    if(choice2=="signal" && choice=="1gauss")
-      {
-	pdf_m_signal = new RooAddPdf("pdf_m_signal","pdf_m_signal",RooArgList(m_gaussian1,m_gaussian2),RooArgList(m_fraction));
-	m_fraction.setVal(1.);
-	m_fraction.setConstant(kTRUE);
-      }
-    else
-      if(choice2=="signal" && choice=="3gauss")
-	pdf_m_signal = new RooAddPdf("pdf_m_signal","pdf_m_signal",RooArgList(m_gaussian1,m_gaussian2,m_gaussian3),RooArgList(m_fraction,m_fraction2));
-      else //this is the nominal signal
-	pdf_m_signal = new RooAddPdf("pdf_m_signal","pdf_m_signal",RooArgList(m_gaussian1,m_gaussian2),RooArgList(m_fraction));
+  else if(choice2=="signal" && choice=="1gauss")
+    {
+      m_fraction = new RooRealVar("m_fraction","m_fraction",0.5,0.,1.);
+      pdf_m_signal=new RooAddPdf("pdf_m_signal","pdf_m_signal",RooArgList(m_gaussian1,m_gaussian2),RooArgList(*m_fraction));
+      m_fraction->setVal(1.); m_fraction->setConstant(kTRUE);
+    }
+  else if(choice2=="signal" && choice=="3gauss") {
+    if(lowstat) {
+      m_fraction = new RooRealVar("m_fraction","m_fraction",0.,1.);
+      pdf_m_signal = new RooAddPdf("pdf_m_signal","pdf_m_signal",RooArgList(m_crystal,m_gaussian3),RooArgList(*m_fraction));
+      m_fraction->setVal(1.); m_fraction->setConstant(kTRUE);
+    }
+    else {
+      m_fraction = new RooRealVar("m_fraction","m_fraction",0.33,0.28,0.38);
+      m_fraction2 = new RooRealVar("m_fraction2","m_fraction2",0.33,0.28,0.38);
+      pdf_m_signal = new RooAddPdf("pdf_m_signal","pdf_m_signal",RooArgList(m_gaussian1,m_gaussian2,m_gaussian3),RooArgList(*m_fraction,*m_fraction2));
+    }
+  }
+  else { //this is the nominal signal
+    m_fraction = new RooRealVar("m_fraction","m_fraction",0.5,0.,1.);
+    if(lowstat) {
+      pdf_m_signal=new RooAddPdf("pdf_m_signal","pdf_m_signal",RooArgList(m_gaussian1,m_gaussian3),RooArgList(*m_fraction));
+      m_fraction->setVal(1.); m_fraction->setConstant(kTRUE); m_sigma3.setConstant(kTRUE);
+    }
+    else 
+      pdf_m_signal=new RooAddPdf("pdf_m_signal","pdf_m_signal",RooArgList(m_gaussian1,m_gaussian2),RooArgList(*m_fraction));
+  }
   
   //-----------------------------------------------------------------
   // combinatorial background PDF
   
   //One Exponential
-  RooRealVar m_exp("m_exp","m_exp",0,-4.,0.); //,-0.3,-4.,0.);
+  std::tuple<double,double,double> m_exp_tuple = get_fit_params(channel, pt_pair, y_pair, "m_exp");
+  RooRealVar m_exp("m_exp","m_exp",std::get<0>(m_exp_tuple),std::get<1>(m_exp_tuple),std::get<2>(m_exp_tuple)); //,-0.3,-4.,0.);
   RooExponential pdf_m_combinatorial_exp("pdf_m_combinatorial_exp","pdf_m_combinatorial_exp",mass,m_exp);
 
   RooRealVar zero_var("zero_var","zero_var",0);
@@ -290,21 +315,20 @@ void build_pdf(RooWorkspace& w, int channel, std::string choice, std::string cho
       m_fraction_exp.setVal(1.);
       m_fraction_exp.setConstant(kTRUE);
     }
-  else 
-    if(choice2=="background" && choice=="power")
-      {
-	pdf_m_combinatorial=new RooAddPdf("pdf_m_combinatorial","pdf_m_combinatorial",RooArgList(pdf_m_power,pdf_m_combinatorial_exp),RooArgList(m_fraction_exp));
-	m_fraction_exp.setVal(1.);
-	m_fraction_exp.setConstant(kTRUE);
-      }
-    else //this is the nominal bkg
-      {
-	//pdf_m_combinatorial=new RooAddPdf("pdf_m_combinatorial","pdf_m_combinatorial",RooArgList(pdf_m_combinatorial_exp));
-	
-	pdf_m_combinatorial=new RooAddPdf("pdf_m_combinatorial","pdf_m_combinatorial",RooArgList(pdf_m_combinatorial_exp,const_zero),RooArgList(m_fraction_exp));
+  else if(choice2=="background" && choice=="power")
+    {
+      pdf_m_combinatorial=new RooAddPdf("pdf_m_combinatorial","pdf_m_combinatorial",RooArgList(pdf_m_power,pdf_m_combinatorial_exp),RooArgList(m_fraction_exp));
       m_fraction_exp.setVal(1.);
       m_fraction_exp.setConstant(kTRUE);
-      }
+    }
+  else //this is the nominal bkg
+    {
+      //pdf_m_combinatorial=new RooAddPdf("pdf_m_combinatorial","pdf_m_combinatorial",RooArgList(pdf_m_combinatorial_exp));
+      
+      pdf_m_combinatorial=new RooAddPdf("pdf_m_combinatorial","pdf_m_combinatorial",RooArgList(pdf_m_combinatorial_exp,const_zero),RooArgList(m_fraction_exp));
+      m_fraction_exp.setVal(1.);
+      m_fraction_exp.setConstant(kTRUE);
+    }
   
   ////////////////////////////////////////////////////////////////////////////////////////////
   //The components below have no systematic variation yet, they are part of the nominal fit.//
@@ -389,7 +413,7 @@ void build_pdf(RooWorkspace& w, int channel, std::string choice, std::string cho
   m_nonprompt_mean.setConstant(kTRUE);
   m_nonprompt_sigma.setConstant(kTRUE);
 
-  RooRealVar m_jpsiX_fraction("m_jpsiX_fraction","m_jpsiX_fraction",1);
+  RooRealVar m_jpsiX_fraction("m_jpsiX_fraction","m_jpsiX_fraction",0.5,0.,1.);
 
   RooAddPdf* pdf_m_jpsiX;
   
@@ -419,8 +443,8 @@ void build_pdf(RooWorkspace& w, int channel, std::string choice, std::string cho
   RooRealVar n_combinatorial("n_combinatorial","n_combinatorial",n_combinatorial_initial,0.,data->sumEntries());
   RooRealVar n_x3872("n_x3872","n_x3872",200.,0.,data->sumEntries());
 
-  RooRealVar f_swap("f_swap","f_swap", 0.1291,/*0.,1.*/0.1290,0.1292); //for the k pi swap component of channel 2
-  f_swap.setConstant(kTRUE);
+  RooRealVar f_swap("f_swap","f_swap", 0.1291); //for the k pi swap component of channel 2
+
   //set n_swap like n_jpsipi in case we want to count the k_pi_swap component as background.
   
   RooRealVar f_jpsipi("f_jpsipi","f_jpsipi",4.1E-5/1.026E-3,0.,0.1); //BF(jpsi_pi) = (4.1+-0.4)*10^-5 / BF(jpsi K) = (1.026+-0.031)*10^-3
@@ -742,7 +766,7 @@ void plot_mass_fit(RooWorkspace& w, int channel, TString directory, int pt_high,
   
   double chi_square = frame_m->chiSquare("thePdf","theData");
  
-  TLatex* tex8 = new TLatex(0.17, 0.5, Form("#frac{#chi^{2}}{ndf} = %.3lf", chi_square));
+  TLatex* tex8 = new TLatex(0.13, 0.5, Form("#frac{#chi^{2}}{ndf} = %.3lf", chi_square));
   tex8->SetNDC(kTRUE);
   tex8->SetTextFont(42);
   tex8->SetTextSize(0.035);
@@ -848,7 +872,9 @@ RooRealVar* bin_mass_fit(RooWorkspace& w, int channel, double pt_min, double pt_
   data_cut = data_original->reduce(cut);
   read_data_cut(ws_cut,data_cut);
 
-  build_pdf(ws_cut,channel, choice, choice2);
+  std::pair<double,double> pt_pair = std::make_pair(pt_min,pt_max);
+  std::pair<double,double> y_pair = std::make_pair(pt_min,pt_max);
+  build_pdf(ws_cut, channel, pt_pair, y_pair, LowStat(channel,pt_min,y_min), choice, choice2);
   
   model_cut = ws_cut.pdf("model");
    
@@ -908,7 +934,7 @@ RooRealVar* prefilter_efficiency(int channel, double pt_min, double pt_max, doub
 {
 
   // /*2015 gen MC*/ TString mc_gen_input_file = "/lstore/cms/brunogal/input_for_B_production_x_sec_13_TeV/new_inputs/reduced_myloop_gen_" + channel_to_ntuple_name(channel) + "_bfilter.root";
-  TString mc_gen_input_file = TString::Format(BASE_DIR) + "/new_inputs/reduced_myloop_gen_" + channel_to_ntuple_name(channel) + "_bfilter.root";
+  TString mc_gen_input_file = TString::Format(BASE_DIR_2015) + "/new_inputs/reduced_myloop_gen_" + channel_to_ntuple_name(channel) + "_bfilter.root";
   TFile *fin = new TFile(mc_gen_input_file);
   
   TString ntuple_name = channel_to_ntuple_name(channel) + "_gen";
@@ -1008,23 +1034,24 @@ RooRealVar* prefilter_efficiency(int channel, double pt_min, double pt_max, doub
   return eff1;
 }
 
-//the weight are correct only for 'mu1pt', 'mu2pt' and 'pt'; for the other variables we still have to impose weight = 1 in some points
-RooRealVar* reco_efficiency(int channel, double pt_min, double pt_max, double y_min, double y_max, bool syst, TString reweighting_var_str) 
-{
-
+RooRealVar* reco_efficiency(int channel, double pt_min, double pt_max, double y_min, double y_max, bool syst, 
+			    std::vector<TString> reweighting_var_str) {
   double weight_passed = 0.;
   TFile* f_weights = nullptr;
-  TH1D* h_weights_passed = nullptr;
+  std::vector<TH1D*> h_weights_passed(reweighting_var_str.size());
 
+  ////////////////////////////////////////////////////////////////////////////
   //------------read monte carlo gen without cuts-----------------------------
-  TString mc_input_no_cuts = TString::Format(BASE_DIR) + "/new_inputs/reduced_myloop_gen_" + channel_to_ntuple_name(channel) + "_bmuonfilter.root";
+  ////////////////////////////////////////////////////////////////////////////
+  TString mc_input_no_cuts = "";
+  if(RERECO) mc_input_no_cuts = TString::Format(BASE_DIR_2015) + "/new_inputs/reduced_myloop_gen_" + channel_to_ntuple_name(channel) + "_bmuonfilter.root";
+  else mc_input_no_cuts = TString::Format(BASE_DIR_2016) + "/MC_2016/NewSelection/myloop_gen_" + channel_to_ntuple_name(channel) + "_bmuonfilter.root";
   TFile *fin_no_cuts = new TFile(mc_input_no_cuts);
 
   TString ntuple_name = channel_to_ntuple_name(channel) + "_gen";
   TTree *tin_no_cuts = (TTree*)fin_no_cuts->Get(ntuple_name);
   //set up all the variables needed
   double pt_b, eta_b, y_b, pt_mu1, pt_mu2, eta_mu1, eta_mu2, pt_tk1;
-  double reweighting_variable;
   double lxy, errxy;
 
   //read the ntuple from selected_data
@@ -1054,8 +1081,12 @@ RooRealVar* reco_efficiency(int channel, double pt_min, double pt_max, double y_
 
     }
 
-  //--------------------------------read monte carlo with cuts------------------------
-  TString mc_input_with_cuts = TString::Format(BASE_DIR) + "/final_selection/myloop_new_mc_truth_" + channel_to_ntuple_name(channel) + "_with_cuts.root";
+  ////////////////////////////////////////////////////////////////////////////
+  //---------------------read monte carlo with cuts---------------------------
+  ////////////////////////////////////////////////////////////////////////////
+  TString mc_input_with_cuts;
+  if(RERECO) mc_input_with_cuts = TString::Format(BASE_DIR_2015) + "/final_selection/myloop_new_mc_truth_" + channel_to_ntuple_name(channel) + "_with_cuts.root";
+  else mc_input_with_cuts = TString::Format(BASE_DIR_2016) + "MC_2016/NewSelection/myloop_new_mc_truth_" + channel_to_ntuple_name(channel) + "_with_cuts.root";
   TFile *fin_with_cuts = new TFile(mc_input_with_cuts);
 
   TTree *tin_with_cuts = (TTree*)fin_with_cuts->Get(channel_to_ntuple_name(channel));
@@ -1071,25 +1102,61 @@ RooRealVar* reco_efficiency(int channel, double pt_min, double pt_max, double y_
   tin_with_cuts->SetBranchAddress("lxy", &lxy);
   tin_with_cuts->SetBranchAddress("errxy", &errxy);
   tin_with_cuts->SetBranchAddress("tk1pt", &pt_tk1);
-     
+
+  int reweighting_variable_counter=0;
   if(syst) {
-    if (reweighting_var_str != "eta" && reweighting_var_str != "y" && reweighting_var_str != "pt" && reweighting_var_str != "mu1pt" && reweighting_var_str != "mu2pt" && reweighting_var_str != "mu1eta" && reweighting_var_str != "mu2eta" && reweighting_var_str != "lerrxy" &&  reweighting_var_str != "tk1pt")
-      tin_with_cuts->SetBranchAddress(reweighting_var_str, &reweighting_variable);
+    for(unsigned int ii=0; ii<reweighting_var_str.size(); ++ii) {
+      if (reweighting_var_str[ii] != "eta" && reweighting_var_str[ii] != "y" && reweighting_var_str[ii] != "pt" 
+	    && reweighting_var_str[ii] != "mu1pt" && reweighting_var_str[ii] != "mu2pt" 
+	    && reweighting_var_str[ii] != "mu1eta" && reweighting_var_str[ii] != "mu2eta" 
+	    && reweighting_var_str[ii] != "lerrxy" &&  reweighting_var_str[ii] != "lxy"
+	    &&  reweighting_var_str[ii] != "errxy" &&  reweighting_var_str[ii] != "tk1pt")
+	  ++reweighting_variable_counter;
+    }
   }
+
+  //it will have zero size in case the 'syst' flag is not activated
+  std::vector<double> reweighting_variable(reweighting_variable_counter,0.); 
+  std::vector<double>::const_iterator reweighting_variable_Iter;
+
+  if(syst) {
+    reweighting_variable_Iter = reweighting_variable.begin();
+    for(unsigned int ii=0; ii<reweighting_var_str.size(); ++ii) {
+      if (reweighting_var_str[ii] != "eta" && reweighting_var_str[ii] != "y" && reweighting_var_str[ii] != "pt" 
+	  && reweighting_var_str[ii] != "mu1pt" && reweighting_var_str[ii] != "mu2pt" 
+	  && reweighting_var_str[ii] != "mu1eta" && reweighting_var_str[ii] != "mu2eta" 
+	  && reweighting_var_str[ii] != "lerrxy" &&  reweighting_var_str[ii] != "lxy"
+	  &&  reweighting_var_str[ii] != "errxy" &&  reweighting_var_str[ii] != "tk1pt")
+	{
+	  tin_with_cuts->SetBranchAddress(reweighting_var_str[ii], 
+			 &reweighting_variable.at(reweighting_variable_Iter-reweighting_variable.begin()));
+	  ++reweighting_variable_Iter;
+	}
+    }
+    std::cout << "REWEIGHTING_VARIABLE SIZE: " << reweighting_variable.size() << std::endl;
+  }
+  
   TH1D* hist_passed = new TH1D("hist_passed","hist_passed",1,pt_min,pt_max);
 
   if (syst) { 
     if(RERECO) f_weights = new TFile("weights/weights_2015rereco_" + channel_to_ntuple_name(channel) + ".root", "READ");
-    else f_weights = new TFile("weights/weights_" + channel_to_ntuple_name(channel) + ".root", "READ");
+    else f_weights = new TFile("weights/weights_2016rereco_" + channel_to_ntuple_name(channel) + ".root", "READ");
 
-    if (f_weights != nullptr) h_weights_passed = static_cast<TH1D*>( f_weights->Get(reweighting_var_str + "_with_cuts"));
+    if (f_weights != nullptr) {
+      for(unsigned int jj=0; jj<reweighting_var_str.size(); ++jj)
+	{
+	  h_weights_passed[jj] = static_cast<TH1D*>(f_weights->Get(reweighting_var_str[jj] + "_with_cuts"));
+	  if(h_weights_passed[jj] == nullptr) std::cout << "ERROR! The weight histogram does not exist." << std::endl;
+	}
+    }
     else std::cout << "The file was not opened! (functions.h)" << std::endl;
   }
 
+  bool unity = false;
   for (int evt=0; evt < tin_with_cuts->GetEntries(); evt++)
     {
       tin_with_cuts->GetEntry(evt);
-	
+
       if (fabs(eta_b) > 2.4) continue; //B mesons inside the detector region eta < 2.4
       if (fabs(y_b)<y_min || fabs(y_b)>y_max) continue; // within the y binning
       if (pt_b<pt_min || pt_b>pt_max) continue; //within the pt bin
@@ -1102,40 +1169,50 @@ RooRealVar* reco_efficiency(int channel, double pt_min, double pt_max, double y_
       bool muon2Filter = fabs(eta_mu2) < 2.4 && pt_mu2 > 2.8;
 
       if (syst) {
+	reweighting_variable_Iter = reweighting_variable.begin();
 	if (muon1Filter && muon2Filter) {
-	  if (reweighting_var_str != "eta" && reweighting_var_str != "y" && reweighting_var_str != "pt" && reweighting_var_str != "mu1pt" && reweighting_var_str != "mu2pt" && reweighting_var_str != "mu1eta" && reweighting_var_str != "mu2eta" && reweighting_var_str != "lerrxy" &&  reweighting_var_str != "tk1pt")
-	    weight_passed += h_weights_passed->GetBinContent( h_weights_passed->FindBin(reweighting_variable) );	    
-	  else if (reweighting_var_str == "eta") weight_passed += h_weights_passed->GetBinContent( h_weights_passed->FindBin(eta_b) );
-	  else if (reweighting_var_str == "y") weight_passed += h_weights_passed->GetBinContent( h_weights_passed->FindBin(y_b) );
-	  else if (reweighting_var_str == "pt") {
-	    if(pt_b >= 10. && pt_b <= 45.) weight_passed += h_weights_passed->GetBinContent( h_weights_passed->FindBin(pt_b) );
-	    else weight_passed += 1.;
-	  }
-	  else if (reweighting_var_str == "mu1pt") {
-	    if(pt_mu1 >= 4.5 && pt_mu1 <= 15.) weight_passed += h_weights_passed->GetBinContent( h_weights_passed->FindBin(pt_mu1) );
-	    else weight_passed += 1.;
-	  }
-	  else if (reweighting_var_str == "mu2pt") {
-	    if(pt_mu2 >= 4.5 && pt_mu2 <= 15.) weight_passed += h_weights_passed->GetBinContent( h_weights_passed->FindBin(pt_mu2) );
-	    else weight_passed += 1.;
-	  }
-	  else if (reweighting_var_str == "mu1eta") weight_passed += h_weights_passed->GetBinContent( h_weights_passed->FindBin(eta_mu1) );
-	  else if (reweighting_var_str == "mu2eta") weight_passed += h_weights_passed->GetBinContent( h_weights_passed->FindBin(eta_mu2) );
-	  else if (reweighting_var_str == "lerrxy") {
-	    if (lxy/errxy >= 8 && lxy/errxy <= 60.) weight_passed += h_weights_passed->GetBinContent( h_weights_passed->FindBin(lxy/errxy) );
-	    else weight_passed += 1.;
-	  }
-	  else if (reweighting_var_str == "tk1pt") {
-	    if (pt_tk1 >= 1.5 && pt_tk1 <= 9.) weight_passed += h_weights_passed->GetBinContent( h_weights_passed->FindBin(pt_tk1) );
-	    else weight_passed += 1.;
-	  }
+	  double weight_aux = 1.;
+	  for(unsigned int xx=0; xx<reweighting_var_str.size(); ++xx)
+	    {
+	      if (reweighting_var_str[xx] != "eta" && reweighting_var_str[xx] != "y" && reweighting_var_str[xx] != "pt" 
+		  && reweighting_var_str[xx] != "mu1pt" && reweighting_var_str[xx] != "mu2pt" 
+		  && reweighting_var_str[xx] != "mu1eta" && reweighting_var_str[xx] != "mu2eta" 
+		  && reweighting_var_str[xx] != "lerrxy" &&  reweighting_var_str[xx] != "lxy"
+		  &&  reweighting_var_str[xx] != "errxy" &&  reweighting_var_str[xx] != "tk1pt")
+		{
+		  weight_aux *= h_weights_passed[xx]->GetBinContent(h_weights_passed[xx]->FindBin(*reweighting_variable_Iter));
+		  std::cout << "Simple check: " << xx << "; " << reweighting_variable_Iter-reweighting_variable.begin() << "; " << reweighting_variable.at(reweighting_variable_Iter-reweighting_variable.begin()) << "; " << *reweighting_variable_Iter << std::endl;
+		  ++reweighting_variable_Iter;
+		}
+	      else 
+		{
+		  double aux_var=-999.;
+		  unity = false;
+		  if (reweighting_var_str[xx] == "eta") aux_var = eta_b;
+		  else if(reweighting_var_str[xx] == "y") aux_var = y_b;
+		  else if (reweighting_var_str[xx] == "pt") {aux_var = pt_b; if(pt_b<10. || pt_b>45.) unity = true;}
+		  else if (reweighting_var_str[xx] == "mu1pt") {aux_var = pt_mu1; if(pt_mu1<4.5 || pt_mu1>15) unity=true;} 
+		  else if (reweighting_var_str[xx] == "mu2pt") {aux_var = pt_mu2; if(pt_mu1<4.5 || pt_mu1>15) unity=true;}
+		  else if (reweighting_var_str[xx] == "mu1eta") aux_var = eta_mu1;
+		  else if (reweighting_var_str[xx] == "mu2eta") aux_var = eta_mu2;
+		  else if (reweighting_var_str[xx] == "lerrxy") {aux_var = lxy/errxy; 
+		    if(aux_var<8. || aux_var>60) unity = true;}
+		  else if (reweighting_var_str[xx] == "lxy") aux_var = lxy;
+		  else if (reweighting_var_str[xx] == "errxy") aux_var = errxy;
+		  else if (reweighting_var_str[xx] == "tk1pt") {aux_var = pt_tk1; if(pt_tk1<1.5 || pt_tk1>9.) unity=true;}
+		  else std::cout << "ERROR! Wrong name for the reweighting variable!" << std::endl;
+		  if(unity) weight_aux *= 1.; 
+		  else weight_aux *= h_weights_passed[xx]->GetBinContent(h_weights_passed[xx]->FindBin(aux_var));
+		}
+	    }
+	  std::cout << weight_aux << std::endl;
+	  weight_passed += weight_aux;
 	}
       }
-
+      
       if (muon1Filter && muon2Filter) hist_passed->Fill(pt_b); //count only the events with the muon selection above
-	
     }
-    
+
   //calculates the efficiency by dividing the histograms
   TEfficiency* efficiency = nullptr;
   if (!syst) efficiency = new TEfficiency(*hist_passed, *hist_tot);
@@ -1167,7 +1244,7 @@ RooRealVar* reco_efficiency(int channel, double pt_min, double pt_max, double y_
   return eff2;
 }
 
-RooRealVar* branching_fraction(TString measure, int channel)
+RooRealVar* branching_fraction(TString measure, int channel, bool precise_only)
 {
   RooRealVar* b_fraction = new RooRealVar("b_fraction","b_fraction",1);
   b_fraction->setError(1);
@@ -1189,52 +1266,91 @@ RooRealVar* branching_fraction(TString measure, int channel)
 
   RooRealVar* phi_to_k_k = new RooRealVar("phi","phi",48.9e-2);
   phi_to_k_k->setError(5e-3);
-
-  double err =1;
   
+  double innacurate_bf_val=0.;
+
   if(measure == "x_sec")
     {
       switch (channel) 
 	{
 	default:
 	case 1:
-	  b_fraction->setVal(bu_to_jpsi_ku->getVal() * jpsi_to_mu_mu->getVal());
-	  err = b_fraction->getVal()*sqrt( pow(bu_to_jpsi_ku->getError()/bu_to_jpsi_ku->getVal(),2) + pow(jpsi_to_mu_mu->getError()/jpsi_to_mu_mu->getVal(),2) );
+	  innacurate_bf_val = bu_to_jpsi_ku->getVal();
+	  if(precise_only) {	    
+	      b_fraction->setVal(jpsi_to_mu_mu->getVal());
+	      b_fraction->setError(jpsi_to_mu_mu->getError());
+	  }
+	  else { 
+	    b_fraction->setVal(innacurate_bf_val * jpsi_to_mu_mu->getVal());
+	    b_fraction->setError(b_fraction->getVal()*sqrt( pow(bu_to_jpsi_ku->getError()/innacurate_bf_val,2) + pow(jpsi_to_mu_mu->getError()/jpsi_to_mu_mu->getVal(),2) ));
+	  }
 	  break;      
 	case 2:
-	  b_fraction->setVal( bd_to_jpsi_kstar->getVal() * kstar_to_k_pi->getVal() * jpsi_to_mu_mu->getVal());
-	  err = b_fraction->getVal() * sqrt( pow(bd_to_jpsi_kstar->getError()/bd_to_jpsi_kstar->getVal(),2) + pow(kstar_to_k_pi->getError()/kstar_to_k_pi->getVal(),2) + pow(jpsi_to_mu_mu->getError()/jpsi_to_mu_mu->getVal(),2) );
+	  innacurate_bf_val = bd_to_jpsi_kstar->getVal();
+	  if(precise_only) {
+	    b_fraction->setVal(kstar_to_k_pi->getVal() * jpsi_to_mu_mu->getVal());
+	    b_fraction->setError(b_fraction->getVal() * sqrt( pow(kstar_to_k_pi->getError()/kstar_to_k_pi->getVal(),2) + pow(jpsi_to_mu_mu->getError()/jpsi_to_mu_mu->getVal(),2) ));
+	  }
+	  else {
+	    b_fraction->setVal(innacurate_bf_val * kstar_to_k_pi->getVal() * jpsi_to_mu_mu->getVal());
+	    b_fraction->setError(b_fraction->getVal() * sqrt( pow(bd_to_jpsi_kstar->getError()/innacurate_bf_val,2) + pow(kstar_to_k_pi->getError()/kstar_to_k_pi->getVal(),2) + pow(jpsi_to_mu_mu->getError()/jpsi_to_mu_mu->getVal(),2) ));
+	  }
 	  break;
 	case 4:
-	  b_fraction->setVal( bs_to_jpsi_phi->getVal() * phi_to_k_k->getVal() * jpsi_to_mu_mu->getVal());
-	  err = b_fraction->getVal() * sqrt(pow(bs_to_jpsi_phi->getError()/bs_to_jpsi_phi->getVal(),2) + pow(phi_to_k_k->getError()/phi_to_k_k->getVal(),2) + pow(jpsi_to_mu_mu->getError()/jpsi_to_mu_mu->getVal(),2));
+	  innacurate_bf_val = bs_to_jpsi_phi->getVal();
+	  if(precise_only) {
+	    b_fraction->setVal(phi_to_k_k->getVal() * jpsi_to_mu_mu->getVal());
+	    b_fraction->setError(b_fraction->getVal() * sqrt( pow(phi_to_k_k->getError()/phi_to_k_k->getVal(),2) + pow(jpsi_to_mu_mu->getError()/jpsi_to_mu_mu->getVal(),2)));
+	  }
+	  else {
+	    b_fraction->setVal( innacurate_bf_val * phi_to_k_k->getVal() * jpsi_to_mu_mu->getVal());
+	    b_fraction->setError(b_fraction->getVal() * sqrt(pow(bs_to_jpsi_phi->getError()/innacurate_bf_val,2) + pow(phi_to_k_k->getError()/phi_to_k_k->getVal(),2) + pow(jpsi_to_mu_mu->getError()/jpsi_to_mu_mu->getVal(),2)));
+	  }
+	  break;
+	}
+    }
+  else if(measure == "ratio")
+    {
+      switch (channel) 
+	{
+	default:
+	case 1:
+	  innacurate_bf_val = bu_to_jpsi_ku->getVal();
+	  if(precise_only) {
+	    b_fraction->setVal(1.);
+	    b_fraction->setError(0.);
+	  }
+	  else {
+	    b_fraction->setVal( innacurate_bf_val );
+	    b_fraction->setError(b_fraction->getVal()*sqrt( pow(bu_to_jpsi_ku->getError()/innacurate_bf_val,2)));
+	  }
+	  break;      
+	case 2:
+	  innacurate_bf_val = bd_to_jpsi_kstar->getVal();
+	  if(precise_only) {
+	    b_fraction->setVal(kstar_to_k_pi->getVal() );
+	    b_fraction->setError(kstar_to_k_pi->getError());
+	  }
+	  else {
+	    b_fraction->setVal(innacurate_bf_val * kstar_to_k_pi->getVal() );
+	    b_fraction->setError(b_fraction->getVal() * sqrt( pow(bd_to_jpsi_kstar->getError()/innacurate_bf_val,2) + pow(kstar_to_k_pi->getError()/kstar_to_k_pi->getVal(),2) ));
+	  }
+	  break;
+	case 4:
+	  innacurate_bf_val = bs_to_jpsi_phi->getVal();
+	  if(precise_only) {
+	    b_fraction->setVal( phi_to_k_k->getVal() );
+	    b_fraction->setError( phi_to_k_k->getError() );
+	  }
+	  else {
+	    b_fraction->setVal( innacurate_bf_val * phi_to_k_k->getVal() );
+	    b_fraction->setError(b_fraction->getVal() * sqrt(pow(bs_to_jpsi_phi->getError()/innacurate_bf_val,2) + pow(phi_to_k_k->getError()/phi_to_k_k->getVal(),2) ));
+	  }
 	  break;
 	}
     }
   else
-    if(measure == "ratio")
-      {
-	switch (channel) 
-	  {
-	  default:
-	  case 1:
-	    b_fraction->setVal( bu_to_jpsi_ku->getVal() );
-	    err = b_fraction->getVal()*sqrt( pow(bu_to_jpsi_ku->getError()/bu_to_jpsi_ku->getVal(),2) );
-	    break;      
-	  case 2:
-	    b_fraction->setVal( bd_to_jpsi_kstar->getVal() * kstar_to_k_pi->getVal() );
-	    err = b_fraction->getVal() * sqrt( pow(bd_to_jpsi_kstar->getError()/bd_to_jpsi_kstar->getVal(),2) + pow(kstar_to_k_pi->getError()/kstar_to_k_pi->getVal(),2) );
-	    break;
-	  case 4:
-	    b_fraction->setVal( bs_to_jpsi_phi->getVal() * phi_to_k_k->getVal() );
-	    err = b_fraction->getVal() * sqrt(pow(bs_to_jpsi_phi->getError()/bs_to_jpsi_phi->getVal(),2) + pow(phi_to_k_k->getError()/phi_to_k_k->getVal(),2) );
-	    break;
-	  }
-      }
-    else
-      std::cout << "ERROR: strange measurement in b_fraction in functions.h" << std::endl;
-  
-  b_fraction->setError(err);
+    std::cout << "ERROR: strange measurement in b_fraction in functions.h" << std::endl;
   
   return b_fraction;
 }
@@ -1247,7 +1363,7 @@ void read_vector(int channel, TString vector, TString var1_name , TString var2_n
   TString dir = TString::Format(VERSION) + "/";
 
   if(vector == "yield")
-      dir += "signal_yield_root/";
+    dir += "signal_yield_root/";
   else
     if(vector.Contains("syst"))
       dir += "systematics_root/";
@@ -1268,7 +1384,9 @@ void read_vector(int channel, TString vector, TString var1_name , TString var2_n
 	  else
 	    bins_str = TString::Format("pt_from_%d_to_%d_y_from_%.2f_to_%.2f", (int)var2_bins[j], (int)var2_bins[j+1], var1_bins[i], var1_bins[i+1]);
 	  
-	  if(vector != "ratio_reweight_syst")
+	  if(vector == "combined_syst" && ratio != "") 
+	    in_file_name = TString::Format(VERSION)+"/systematics_root/combined_ratios/" + ratio + "_" + bins_str + ".root";
+	  else if(vector != "ratio_reweight_syst")
 	    in_file_name = dir + vector + "_" + channel_to_ntuple_name(channel) + "_" + bins_str + ".root";
 	  else 
 	    in_file_name = dir + ratio + "_" + vector + "_" + bins_str + ".root";
@@ -1344,6 +1462,7 @@ void read_vector(int channel, TString vector, TString var1_name , TString var2_n
                       line = command + opt + " --syst " + vector;
                     }
 	      
+	      std::cout << "LINE: " << line << std::endl;
               gSystem->Exec(line);
 	      //////////////////////////////////////////////////////////////////////////////////	      
 
@@ -1448,7 +1567,7 @@ void print_table(TString title, int n_var1_bins, int n_var2_bins, TString var1_n
 	      if(global_err == NULL)
 		std::cout << "BIN: " << var1_name << " " << var1_bin_edges[i] << " to " << var1_bin_edges[i+1] << " : " << *(array + j*n_var1_bins + i) << " +" << *(stat_err_hi + j*n_var1_bins + i) << " -" << *(stat_err_lo + j*n_var1_bins + i) << " (stat) +" << *(syst_err_hi + j*n_var1_bins + i) << " -" << *(syst_err_lo + j*n_var1_bins + i) << " (syst) +-" << *(BF_err + j*n_var1_bins + i) << " (BF)" << std::endl;
 	      else
-		std::cout << "BIN: " << var1_name << " " << var1_bin_edges[i] << " to " << var1_bin_edges[i+1] << " : " << *(array + j*n_var1_bins + i) << " +" << *(stat_err_hi + j*n_var1_bins + i) << " -" << *(stat_err_lo + j*n_var1_bins + i) << " (stat) +" << *(syst_err_hi + j*n_var1_bins + i) << " -" << *(syst_err_lo + j*n_var1_bins + i) << " (syst) +-" << *(BF_err + j*n_var1_bins + i) << " (BF) +-" << *global_err << " ([%%]Global syst)" << std::endl;
+		std::cout << "BIN: " << var1_name << " " << var1_bin_edges[i] << " to " << var1_bin_edges[i+1] << " : " << *(array + j*n_var1_bins + i) << " +" << *(stat_err_hi + j*n_var1_bins + i) << " -" << *(stat_err_lo + j*n_var1_bins + i) << " (stat) +" << *(syst_err_hi + j*n_var1_bins + i) << " -" << *(syst_err_lo + j*n_var1_bins + i) << " (syst) +-" << *(BF_err + j*n_var1_bins + i) << " (BF) +-" << (*global_err) * (*(array + j*n_var1_bins + i)) << " ([%%]Global syst)" << std::endl;
 	}
       std::cout << std::endl;
     }
@@ -1472,7 +1591,8 @@ void latex_table(std::string filename, int n_col, int n_lin, std::vector<std::st
   TString col = "|c|";
 
   for(int i=1; i<n_col; i++)
-    col+="p{19mm}|"; //col+= TString::Format("|S[round-precision= %d ]", precision[i-1]);
+    if(i!=n_col-1) col+="p{19mm}|"; //col+= TString::Format("|S[round-precision= %d ]", precision[i-1]);
+    else col+="p{28mm}|";
 
   file << "\\begin{center}" << std::endl;
   file << "\\begin{tabular}{" + col + "}" << std::endl;
@@ -1550,7 +1670,9 @@ void mc_study(RooWorkspace& w, int channel, double pt_min, double pt_max, double
   data_cut = data_original->reduce(cut);
   read_data_cut(ws_cut,data_cut);
 
-  build_pdf(ws_cut,channel);
+  std::pair<double,double> pt_pair = std::make_pair(pt_min,pt_max);
+  std::pair<double,double> y_pair = std::make_pair(pt_min,pt_max);
+  build_pdf(ws_cut,channel,pt_pair,y_pair);
   model_cut = ws_cut.pdf("model");
   model_cut->fitTo(*data_cut,Minos(kTRUE),NumCPU(NUMBER_OF_CPU),Offset(kTRUE));
 

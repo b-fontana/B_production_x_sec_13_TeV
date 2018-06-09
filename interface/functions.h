@@ -95,7 +95,7 @@ RooRealVar* bin_mass_fit(RooWorkspace& w, int channel, double pt_min, double pt_
 
 RooRealVar* prefilter_efficiency(int channel, double pt_min, double pt_max, double y_min, double y_max);
 RooRealVar* reco_efficiency(int channel, double pt_min, double pt_max, double y_min, double y_max, bool syst = false, std::vector<TString> reweighting_var_str = {});
-RooRealVar* branching_fraction(TString measure, int channel, bool precise_only);
+RooRealVar* branching_fraction(TString measure, int channel, bool precise_only, bool pQCD_flag);
 
 void read_vector(int channel, TString vector, TString var1_name , TString var2_name, int n_var1_bins, int n_var2_bins,  double* var1_bins, double* var2_bins, double* array, TString ratio = "", double* err_lo = NULL, double* err_hi = NULL);
 void print_table(TString title, int n_var1_bins, int n_var2_bins, TString var1_name, TString var2_name, double* var1_bin_edges, double* var2_bin_edges, double* array, double* stat_err_lo, double* stat_err_hi, double* syst_err_lo = NULL, double* syst_err_hi = NULL, double* BF_err = NULL, double* global_err = NULL);
@@ -1244,7 +1244,7 @@ RooRealVar* reco_efficiency(int channel, double pt_min, double pt_max, double y_
   return eff2;
 }
 
-RooRealVar* branching_fraction(TString measure, int channel, bool precise_only)
+RooRealVar* branching_fraction(TString measure, int channel, bool precise_only, bool pQCD_flag)
 {
   RooRealVar* b_fraction = new RooRealVar("b_fraction","b_fraction",1);
   b_fraction->setError(1);
@@ -1267,6 +1267,9 @@ RooRealVar* branching_fraction(TString measure, int channel, bool precise_only)
   RooRealVar* phi_to_k_k = new RooRealVar("phi","phi",48.9e-2);
   phi_to_k_k->setError(5e-3);
   
+  RooRealVar* pQCD = new RooRealVar("pQCD","pQCD", 0.83);
+  pQCD->setError(3.46e-2);
+
   double innacurate_bf_val=0.;
 
   if(measure == "x_sec")
@@ -1332,8 +1335,14 @@ RooRealVar* branching_fraction(TString measure, int channel, bool precise_only)
 	    b_fraction->setError(kstar_to_k_pi->getError());
 	  }
 	  else {
-	    b_fraction->setVal(innacurate_bf_val * kstar_to_k_pi->getVal() );
-	    b_fraction->setError(b_fraction->getVal() * sqrt( pow(bd_to_jpsi_kstar->getError()/innacurate_bf_val,2) + pow(kstar_to_k_pi->getError()/kstar_to_k_pi->getVal(),2) ));
+	    if(!pQCD_flag) {
+	      b_fraction->setVal(innacurate_bf_val * kstar_to_k_pi->getVal() );
+	      b_fraction->setError(b_fraction->getVal() * sqrt( pow(bd_to_jpsi_kstar->getError()/innacurate_bf_val,2) + pow(kstar_to_k_pi->getError()/kstar_to_k_pi->getVal(),2) ));
+	    }
+	    else {
+	      b_fraction->setVal( (1/pQCD->getVal()) * kstar_to_k_pi->getVal() );
+	      b_fraction->setError(b_fraction->getVal() * sqrt( pow(pQCD->getError()/pow(pQCD->getVal(),2),2) + pow(kstar_to_k_pi->getError()/kstar_to_k_pi->getVal(),2) ));
+	    }
 	  }
 	  break;
 	case 4:
@@ -1343,8 +1352,14 @@ RooRealVar* branching_fraction(TString measure, int channel, bool precise_only)
 	    b_fraction->setError( phi_to_k_k->getError() );
 	  }
 	  else {
-	    b_fraction->setVal( innacurate_bf_val * phi_to_k_k->getVal() );
-	    b_fraction->setError(b_fraction->getVal() * sqrt(pow(bs_to_jpsi_phi->getError()/innacurate_bf_val,2) + pow(phi_to_k_k->getError()/phi_to_k_k->getVal(),2) ));
+	    if(!pQCD_flag) {
+	      b_fraction->setVal( innacurate_bf_val * phi_to_k_k->getVal() );
+	      b_fraction->setError(b_fraction->getVal() * sqrt(pow(bs_to_jpsi_phi->getError()/innacurate_bf_val,2) + pow(phi_to_k_k->getError()/phi_to_k_k->getVal(),2) ));
+	    }
+	    else {
+	      b_fraction->setVal( phi_to_k_k->getVal() );
+	      b_fraction->setError( phi_to_k_k->getError() );
+	    }
 	  }
 	  break;
 	}

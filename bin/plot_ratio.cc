@@ -1,4 +1,5 @@
 #include "UserCode/B_production_x_sec_13_TeV/interface/syst.h"
+#include "UserCode/B_production_x_sec_13_TeV/interface/BWarnings.h"
 
 //-----------------------------------------------------------------
 // Definition of channel #
@@ -10,9 +11,10 @@
 // channel = 6: Lambda_b -> Jpsi + Lambda
 //-----------------------------------------------------------------
 
-//input example: plot_ratio --ratio fsfu --bins pt_y --eff 1 --syst 0 --poly 1
+//input example: plot_ratio --ratio fsfu --bins pt_y --eff 1 --syst 0 --poly 1 --precise_BF_only 0
 int main(int argc, char** argv)
 {
+  BWarnings Warn;
   std::string ratio = "fsfu";
   std::string bins = "pt";
   int poly = 1;
@@ -30,31 +32,32 @@ int main(int argc, char** argv)
 	  convert << argv[++i];
 	  convert >> ratio;
 	}
-      if(argument == "--bins")
+      else if(argument == "--bins")
 	{
 	  convert << argv[++i];
 	  convert >> bins;
 	}
-      if(argument == "--eff")
+      else if(argument == "--eff")
 	{
 	  convert << argv[++i];
 	  convert >> eff;
 	}
-      if(argument == "--syst")
+      else if(argument == "--syst")
 	{
 	  convert << argv[++i];
 	  convert >> syst;
 	}
-      if(argument == "--poly")
+      else if(argument == "--poly")
 	{
 	  convert << argv[++i];
 	  convert >> poly;
 	}
-      if(argument == "--precise_BF_only")
+      else if(argument == "--precise_BF_only")
 	{
 	  convert << argv[++i];
 	  convert >> precise_BF_only;
 	}
+      else Warn.RunningError("NAME_ERROR"); 
     }
 
   if(precise_BF_only == true && bins != "full") std::cout << "The 'precise_BF_only' option can only be used when the full bin is being considered!" << std::endl;
@@ -187,14 +190,16 @@ int main(int argc, char** argv)
               return 0;
             }
      
-      std::cout << "FUNCTION: " << precise_BF_only << std::endl;
-      RooRealVar* branch = branching_fraction(measure, channel, precise_BF_only);
+      bool pQCD_flag = false;
+      if(ratio == "fsfd") pQCD_flag = true; //when the ratio is not defined (x_sec) this flag remains false
+      RooRealVar* branch = branching_fraction(measure, channel, precise_BF_only, pQCD_flag);
+
       b_fraction[ch] = branch->getVal();
       b_fraction_err[ch] = branch->getError();
-      
+
       //read yield
       read_vector(channel, "yield", var1_name , var2_name, n_var1_bins, n_var2_bins, var1_bins, var2_bins, yield[ch][0], "", yield_err_lo[ch][0], yield_err_hi[ch][0]);
-	  
+
       //read efficiency
       if(eff)
 	read_vector(channel, "totaleff", var1_name , var2_name, n_var1_bins, n_var2_bins, var1_bins, var2_bins, total_eff[ch][0], "", total_eff_err_lo[ch][0], total_eff_err_hi[ch][0]);
@@ -290,6 +295,8 @@ int main(int argc, char** argv)
       global_syst_err = sqrt(global_syst_err);
 
       std::cout << "global syst err : " << global_syst_err << std::endl;
+
+
     }
 
   //plot the ratio
@@ -329,9 +336,6 @@ int main(int argc, char** argv)
       if((ratio_array[0][i] - ratio_syst_lo[0][i]) < ratio_min)
 	ratio_min = ratio_array[0][i] - ratio_syst_lo[0][i];
     }
-
-  std::cout << "RATIO_MIN: " << ratio_min << std::endl;
-  std::cout << "RATIO_MAX: " << ratio_max << std::endl;
 
   TString ratio_title = "";
   TString no_eff_ratio = "";

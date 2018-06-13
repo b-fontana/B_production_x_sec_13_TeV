@@ -103,8 +103,7 @@ int main(int argc, char** argv)
     {
       col_name.push_back(syst_fancy_name(syst_list[k])/*.append("[\\%]")*/);
     }
-  
-  
+    
   //read the arrays
   for(int j=0; j<n_var2_bins; j++)
     {
@@ -138,8 +137,12 @@ int main(int argc, char** argv)
 	      if(channel != 1 && (syst_list[k] == "jpsiX_pdf_syst" || syst_list[k] == "jpsipi_pdf_syst")) continue; //read jpsipi and jpsiX only for channel 1
 	      if(syst_list[k] == "ratio_reweight_syst" && ch >0) continue; //only read the ratio_reweight_syst one time.
 
-	      if(syst_list[k] != "ratio_reweight_syst") //all the regular syst
+	      if(syst_list[k] != "ratio_reweight_syst") {//all the regular syst
+		if(syst_list[k] == "combined_syst" && ratio != "") //Bruno Alves
+		  read_vector(channel, syst_list[k], var1_name , var2_name, n_var1_bins, n_var2_bins, var1_bins, var2_bins, val_array[ch][0], ratio, val_err_lo[ch][0], val_err_hi[ch][0]);
+		else 
 		read_vector(channel, syst_list[k], var1_name , var2_name, n_var1_bins, n_var2_bins, var1_bins, var2_bins, val_array[ch][0], "", val_err_lo[ch][0], val_err_hi[ch][0]);
+	      }
 	      else //special case of ratio_reweight_syst
 		read_vector(channel, "ratio_reweight_syst", var1_name , var2_name, n_var1_bins, n_var2_bins, var1_bins, var2_bins, val_array[ch][0], ratio, val_err_lo[ch][0], val_err_hi[ch][0]);
 	    }//end of ch cicle
@@ -152,9 +155,13 @@ int main(int argc, char** argv)
 
 	      if((ratio.Contains("fu") && (syst_list[k] == "jpsiX_pdf_syst" || syst_list[k] == "jpsipi_pdf_syst")) || syst_list[k] == "ratio_reweight_syst")
 		syst_val = val_err_hi[0][j][i];
+	      else if(ratio == "fsfd" && syst_list[k] == "ratio_reweight_syst") //Bruno Alves (8-04-2018)
+		syst_val = val_err_hi[0][j][i];
+	      else if(syst_list[k] == "combined_syst" && ratio != "") //Bruno Alves
+		syst_val = val_err_hi[0][j][i];
 	      else
 		syst_val = sqrt(pow(val_err_hi[0][j][i],2)+pow(val_err_hi[1][j][i],2));
-
+	      
 	      aux.push_back(TString::Format("%.*f", precision, 100*syst_val).Data());
 	    }
 	  numbers.push_back(aux);

@@ -873,7 +873,7 @@ RooRealVar* bin_mass_fit(RooWorkspace& w, int channel, double pt_min, double pt_
   read_data_cut(ws_cut,data_cut);
 
   std::pair<double,double> pt_pair = std::make_pair(pt_min,pt_max);
-  std::pair<double,double> y_pair = std::make_pair(pt_min,pt_max);
+  std::pair<double,double> y_pair = std::make_pair(y_min,y_max);
   build_pdf(ws_cut, channel, pt_pair, y_pair, LowStat(channel,pt_min,y_min), choice, choice2);
   
   model_cut = ws_cut.pdf("model");
@@ -1181,7 +1181,6 @@ RooRealVar* reco_efficiency(int channel, double pt_min, double pt_max, double y_
 		  &&  reweighting_var_str[xx] != "errxy" &&  reweighting_var_str[xx] != "tk1pt")
 		{
 		  weight_aux *= h_weights_passed[xx]->GetBinContent(h_weights_passed[xx]->FindBin(*reweighting_variable_Iter));
-		  std::cout << "Simple check: " << xx << "; " << reweighting_variable_Iter-reweighting_variable.begin() << "; " << reweighting_variable.at(reweighting_variable_Iter-reweighting_variable.begin()) << "; " << *reweighting_variable_Iter << std::endl;
 		  ++reweighting_variable_Iter;
 		}
 	      else 
@@ -1686,7 +1685,7 @@ void mc_study(RooWorkspace& w, int channel, double pt_min, double pt_max, double
   read_data_cut(ws_cut,data_cut);
 
   std::pair<double,double> pt_pair = std::make_pair(pt_min,pt_max);
-  std::pair<double,double> y_pair = std::make_pair(pt_min,pt_max);
+  std::pair<double,double> y_pair = std::make_pair(y_min,y_max);
   build_pdf(ws_cut,channel,pt_pair,y_pair);
   model_cut = ws_cut.pdf("model");
   model_cut->fitTo(*data_cut,Minos(kTRUE),NumCPU(NUMBER_OF_CPU),Offset(kTRUE));

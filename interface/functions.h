@@ -62,7 +62,7 @@ using namespace RooFit;
 
 #define LUMINOSITY          2.54 //2015 rereco: 17.748
 #define NUMBER_OF_CPU       1
-#define VERSION             "v2015_Pt10" //2016: "v1_2016"
+#define VERSION             "v2015" //2016: "v1_2016"
 #define BASE_DIR_2015       "/lstore/cms/brunogal/input_for_B_production_x_sec_13_TeV/"
 #define BASE_DIR_2016       "/lstore/cms/balves/Jobs/"
 extern bool RERECO = true; //true for 2015 rereco; false for 2016
@@ -1217,8 +1217,8 @@ RooRealVar* reco_efficiency(int channel, double pt_min, double pt_max, double y_
       bool track2Filter = true;
       if(RERECO)
         {
-          muon1Filter = fabs(eta_mu1)<2.4 && pt_mu1>10.;//pt_mu1>2.8;
-          muon2Filter = fabs(eta_mu2)<2.4 && pt_mu2>10.;//pt_mu2>2.8;
+          muon1Filter = fabs(eta_mu1)<2.4 && pt_mu1>2.8;//pt_mu1>2.8;
+          muon2Filter = fabs(eta_mu2)<2.4 && pt_mu2>2.8;//pt_mu2>2.8;
         }
       else
         {

@@ -63,7 +63,7 @@ void Legend(int channel, int pt_min, int pt_max, double y_min, double y_max, boo
   tex->SetNDC(kTRUE);
   tex->SetLineWidth(2);
   tex->Draw();
-  tex = new TLatex(x_top_1,y_top,"CMS Preliminary");
+  tex = new TLatex(x_top_1,y_top,""/*"CMS Preliminary"*/);
   tex->SetNDC(kTRUE);
   tex->SetTextFont(42);
   tex->SetLineWidth(2);

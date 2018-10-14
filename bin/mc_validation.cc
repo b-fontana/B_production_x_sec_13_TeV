@@ -132,15 +132,17 @@ int main(int argc, char **argv) {
 
   if (input_data_flag!=1) {
     if(cuts)
-      //input_data = "/lstore/cms/brunogal/input_for_B_production_x_sec_13_TeV/final_selection/myloop_new_data_"+channel_to_ntuple_name(channel)+"_with_cuts.root";
-    input_data = "/lstore/cms/balves/Jobs/Full_Dataset_2015_Rereco/myloop_new_data_"+channel_to_ntuple_name(channel)+"_with_cuts_hadd.root";
-    else 
-      //input_data = "/lstore/cms/brunogal/input_for_B_production_x_sec_13_TeV/no_cuts/myloop_new_data_" + channel_to_ntuple_name(channel) + "_no_cuts.root";
-    input_data = "/lstore/cms/balves/Jobs/Full_Dataset_2015_Rereco/myloop_new_data_"+channel_to_ntuple_name(channel)+"_no_cuts_hadd_OldSelection.root";
+      input_data = "/lstore/cms/balves/Jobs/Full_Dataset_2015_Rereco/myloop_new_data_"+channel_to_ntuple_name(channel)+"_with_cuts_hadd.root";
+    //2016: input_data = "/lstore/cms/balves/Jobs/Full_Dataset_2016/NewSelection/myloop_new_data_"+channel_to_ntuple_name(channel)+"_with_cuts.root";
+    else {
+      input_data = "/lstore/cms/brunogal/input_for_B_production_x_sec_13_TeV/no_cuts/myloop_new_data_" + channel_to_ntuple_name(channel) + "_no_cuts.root";
+    //input_data = "/lstore/cms/balves/Jobs/Full_Dataset_2015_Rereco/myloop_new_data_"+channel_to_ntuple_name(channel)+"_no_cuts_hadd_OldSelection.root";
+    }
   }
   if (input_mc_flag!=1) {
     if(cuts)
       input_mc = "/lstore/cms/brunogal/input_for_B_production_x_sec_13_TeV/final_selection/myloop_new_mc_truth_"+channel_to_ntuple_name(channel)+"_with_cuts.root";
+      //2016: input_mc = "/lstore/cms/balves/Jobs/MC_2016/NewSelection/myloop_new_mc_truth_"+channel_to_ntuple_name(channel)+"_with_cuts.root";
     else
       input_mc = "/lstore/cms/brunogal/input_for_B_production_x_sec_13_TeV/no_cuts/myloop_new_mc_truth_" + channel_to_ntuple_name(channel) + "_no_cuts.root";
   }
@@ -153,7 +155,6 @@ int main(int argc, char **argv) {
   read_data(*ws_mc, input_mc, channel);
   
   std::string extension1 = "_ssdata", extension2 = "_mc";
-  std::cout << "CHECK!!" << std::endl;  
   std::vector<TH1D*> h1 = sideband_sub(*ws, *ws_mc, channel, extension1);
   std::vector<TH1D*> h2;
 
@@ -198,13 +199,11 @@ void read_data(RooWorkspace& w, std::string filename, int channel)
   arg_list1.add(*(w.var("tktkmass")));
   arg_list1.add(*(w.var("mass")));
 
-  std::cout << "CHECK!" << std::endl;
   RooDataSet* data = new RooDataSet("data","data",nt1,arg_list1);
-  std::cout << "CHECK!" << std::endl;
   TString formula1, formula2;
   if (filename.find("_mc_") != std::string::npos) {
-    formula1 = "errxy";//"1.14*errxy";
-    formula2 = "lxy/errxy";//"lxy/(1.14*errxy)";
+    formula1 = "1.026*errxy";
+    formula2 = "lxy/(1.026*errxy)";
   }
   else {
     formula1 = "errxy";
@@ -216,7 +215,7 @@ void read_data(RooWorkspace& w, std::string filename, int channel)
 
   data->addColumn(errxyFunc);
   data->addColumn(lerrxyFunc);
-  data->addColumn(propertFunc);  
+  data->addColumn(propertFunc);
 
   w.import(*data);
 
@@ -361,6 +360,7 @@ void set_up_workspace_variables(RooWorkspace& w, int channel)
 std::vector<TH1D*> histoScale(std::vector<TH1D*> v1, std::vector<TH1D*> v2){
   int variables = VAR_NUMBER;
   for (int i=0; i<variables; ++i) {
+    if(v2.at(i) == nullptr) std::cout << "NULL" << std::endl;
     std::cout << v1.at(i)->GetXaxis()->GetXmin() << " - " << v1.at(i)->GetXaxis()->GetXmax()<< std::endl;
     std::cout << v2.at(i)->GetXaxis()->GetXmin() << " - " << v2.at(i)->GetXaxis()->GetXmax()<< std::endl;
     std::cout << "-----------------" << std::endl;
@@ -640,7 +640,7 @@ std::vector<TH1D*> sideband_sub(RooWorkspace& w, RooWorkspace& w_mc, int channel
   tex11->SetLineWidth(2);
   tex11->SetTextSize(0.04);
   tex11->Draw();
-  tex11 = new TLatex(0.68,0.85,"CMS Preliminary");
+  tex11 = new TLatex(0.68,0.85,""/*"CMS Preliminary"*/);
   tex11->SetNDC(kTRUE);
   tex11->SetTextFont(42);
   tex11->SetTextSize(0.04);
@@ -746,14 +746,6 @@ std::vector<TH1D*> sideband_sub(RooWorkspace& w, RooWorkspace& w_mc, int channel
 
     histos.push_back(aux1); 
 
-    if (i==15) {
-      TFile tauss_file("tau_ss.root", "RECREATE");
-      tauss_file.cd();
-      aux1->SetName("tau_ss_histo");
-      aux1->Write();
-      tauss_file.Close();
-    }
-
   }
   return histos;
 }
@@ -781,15 +773,15 @@ std::vector<TH1D*> histoBuild(RooWorkspace& w, int channel, std::string extensio
     /*if (k==11) { //shift the errxy MC distribution 
       for (int ii=1; ii<=h_aux->GetNbinsX(); ++ii) {
         for (int jj=1; jj<=h_aux->GetBinContent(ii); ++jj)
-          aux_errxy->Fill(1.14*h_aux->GetBinCenter(ii));
+          aux_errxy->Fill(ERRXY_SHIFT*h_aux->GetBinCenter(ii));
       }
       h_aux = aux_errxy;
     }
     else if (k==14){ //shift the lerrxy MC distribution
       for (int ii2=1; ii2<=h_aux->GetNbinsX(); ++ii2) {
-	std::cout << "Bin: " << h_aux->GetBinLowEdge(ii2) << " - " << h_aux->GetBinLowEdge(ii2) + 2*(h_aux->GetBinCenter(ii2)-h_aux->GetBinLowEdge(ii2)) << "; Previou content: " << h_aux->GetBinCenter(ii2) << "; Current content: " << h_aux->GetBinCenter(ii2)/1.14 << std::endl;
+	std::cout << "Bin: " << h_aux->GetBinLowEdge(ii2) << " - " << h_aux->GetBinLowEdge(ii2) + 2*(h_aux->GetBinCenter(ii2)-h_aux->GetBinLowEdge(ii2)) << "; Previou content: " << h_aux->GetBinCenter(ii2) << "; Current content: " << h_aux->GetBinCenter(ii2)/ERRXY_SHIFT << std::endl;
         for (int jj2=1; jj2<=h_aux->GetBinContent(ii2); ++jj2)
-          aux_lerrxy->Fill(static_cast<double>(h_aux->GetBinCenter(ii2)/1.14));
+          aux_lerrxy->Fill(static_cast<double>(h_aux->GetBinCenter(ii2)/ERRXY_SHIFT));
       }
       h_aux = aux_lerrxy;
     }
@@ -798,6 +790,8 @@ std::vector<TH1D*> histoBuild(RooWorkspace& w, int channel, std::string extensio
     histos.push_back(h_aux);
   }
 
+  for(int i=0;i<variables;++i)
+    if(histos.at(i)==nullptr) std::cout << "I knew it!" << std::endl;
   return histos;
 }
 
@@ -959,7 +953,7 @@ std::string varName(int variable) {
     s = "lxy";
     break;
   case 12:
-    s = "errxy"; //one can replace this string by "errxy" to use the non-shifted variable
+    s = "errxy_shifted"; //one can replace this string by "errxy" to use the non-shifted variable
     break;
   case 13:
     s = "vtxprob";
@@ -1297,7 +1291,7 @@ std::vector<double> getXRange(int var, int channel) {
     break;
   case 15: //lerrxy
     v.push_back(0.);
-    v.push_back(70.);
+    v.push_back(110.);
     break;
   case 16: //propert
     v.push_back(0.);

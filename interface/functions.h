@@ -60,9 +60,9 @@
 
 using namespace RooFit;
 
-#define LUMINOSITY          2.54 //2016 rereco: 17.748
+#define LUMINOSITY          2.54 //2015 rereco: 17.748
 #define NUMBER_OF_CPU       1
-#define VERSION             "v22" //2016 rereco: "v1_2016"
+#define VERSION             "v2015_Pt10" //2016: "v1_2016"
 #define BASE_DIR_2015       "/lstore/cms/brunogal/input_for_B_production_x_sec_13_TeV/"
 #define BASE_DIR_2016       "/lstore/cms/balves/Jobs/"
 extern bool RERECO = true; //true for 2015 rereco; false for 2016
@@ -271,7 +271,7 @@ void build_pdf(RooWorkspace& w, int channel, std::pair<double,double> pt_pair, s
       pdf_m_signal = new RooAddPdf("pdf_m_signal","pdf_m_signal",RooArgList(m_gaussian1,m_gaussian2,m_gaussian3),RooArgList(*m_fraction,*m_fraction2));
     }
   }
-  else { //this is the nominal signal
+  else { //this was the nominal signal with 2 gaussians
     m_fraction = new RooRealVar("m_fraction","m_fraction",0.5,0.,1.);
     if(lowstat) {
       pdf_m_signal=new RooAddPdf("pdf_m_signal","pdf_m_signal",RooArgList(m_gaussian1,m_gaussian3),RooArgList(*m_fraction));
@@ -340,7 +340,7 @@ void build_pdf(RooWorkspace& w, int channel, std::pair<double,double> pt_pair, s
   RooRealVar sigma_swapped2("sigma_swapped2","sigma_swapped2", 0.01529, 0.010, 0.150);
   RooRealVar sigma_swapped3("sigma_swapped3","sigma_swapped3", 0.0424, 0.010, 0.150);
   RooRealVar alpha1("alpha1","alpha1", 1.78, -20., 20.);
-  RooRealVar alpha2("alpha2","alpha2", 0.150, -20., 20);
+  RooRealVar alpha2("alpha2","alpha2", 0.150, -20., 20.);
   RooRealVar alpha3("alpha3","alpha3", -6.802, -20., 20.);
   RooRealVar n1_parameter("n1_parameter", "n1_parameter", 32., 0., 300.);
   RooRealVar n2_parameter("n2_parameter", "n2_parameter", 98., 0., 300.);
@@ -934,14 +934,14 @@ RooRealVar* prefilter_efficiency(int channel, double pt_min, double pt_max, doub
 {
 
   // /*2015 gen MC*/ TString mc_gen_input_file = "/lstore/cms/brunogal/input_for_B_production_x_sec_13_TeV/new_inputs/reduced_myloop_gen_" + channel_to_ntuple_name(channel) + "_bfilter.root";
-  TString mc_gen_input_file = TString::Format(BASE_DIR_2015) + "/new_inputs/reduced_myloop_gen_" + channel_to_ntuple_name(channel) + "_bfilter.root";
+  TString mc_gen_input_file = TString::Format(BASE_DIR_2015) + "/new_inputs/myloop_gen_" + channel_to_ntuple_name(channel) + "_bfilter.root";
   TFile *fin = new TFile(mc_gen_input_file);
   
   TString ntuple_name = channel_to_ntuple_name(channel) + "_gen";
   TTree *tin = (TTree*)fin->Get(ntuple_name);
   
   //set up the variables needed
-  double pt_b, eta_b, y_b, pt_mu1, pt_mu2, eta_mu1, eta_mu2;
+  double pt_b, eta_b, y_b, pt_mu1, pt_mu2, eta_mu1, eta_mu2, pt_tk1, pt_tk2, eta_tk1, eta_tk2;
   
   //read the ntuple from selected_data
   tin->SetBranchAddress("eta", &eta_b);
@@ -951,6 +951,10 @@ RooRealVar* prefilter_efficiency(int channel, double pt_min, double pt_max, doub
   tin->SetBranchAddress("mu2pt", &pt_mu2);
   tin->SetBranchAddress("mu1eta", &eta_mu1);
   tin->SetBranchAddress("mu2eta", &eta_mu2);
+  tin->SetBranchAddress("tk1pt", &pt_tk1);
+  tin->SetBranchAddress("tk2pt", &pt_tk2);
+  tin->SetBranchAddress("tk1eta", &eta_tk1);
+  tin->SetBranchAddress("tk2eta", &eta_tk2);
   
   //use histograms to count the events, and TEfficiency for efficiency, because it takes care of the errors and propagation
   TH1D* hist_tot = new TH1D("hist_tot","hist_tot",1,pt_min,pt_max);
@@ -979,23 +983,39 @@ RooRealVar* prefilter_efficiency(int channel, double pt_min, double pt_max, doub
       hist_tot->Fill(pt_b);
       total ++;
 
-      bool muon1Filter = fabs(eta_mu1)<2.4 && pt_mu1>2.8;
-      bool muon2Filter = fabs(eta_mu2)<2.4 && pt_mu2>2.8;
-      
+      bool muon1Filter = true; 
+      bool muon2Filter = true;
+      bool track1Filter = true;
+      bool track2Filter = true;
+      if(RERECO) 
+	{
+	  muon1Filter = fabs(eta_mu1)<2.4 && pt_mu1>2.8;
+	  muon2Filter = fabs(eta_mu2)<2.4 && pt_mu2>2.8;
+	}
+      else 
+	{
+	  muon1Filter = fabs(eta_mu1)<2.5 && pt_mu1>2.5;
+	  muon2Filter = fabs(eta_mu2)<2.5 && pt_mu2>2.5;
+	  track1Filter = fabs(eta_tk1)<2.5 && pt_tk1>0.4;
+	  track2Filter = fabs(eta_tk2)<2.5 && pt_tk2>0.4;
+	}
+
       if (muon1Filter)
 	{
 	passed_mu1 ++;
 	if(muon2Filter)
 	  {
-	    hist_passed->Fill(pt_b);//count only the events with the muon selection above
 	    passed_mu2 ++;
-	    passed ++;
+	    if (track1Filter && track2Filter)
+	      {
+		hist_passed->Fill(pt_b);//count only the events with the muon selection above
+		passed ++;
+	      }
 	  }
 	}
     }
   
   //debug
-  /*
   std::cout << "debug: evt number: " << tin->GetEntries() << std::endl;
   std::cout << "debug: passed_y number: " << passed_y << std::endl;
   std::cout << "debug: passed_pt number: " << passed_pt << std::endl;
@@ -1005,7 +1025,6 @@ RooRealVar* prefilter_efficiency(int channel, double pt_min, double pt_max, doub
   std::cout << "debug: passed number: " << passed << std::endl;
   std::cout << "debug: passed: " << hist_passed->GetBinContent(1) << std::endl;
   std::cout << "debug: total: " << hist_tot->GetBinContent(1) << std::endl;
-  */
   //----------------------------------
   
   //calculates the efficiency by dividing the histograms
@@ -1051,7 +1070,7 @@ RooRealVar* reco_efficiency(int channel, double pt_min, double pt_max, double y_
   TString ntuple_name = channel_to_ntuple_name(channel) + "_gen";
   TTree *tin_no_cuts = (TTree*)fin_no_cuts->Get(ntuple_name);
   //set up all the variables needed
-  double pt_b, eta_b, y_b, pt_mu1, pt_mu2, eta_mu1, eta_mu2, pt_tk1;
+  double pt_b, eta_b, y_b, pt_mu1, pt_mu2, eta_mu1, eta_mu2, pt_tk1, pt_tk2, eta_tk1, eta_tk2;
   double lxy, errxy;
 
   //read the ntuple from selected_data
@@ -1062,6 +1081,11 @@ RooRealVar* reco_efficiency(int channel, double pt_min, double pt_max, double y_
   tin_no_cuts->SetBranchAddress("mu2pt", &pt_mu2);
   tin_no_cuts->SetBranchAddress("mu1eta", &eta_mu1);
   tin_no_cuts->SetBranchAddress("mu2eta", &eta_mu2);
+  std::cout << "tin_no_cuts, recoeff" << std::endl;
+  tin_no_cuts->SetBranchAddress("tk1pt", &pt_tk1);
+  tin_no_cuts->SetBranchAddress("tk2pt", &pt_tk2);
+  tin_no_cuts->SetBranchAddress("tk1eta", &eta_tk1);
+  tin_no_cuts->SetBranchAddress("tk2eta", &eta_tk2);
 
   //use histograms to count the events, and TEfficiency for efficiency, because it takes care of the errors and propagation
   TH1D* hist_tot = new TH1D("hist_tot","hist_tot",1,pt_min,pt_max);
@@ -1073,11 +1097,27 @@ RooRealVar* reco_efficiency(int channel, double pt_min, double pt_max, double y_
       if (fabs(eta_b) > 2.4) continue; //B mesons inside the detector region eta < 2.4
       if (fabs(y_b)<y_min || fabs(y_b)>y_max) continue; // within the y binning
       if (pt_b<pt_min || pt_b>pt_max) continue; //within the pt bin
+      
 
-      bool muon1Filter = fabs(eta_mu1) < 2.4 && pt_mu1 > 2.8;
-      bool muon2Filter = fabs(eta_mu2) < 2.4 && pt_mu2 > 2.8;
+      bool muon1Filter = true;
+      bool muon2Filter = true;
+      bool track1Filter = true;
+      bool track2Filter = true;
+      if(RERECO)
+        {
+          muon1Filter = fabs(eta_mu1)<2.4 && pt_mu1>2.8;
+          muon2Filter = fabs(eta_mu2)<2.4 && pt_mu2>2.8;
+        }
+      else
+        {
+          muon1Filter = fabs(eta_mu1)<2.5 && pt_mu1>2.5;
+          muon2Filter = fabs(eta_mu2)<2.5 && pt_mu2>2.5;
+          track1Filter = fabs(eta_tk1)<2.5 && pt_tk1>0.4;
+          track2Filter = fabs(eta_tk2)<2.5 && pt_tk2>0.4;
+        }
 
-      if (muon1Filter && muon2Filter) hist_tot->Fill(pt_b); //count only the events with the muon selection above
+      //count only the events with the muon selection above
+      if (muon1Filter && muon2Filter && track1Filter && track2Filter) hist_tot->Fill(pt_b); 
 
     }
 
@@ -1092,6 +1132,7 @@ RooRealVar* reco_efficiency(int channel, double pt_min, double pt_max, double y_
   TTree *tin_with_cuts = (TTree*)fin_with_cuts->Get(channel_to_ntuple_name(channel));
    
   //read the ntuple
+  std::cout << "tin_with_cuts, recoeff" << std::endl;
   tin_with_cuts->SetBranchAddress("eta", &eta_b);
   tin_with_cuts->SetBranchAddress("y", &y_b);
   tin_with_cuts->SetBranchAddress("pt", &pt_b);
@@ -1102,6 +1143,9 @@ RooRealVar* reco_efficiency(int channel, double pt_min, double pt_max, double y_
   tin_with_cuts->SetBranchAddress("lxy", &lxy);
   tin_with_cuts->SetBranchAddress("errxy", &errxy);
   tin_with_cuts->SetBranchAddress("tk1pt", &pt_tk1);
+  tin_with_cuts->SetBranchAddress("tk2pt", &pt_tk2);
+  tin_with_cuts->SetBranchAddress("tk1eta", &eta_tk1);
+  tin_with_cuts->SetBranchAddress("tk2eta", &eta_tk2);
 
   int reweighting_variable_counter=0;
   if(syst) {
@@ -1162,11 +1206,28 @@ RooRealVar* reco_efficiency(int channel, double pt_min, double pt_max, double y_
       if (pt_b<pt_min || pt_b>pt_max) continue; //within the pt bin
 
       //shift correction of errxy
-      if(!RERECO) {if((lxy/(1.14*errxy)) <= 3.5)continue;}
-      else {if((lxy/errxy) <= 3.5)continue;}
+      if(RERECO) {
+	if((lxy/(1.14*errxy)) <= 3.5) {continue;}
+      }
+      else {if((lxy/(1.026*errxy)) <= 3.5)continue;}
 		
-      bool muon1Filter = fabs(eta_mu1) < 2.4 && pt_mu1 > 2.8;
-      bool muon2Filter = fabs(eta_mu2) < 2.4 && pt_mu2 > 2.8;
+      bool muon1Filter = true;
+      bool muon2Filter = true;
+      bool track1Filter = true;
+      bool track2Filter = true;
+      if(RERECO)
+        {
+          muon1Filter = fabs(eta_mu1)<2.4 && pt_mu1>10.;//pt_mu1>2.8;
+          muon2Filter = fabs(eta_mu2)<2.4 && pt_mu2>10.;//pt_mu2>2.8;
+        }
+      else
+        {
+          muon1Filter = fabs(eta_mu1)<2.5 && pt_mu1>2.5;
+          muon2Filter = fabs(eta_mu2)<2.5 && pt_mu2>2.5;
+          track1Filter = fabs(eta_tk1)<2.5 && pt_tk1>0.4;
+          track2Filter = fabs(eta_tk2)<2.5 && pt_tk2>0.4;
+        }
+
 
       if (syst) {
 	reweighting_variable_Iter = reweighting_variable.begin();
@@ -1209,7 +1270,8 @@ RooRealVar* reco_efficiency(int channel, double pt_min, double pt_max, double y_
 	}
       }
       
-      if (muon1Filter && muon2Filter) hist_passed->Fill(pt_b); //count only the events with the muon selection above
+      //count only the events with the muon selection above
+      if (muon1Filter && muon2Filter && track1Filter && track2Filter) hist_passed->Fill(pt_b); 
     }
 
   //calculates the efficiency by dividing the histograms
@@ -1243,6 +1305,8 @@ RooRealVar* reco_efficiency(int channel, double pt_min, double pt_max, double y_
   return eff2;
 }
 
+//The option precise_only refers to the usage of the precise branching fractions only.
+//When that option is set the code does not include the unprecise branching fractions in the final fragmentaiton fraction measurements
 RooRealVar* branching_fraction(TString measure, int channel, bool precise_only, bool pQCD_flag)
 {
   RooRealVar* b_fraction = new RooRealVar("b_fraction","b_fraction",1);
@@ -1513,6 +1577,9 @@ void plot_eff(TString measure, TString eff_name, int channel, int n_var1_bins, T
   TString eff_title = "";
   TString ntuple = "";
 
+  std::cout << "BIG CHECK!" << std::endl;
+  std::cout << measure << "--" << eff_name << "--" << channel << "--" << n_var1_bins << "--" << var2_name << "--" << var2_min << "--" << var2_max << "--" << x_axis_name << "--" << b_title << "--" << var1_bin_centre[0] << "--" << var1_bin_centre_lo[0] << "--" << var1_bin_centre_hi << "--" << eff_array[0] << "--" << eff_err_lo_array[0] << "--" << eff_err_hi_array[0] << "--" << std::endl;
+ 
   if(eff_name != "ratioeff")
     ntuple = channel_to_ntuple_name(channel) + "_";
   
@@ -1560,7 +1627,11 @@ void plot_eff(TString measure, TString eff_name, int channel, int n_var1_bins, T
   if(n_var1_bins == 1)
     save_eff = TString::Format(VERSION) + "/efficiencies/" + measure + "_" + eff_name + "_" + ntuple + "full_bins.png";
   
+  std::cout << "CHECK!!!!!!!!!!" << std::endl;
+  std::cout << save_eff << std::endl;  
+  ce.cd();
   ce.SaveAs(save_eff);
+  std::cout << "CHECK!!!!!!!!!!" << std::endl;
 } 
 
 void print_table(TString title, int n_var1_bins, int n_var2_bins, TString var1_name, TString var2_name, double* var1_bin_edges, double* var2_bin_edges, double* array, double* stat_err_lo, double* stat_err_hi, double* syst_err_lo, double* syst_err_hi, double* BF_err, double* global_err)

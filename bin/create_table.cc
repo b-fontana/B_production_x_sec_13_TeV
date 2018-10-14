@@ -105,8 +105,16 @@ int main(int argc, char** argv)
   
   std::vector<std::string> col_name;
 
-  std::string var1_str = var1_name.Data();
-  var1_str.append(" bins");
+
+  std::string var1_str;
+  var1_str.reserve(20);
+  var1_str = var1_name.Data();
+  if(var1_str != "pt") var1_str.append(" bins");
+  else {
+    var1_str.insert(0, "$\\");
+    var1_str.append("\\,[\GeV]$");
+  }
+
   
   std::string table_str = vector.Data();
 

@@ -77,6 +77,7 @@ int main(int argc, char** argv)
   //to create the directories to save the files
   std::vector<std::string> dir_list;  
   
+  dir_list.push_back(static_cast<const char*>(TString::Format(VERSION) + "/systematics_root/" + "combined_ratios/"));
   dir_list.push_back(static_cast<const char*>(TString::Format(VERSION) + "/systematics_root/" + channel_to_ntuple_name(channel)));
   dir_list.push_back(static_cast<const char*>(TString::Format(VERSION) + "/mass_fits/syst/" + channel_to_ntuple_name(channel)));
   dir_list.push_back(static_cast<const char*>(TString::Format(VERSION) + "/mass_fits/syst/" + channel_to_ntuple_name(channel) + "/workspace/"));
@@ -298,7 +299,10 @@ int main(int argc, char** argv)
 	      ///////////////read dataset//////////////////////
 	      if(syst.Contains("eff") == false)
 		{
-		  TString data_selection_input_file = TString::Format(BASE_DIR) + "/new_inputs/myloop_new_data_" + channel_to_ntuple_name(channel) + "_with_cuts.root";
+		  TString data_selection_input_file = "";
+		  if(RERECO) data_selection_input_file = "/lstore/cms/balves/Jobs/Full_Dataset_2015_Rereco/myloop_new_data_" + channel_to_ntuple_name(channel) + "_with_cuts_hadd.root";
+		  else data_selection_input_file = TString::Format(BASE_DIR_2016) + "Full_Dataset_2016/NewSelection/myloop_new_data_" + channel_to_ntuple_name(channel) + "_with_cuts.root";
+		  //old 2015 prompt-reco: TString data_selection_input_file = TString::Format(BASE_DIR) + "/new_inputs/myloop_new_data_" + channel_to_ntuple_name(channel) + "_with_cuts.root";
 		  RooWorkspace* ws = new RooWorkspace("ws","Bmass");
 	  
 		  //set up mass, pt and y variables inside ws  
@@ -322,7 +326,10 @@ int main(int argc, char** argv)
 		    }
 		}
 	  
-	      absolute_syst_val = fabs(nominal_val.getVal() - alternative_val)/nominal_val.getVal(); 
+	      //keep the signal of the systematic for the reweighting
+	      if(syst == "recoeff_reweight_syst") 
+		absolute_syst_val = (nominal_val.getVal() - alternative_val)/nominal_val.getVal(); 
+	      else absolute_syst_val = fabs((nominal_val.getVal() - alternative_val)/nominal_val.getVal()); 
 	    }
 	}
     }
@@ -330,7 +337,6 @@ int main(int argc, char** argv)
     {
       if(syst == "combined_syst")
 	{
-	  std::cout << "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW" << std::endl;
 	  std::cout << "calculate ratio combined_syst" << std::endl;
 	  
 	  setup_syst_list(ratio, &syst_list);
@@ -411,6 +417,8 @@ int main(int argc, char** argv)
 	      delete f_syst;
 
 	      syst_list_val.push_back(in_err_hi[0][0]);
+
+	      sqrt_err += pow(in_err_hi[0][0],2);  //Corrigido por Bruno Alves - 8 de Abril de 2018
 	    }
 
 	  absolute_syst_val = sqrt(sqrt_err);
@@ -516,22 +524,27 @@ int main(int argc, char** argv)
 
   TString syst_file_name = "";
     
-  if(syst.Contains("ratio") == false)
+  if(syst == "combined_syst" && ratio != "") {
+    syst_file_name = syst_dir + "combined_ratios/" + ratio + bins_str + ".root";
+    std::cout << "FILE TO BE OPEN " << syst_file_name << std::endl;
+  }
+  else if(syst.Contains("ratio") == false) {
     syst_file_name = syst_dir + channel_to_ntuple_name(channel) + "/" + syst + "_" + channel_to_ntuple_name(channel) + bins_str + ".root";
+    std::cout << syst_file_name << std::endl;
+  }
   else
     syst_file_name = TString::Format(VERSION) + "/systematics_root/" + ratio + "_" + syst + bins_str + ".root";
-  
+
   TFile* syst_file = new TFile(syst_file_name,"recreate");
-  
+
   TVectorD val(1);
   TVectorD err_lo(1);
   TVectorD err_hi(1);
 
   //val[0] = quantity_res; //instead of 1.
-  
   val[0] = 1.00;
-  err_lo[0] = fabs(absolute_syst_val);
-  err_hi[0] = fabs(absolute_syst_val);
+  err_lo[0] = absolute_syst_val;
+  err_hi[0] = absolute_syst_val;
   
   val.Write("val");
   err_lo.Write("err_lo");
@@ -547,7 +560,7 @@ double pdf_syst(RooWorkspace& ws, int channel, double pt_min, double pt_max, dou
 
   RooRealVar* fit_res;
   
-  std::vector<std::string> signal = {"1gauss"}; //,"crystal", "3gauss"};
+  std::vector<std::string> signal = {"3gauss"}; //,"crystal", "1gauss"};
   std::vector<std::string> combinatorial = {"bern"}; //, "2exp", "power"};
   std::vector<std::string> jpsipi = {"no_jpsipi"};
   std::vector<std::string> jpsiX = {"jpsiX_gauss"};
@@ -610,6 +623,9 @@ double pdf_syst(RooWorkspace& ws, int channel, double pt_min, double pt_max, dou
 	  //mass_max = 5.4; //(ws.var("mass"))->getMax();
 	}
 
+      std::cout << std::endl;
+      std::cout << "SYST!" << std::endl;
+      std::cout << std::endl;
       fit_res = bin_mass_fit(ws, channel, pt_min, pt_max, y_min, y_max, pdf[i], pdf_name.Data(), mass_min, mass_max);
       yield_syst.push_back((double)fit_res->getVal());
     }
@@ -687,26 +703,20 @@ double mass_window_syst(RooWorkspace& ws, int channel, double pt_min, double pt_
 double reweighting_syst(int channel, double pt_min, double pt_max, double y_min, double y_max, double nominal_quantity) {
   std::vector<double> range_syst;
   std::vector<TString> reweight_var_names;
+  reweight_var_names.push_back("lerrxy");
   reweight_var_names.push_back("mu1pt");
   reweight_var_names.push_back("mu1eta");
   reweight_var_names.push_back("tk1pt");
   reweight_var_names.push_back("tk1eta");
-  reweight_var_names.push_back("lerrxy");
   //if(channel!=1) reweight_var_names.push_back("tktkmass");
 
   RooRealVar* eff_corrected;
-  int reweight_variables_number = static_cast<int>(reweight_var_names.size());  
+  //int reweight_variables_number = static_cast<int>(reweight_var_names.size());  
 
-  for (int i=0; i<reweight_variables_number; ++i) {
-    eff_corrected = reco_efficiency(channel, pt_min, pt_max, y_min, y_max, true, reweight_var_names.at(i));
-    range_syst.push_back(static_cast<double>(eff_corrected->getVal()));
-    std::cout << std::endl;
-    std::cout << std::endl;
-    std::cout << "Corrected efficiency  " << i << ": "<< eff_corrected->getVal() << std::endl;
-    std::cout << std::endl;
-    std::cout << std::endl;
-  }
-
+  eff_corrected = reco_efficiency(channel, pt_min, pt_max, y_min, y_max, true, reweight_var_names);
+  range_syst.push_back(static_cast<double>(eff_corrected->getVal()));
+  std::cout << "Corrected efficiency  " << ": " << eff_corrected->getVal() << std::endl;
+  
   int i_max = 0;
   double max_diff = 0.00;
   

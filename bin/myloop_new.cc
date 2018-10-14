@@ -102,8 +102,13 @@ int main(int argc, char** argv)
 	      default:
 	      case 1:
 		//2016 MC Bu sample
-		root->Add("/gstore/t3cms/store/user/bfontana/Bfinder_Bu_MC2016_Moriond_v4/BuToJpsiK_BMuonFilter_SoftQCDnonD_TuneCUEP8M1_13TeV-pythia8-evtgen/Bu/180222_095935/0000/bfinder_1*.root");
-		HltTree->Add("/gstore/t3cms/store/user/bfontana/Bfinder_Bu_MC2016_Moriond_v4/BuToJpsiK_BMuonFilter_SoftQCDnonD_TuneCUEP8M1_13TeV-pythia8-evtgen/Bu/180222_095935/0000/bfinder_1*.root");
+		root->Add("/gstore/t3cms/store/user/bfontana/Bfinder_Bu_MC2016_Moriond_v7/BuToJpsiK_BMuonFilter_SoftQCDnonD_TuneCUEP8M1_13TeV-pythia8-evtgen/Bu/180306_150011/0000/bfinder_1.root");
+		root->Add("/gstore/t3cms/store/user/bfontana/Bfinder_Bu_MC2016_Moriond_v7/BuToJpsiK_BMuonFilter_SoftQCDnonD_TuneCUEP8M1_13TeV-pythia8-evtgen/Bu/180306_150011/0000/bfinder_2.root");
+		root->Add("/gstore/t3cms/store/user/bfontana/Bfinder_Bu_MC2016_Moriond_v7/BuToJpsiK_BMuonFilter_SoftQCDnonD_TuneCUEP8M1_13TeV-pythia8-evtgen/Bu/180306_150011/0000/bfinder_3.root");
+		HltTree->Add("/gstore/t3cms/store/user/bfontana/Bfinder_Bu_MC2016_Moriond_v7/BuToJpsiK_BMuonFilter_SoftQCDnonD_TuneCUEP8M1_13TeV-pythia8-evtgen/Bu/180306_150011/0000/bfinder_1.root");
+		HltTree->Add("/gstore/t3cms/store/user/bfontana/Bfinder_Bu_MC2016_Moriond_v7/BuToJpsiK_BMuonFilter_SoftQCDnonD_TuneCUEP8M1_13TeV-pythia8-evtgen/Bu/180306_150011/0000/bfinder_2.root");
+		HltTree->Add("/gstore/t3cms/store/user/bfontana/Bfinder_Bu_MC2016_Moriond_v7/BuToJpsiK_BMuonFilter_SoftQCDnonD_TuneCUEP8M1_13TeV-pythia8-evtgen/Bu/180306_150011/0000/bfinder_3.root");
+
 		//for BMuonFilter processed with Bfinder_mc	    
 		/*root->Add("/gstore/t3cms/store/user/martinsg/DumpGenInfo_Bu_Bfilter_ext_v1/BuToJpsiKV2_BFilter_TuneCUEP8M1_13TeV-pythia8-evtgen/crab_DumpGenInfo_Bu_Bfilter_ext_v1/170929_092549/0000/DumpGenInfo_*.root");
 		root->Add("/gstore/t3cms/store/user/martinsg/DumpGenInfo_Bu_Bfilter_ext_v1/BuToJpsiKV2_BFilter_TuneCUEP8M1_13TeV-pythia8-evtgen/crab_DumpGenInfo_Bu_Bfilter_ext_v1/170929_092549/0001/DumpGenInfo_*.root");

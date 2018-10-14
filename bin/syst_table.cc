@@ -136,7 +136,9 @@ int main(int argc, char** argv)
 	  for(int i=0; i<n_var1_bins; i++)
 	    {
 	      aux.push_back(TString::Format("%.*f", precision, 100*val_err_hi[j][i]).Data());
+	      std::cout << aux[i] << ", ";
 	    }
+	  std::cout << std::endl;
 	  numbers.push_back(aux);
 	  aux.clear();
 	}

@@ -95,7 +95,7 @@ int main(int argc, char** argv)
   double x_sec_syst_lo[n_var2_bins][n_var1_bins];
   double x_sec_syst_hi[n_var2_bins][n_var1_bins];
     
-  RooRealVar* branch = branching_fraction(measure, channel);
+  RooRealVar* branch = branching_fraction(measure, channel, false, false);
   double b_fraction = branch->getVal();
   double b_fraction_err = branch->getError();
   
@@ -123,8 +123,9 @@ int main(int argc, char** argv)
 
   //read data to calculate bin mean
   TString data_selection_input_file = "";
-  if(RERECO) data_selection_input_file = "/lstore/cms/balves/Jobs/Full_Dataset_2015_Rereco/myloop_new_data_" + channel_to_ntuple_name(channel) + "_with_cuts_hadd.root";
-  else data_selection_input_file = TString::Format(BASE_DIR) + "/new_inputs/myloop_new_data_" + channel_to_ntuple_name(channel) + "_with_cuts.root";
+  if(RERECO) data_selection_input_file = "/lstore/cms/balves/Jobs/Full_Dataset_2015_Rereco/Pt10/myloop_new_data_" + channel_to_ntuple_name(channel) + "_with_cuts_hadd.root";
+  else data_selection_input_file = TString::Format(BASE_DIR_2016) + "Full_Dataset_2016/NewSelection/myloop_new_data_" + channel_to_ntuple_name(channel) + "_with_cuts.root";
+  //old 2015 prompt-reco: else data_selection_input_file = TString::Format(BASE_DIR) + "/new_inputs/myloop_new_data_" + channel_to_ntuple_name(channel) + "_with_cuts.root";
   RooWorkspace* ws = new RooWorkspace("ws","Bmass");
   
   set_up_workspace_variables(*ws,channel);

@@ -58,11 +58,9 @@ int main(int argc, char **argv) {
 
   if (input_data_flag!=1) {
     if(cuts)
-      input_data = "/lstore/cms/brunogal/input_for_B_production_x_sec_13_TeV/new_inputs/myloop_new_data_" + channel_to_ntuple_name(channel) 
-	+ "_with_cuts.root";
+      input_data = "/lstore/cms/brunogal/input_for_B_production_x_sec_13_TeV/new_inputs/myloop_new_data_" + channel_to_ntuple_name(channel) + "_with_cuts.root";
     else
-      input_data = "/lstore/cms/brunogal/input_for_B_production_x_sec_13_TeV/no_cuts/myloop_new_data_" + channel_to_ntuple_name(channel) 
-	+ "_no_cuts.root"; 
+      input_data = "/lstore/cms/brunogal/input_for_B_production_x_sec_13_TeV/no_cuts/myloop_new_data_" + channel_to_ntuple_name(channel) + "_no_cuts.root"; 
   }
   if (input_mc_flag!=1) {
     if(cuts)

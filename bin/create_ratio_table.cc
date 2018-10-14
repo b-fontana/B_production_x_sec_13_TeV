@@ -18,6 +18,7 @@ int main(int argc, char** argv)
   TString vector = "";
   int eff = 0;
   int syst = 0;
+  bool precision_BF_only = false;
 
   for(int i=1 ; i<argc ; ++i)
     {
@@ -49,8 +50,17 @@ int main(int argc, char** argv)
 	  convert << argv[++i];
 	  convert >> syst;
 	}
+      if(argument == "--precision_BF_only")
+	{
+	  convert << argv[++i];
+	  convert >> precision_BF_only;
+	}
     }
   
+  if(precision_BF_only == true && bins != "full") {
+    std::cout << "ERROR: The 'precision_BF_only' flag can only be used for the full bin!" << std::endl;
+  } 
+
   if(ratio == "" || vector == "")
     {
       std::cout << "ERROR: No --ratio or --vector input was provided." << std::endl;
@@ -118,7 +128,9 @@ int main(int argc, char** argv)
               return 0;
             }
       
-      RooRealVar* branch = branching_fraction(measure, channel);
+      bool pQCD_flag = false;
+      if(ratio == "fsfd") pQCD_flag = true;
+      RooRealVar* branch = branching_fraction(measure, channel, precision_BF_only, pQCD_flag);
       b_fraction[ch] = branch->getVal();
             
       if(vector == "yield")

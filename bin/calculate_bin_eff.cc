@@ -10,78 +10,43 @@
 // channel = 6: Lambda_b -> Jpsi + Lambda
 //-----------------------------------------------------------------
 
-//input example: calculate_bin_eff --channel 1 --eff preeff --ptmin 10 --ptmax 20 --ymin 0.00 --ymax 0.50 --reweight mu1pt
+//input example: calculate_bin_eff --channel 1 --eff preeff --ptmin 10 --ptmax 20 --ymin 0.00 --ymax 0.50 --reweight 1
 int main(int argc, char** argv)
 {
   int channel = 1;
+  bool reweight = false;
   TString eff_name = "";
   double pt_min = -1;
   double pt_max = -1;
   double y_min = -1;
   double y_max = -1;
-  TString reweight_str = "";
 
   for(int i=1 ; i<argc ; ++i)
     {
       std::string argument = argv[i];
       std::stringstream convert;
-
-      if(argument == "--channel")
-	{
-	  convert << argv[++i];
-	  convert >> channel;
-	}
-      if(argument == "--eff")
-	{
-	  convert << argv[++i];
-	  convert >> eff_name;
-	  std::cout << eff_name << std::endl;
-	}      
-      if(argument == "--ptmin")
-	{
-	  convert << argv[++i];
-	  convert >> pt_min;
-	}
-      if(argument == "--ptmax")
-	{
-	  convert << argv[++i];
-	  convert >> pt_max;
-	}
-      if(argument == "--ymin")
-	{
-	  convert << argv[++i];
-	  convert >> y_min;
-	}
-      if(argument == "--ymax")
-	{
-	  convert << argv[++i];
-	  convert >> y_max;
-	}
-      if(argument == "--reweight")
-	{
-	  convert << argv[++i];
-	  convert >> reweight_str;
-	}
+      if(argument == "--channel") {convert << argv[++i];convert >> channel;}
+      if(argument == "--eff") {convert << argv[++i];convert >> eff_name;}      
+      if(argument == "--ptmin") {convert << argv[++i];convert >> pt_min;}
+      if(argument == "--ptmax") {convert << argv[++i];convert >> pt_max;}
+      if(argument == "--ymin") {convert << argv[++i];convert >> y_min;}
+      if(argument == "--ymax") {convert << argv[++i];convert >> y_max;}
+      if(argument == "--reweight") {convert << argv[++i]; convert >> reweight;}
     }
-  
+
+  std::vector<TString> reweight_str_vector;
+  if(reweight) reweight_str_vector = {"lerrxy","mu1pt","mu1eta","tk1pt","tk1eta"};
+
+  std::cout << eff_name << ", " << reweight << std::endl;
   if(eff_name == "")
-    {
-      std::cout << "Error: Please indicate the efficiency." << std::endl;
-      return 0;
-    }
-  
+    {std::cout << "Error: Please indicate the efficiency." << std::endl; return 0;}
   if(pt_min == -1 || pt_max == -1 ||y_min == -1 ||y_max == -1)
-    {
-      std::cout << "Error: The bin was not well defined. Please enter pt and y bin." << std::endl;
-      return 0;
-    }
+    {std::cout << "Error: The bin was not well defined. Please enter pt and y bin." << std::endl;return 0;}
+  if(reweight_str_vector.size() != 0 && eff_name != "recoeff_reweight")
+    {std::cout << "Error: Reweighting can only be performed with recoeff_reweight." << std::endl; return 0;}
+  if(eff_name == "recoeff_reweight" && reweight == false) 
+    {std::cout << "ERROR: You need to add the reweighting_variables!" << std::endl; return 0;}
 
-  if(reweight_str != "" && eff_name != "recoeff_reweight")
-	{
-	  std::cout << "Error: Reweighting can only be performed with recoeff_reweight." << std::endl;
-	  return 0;
-	}
-  
   //to create the directories to save the files
   std::vector<std::string> dir_list;  
   
@@ -99,17 +64,11 @@ int main(int argc, char** argv)
   
   if(eff_name == "preeff")
     eff_res = prefilter_efficiency(channel, pt_min, pt_max, y_min, y_max);
-  else
-    if(eff_name == "recoeff")
-      eff_res = reco_efficiency(channel, pt_min, pt_max, y_min, y_max);
-    else
-      if(eff_name == "recoeff_reweight") {
-	std::cout << "Calculating the recoeff_reweight!" << std::endl;
-	eff_res = reco_efficiency(channel, pt_min, pt_max, y_min, y_max, true, reweight_str);
-	std::cout << "Calculating the recoeff_reweight (end)!" << std::endl;
-      }
-    else
-      if(eff_name == "totaleff")
+  else if(eff_name == "recoeff") 
+    eff_res = reco_efficiency(channel, pt_min, pt_max, y_min, y_max);
+  else if(eff_name == "recoeff_reweight") 
+    eff_res = reco_efficiency(channel, pt_min, pt_max, y_min, y_max, true, reweight_str_vector);
+  else if(eff_name == "totaleff")
 	{
 	  //read pre-filter eff values
 	  TString eff_dir = TString::Format(VERSION) + "/efficiencies_root/" + channel_to_ntuple_name(channel) + "/preeff_" + channel_to_ntuple_name(channel) + "_pt_from_" + TString::Format("%d_to_%d", (int)pt_min, (int)pt_max) + "_y_from_" + TString::Format("%.2f_to_%.2f", y_min, y_max) + ".root";
@@ -177,6 +136,7 @@ int main(int argc, char** argv)
   TVectorD stat_err_hi(1);
 
   efficiency[0] = eff_res->getVal();
+  std::cout << "Efficiency: " << efficiency[0] << std::endl;
   stat_err_lo[0] = -eff_res->getAsymErrorLo();
   stat_err_hi[0] = eff_res->getAsymErrorHi();
   

@@ -23,7 +23,6 @@
   <bin name="plot_syst"   file="plot_syst.cc"></bin>
   <bin name="print_val"   file="print_val.cc"></bin> 
   <bin name="valid"   file="mc_validation.cc"></bin>
-  <!--<bin name="weight"   file="check_weights.cc"></bin> -->
   <bin name="calculate_bin_fitbias"   file="calculate_bin_fitbias.cc"></bin>
   <bin name="fitbias"   file="fitBias.cc"></bin>
   <bin name="fitbias_test"   file="fitbias_test.cc"></bin>
@@ -34,6 +33,12 @@
   <bin name="Res"   file="Resolution.cc"></bin>
   <bin name="effratioplot"   file="eff_ratio_plot.cc"></bin>
   <bin name="ResSyst"   file="ResolutionSyst.cc"></bin>
+  <bin name="YieldStab"   file="YieldStability.cc"></bin>
+  <bin name="2D"   file="2DPlot.cc"></bin>
+  <bin name="myloop_new_Data2015_RunC_Significance10" file="myloop_new_Data2015_RunC_Significance10.cc"></bin>
+  <bin name="myloop_new_Data2015_RunD_Significance10" file="myloop_new_Data2015_RunD_Significance10.cc"></bin>
+  <bin name="myloop_new_Data2015_RunC_Pt10" file="myloop_new_Data2015_RunC_Pt10.cc"></bin>
+  <bin name="myloop_new_Data2015_RunD_Pt10" file="myloop_new_Data2015_RunD_Pt10.cc"></bin>
 </environment>
 
 <Flags CXXFLAGS="-g"/>

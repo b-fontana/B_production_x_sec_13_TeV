@@ -20,9 +20,10 @@ double fsfu_tktk_width_syst = 0.051; //set to zero for now.
 double fsfd_tktk_width_syst = 0.051;
 double fdfu_tktk_width_syst = 0.004;
 
-RooRealVar* bu_branch = branching_fraction("ratio", 1);
-RooRealVar* bd_branch = branching_fraction("ratio", 2);
-RooRealVar* bs_branch = branching_fraction("ratio", 4);
+//note that the uncertainties will refer to the fragmentations times the BFs
+RooRealVar* bu_branch = branching_fraction("ratio", 1, true, true);
+RooRealVar* bd_branch = branching_fraction("ratio", 2, true, true);
+RooRealVar* bs_branch = branching_fraction("ratio", 4, true, true);
 
 RooRealVar* bu_pull = new RooRealVar("bu_pull","bu_pull",0.00518);
 RooRealVar* bd_pull = new RooRealVar("bd_pull","bd_pull",0.00309);
@@ -30,6 +31,7 @@ RooRealVar* bs_pull = new RooRealVar("bds_pull","bs_pull",0.00959);
 
 double fsfu_b_fraction_syst = sqrt( pow(bs_branch->getError()/bs_branch->getVal(),2) + pow(bu_branch->getError()/bu_branch->getVal(),2) ) ;
 double fsfd_b_fraction_syst = sqrt( pow(bs_branch->getError()/bs_branch->getVal(),2) + pow(bd_branch->getError()/bd_branch->getVal(),2) ) ;
+//double fsfd_b_fraction_syst = bsbd_pQCD_branch->getError();
 double fdfu_b_fraction_syst = sqrt( pow(bd_branch->getError()/bd_branch->getVal(),2) + pow(bu_branch->getError()/bu_branch->getVal(),2) ) ;
 
 double fsfu_pull_syst = sqrt( pow(bs_pull->getVal(),2) + pow(bu_pull->getVal(),2) );

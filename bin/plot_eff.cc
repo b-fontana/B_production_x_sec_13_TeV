@@ -111,6 +111,8 @@ int main(int argc, char** argv)
   for(int j=0; j<n_var2_bins; j++)
     {
       plot_eff(measure, eff, channel, n_var1_bins, var2_name, var2_bins[j], var2_bins[j+1], x_axis_name, b_title, var1_bin_centre, var1_bin_centre_lo, var1_bin_centre_hi, eff_array[j], eff_err_lo[j], eff_err_hi[j]);
+      std::cout << "Efficiency (1st bin): " << eff_array[j][0] << " +" << eff_err_hi[j][0] << " -" << eff_err_lo[j][0] << std::endl;
     }
+
   
 }//end of plot_eff

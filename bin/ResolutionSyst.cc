@@ -79,11 +79,11 @@ int main(int argc, char **argv) {
 
   TFile *f = new TFile("ss_histograms_ResolutionSyst.root","OPEN");
   TH1D* h;
-  h = (TH1D*)f->Get("tktkmass_ss_data_"+channel_to_ntuple_name(channel));
-  if(h==nullptr) {
-    std::cout << "The sideband subtracted histogram was not available. It will be calculated now." << std::endl;
+  //  h = (TH1D*)f->Get("tktkmass_ss_data_"+channel_to_ntuple_name(channel));
+  //if(h==nullptr) {
+  //std::cout << "The sideband subtracted histogram was not available. It will be calculated now." << std::endl;
     h = sideband_sub(*ws_data, *ws_mc, channel, limits.first, limits.second);
-  }
+    //}
 
   gStyle->SetOptStat(0);
   h->SetTitle(" ");
@@ -219,6 +219,15 @@ TH1D* sideband_sub(RooWorkspace& w, RooWorkspace& w_mc, int channel, double m1, 
  
   std::cout << max1 << std::endl;
 
+  TH1D* hhh1 = (TH1D*)data->createHistogram("tktkmass_ss_data2",*(w.var("tktkmass")),Binning(300,m1,m2));
+  TCanvas c_beforeSSM;
+  c_beforeSSM.cd();
+  hhh1->GetYaxis()->SetTitleOffset(1.3);
+  hhh1->GetXaxis()->SetTitle("K^{*0} invariant mass (GeV)");
+  hhh1->SetTitle(" ");
+  hhh1->Draw();
+  c_beforeSSM.SaveAs("c_beforeSSM.png");
+
   reduceddata_side = static_cast<RooDataSet*>(data->reduce(Form("mass>%lf",max1)));
  
   //the B+ channel background can only be estimated using the right side of the mass spectrum
@@ -292,14 +301,16 @@ TH1D* sideband_sub(RooWorkspace& w, RooWorkspace& w_mc, int channel, double m1, 
   RooDataSet* reduceddata_side2 = (RooDataSet*)reduceddata_side->reduce(Form("mass<%lf",max2));
   reduceddata_side2 = (RooDataSet*)reduceddata_side2->reduce(Form("mass>%lf",min1));
 
-  h1 = (TH1D*)reduceddata_central->createHistogram("tktkmass_ss_data",*(w.var("tktkmass")),Binning(200,m1,m2));
+  h1 = (TH1D*)reduceddata_central->createHistogram("tktkmass_ss_data",*(w.var("tktkmass")),Binning(300,m1,m2));
   h2 = (TH1D*)reduceddata_side2->createHistogram("",*(w.var("tktkmass")),Binning(200,m1,m2));
   h1->Add(h2,-factor);
   h1->SetName("tktkmass_ss_data_"+channel_to_ntuple_name(channel));
 
   TCanvas c_h_beforecut;
   h1->Draw();
-  c_h_beforecut.SaveAs("c_h_beforecut.png");
+  h1->GetXaxis()->SetTitle("K^{*0} invariant mass (GeV)");
+  h1->GetYaxis()->SetTitleOffset(1.2);
+  c_h_beforecut.SaveAs("c_afterSSM.png");
 
   int nbins = h1->GetNbinsX();
   for (int i=1; i<=nbins; ++i) {

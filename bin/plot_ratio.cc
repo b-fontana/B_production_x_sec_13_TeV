@@ -60,7 +60,7 @@ int main(int argc, char** argv)
       else Warn.RunningError("NAME_ERROR"); 
     }
 
-  if(precise_BF_only == true && bins != "full") std::cout << "The 'precise_BF_only' option can only be used when the full bin is being considered!" << std::endl;
+  //if(precise_BF_only == true && bins != "full") std::cout << "The 'precise_BF_only' option can only be used when the full bin is being considered!" << std::endl;
 
   //to create the directories to save the .png files
   std::vector<std::string> dir_list;  
@@ -207,7 +207,7 @@ int main(int argc, char** argv)
       //read syst
       if(syst) {
 	if(ch==0) //Bruno Alves: The systematics are stored in some files which take into account both channels
-	  read_vector(channel, "combined_syst", var1_name , var2_name, n_var1_bins, n_var2_bins, var1_bins, var2_bins, combined_syst[ch][0], ratio, combined_syst_lo[ch][0], combined_syst_hi[ch][0]);
+	  read_vector(channel, "combined_syst", var1_name , var2_name, n_var1_bins, n_var2_bins, var1_bins, var2_bins, combined_syst[ch][0], ratio, combined_syst_lo[ch][0], combined_syst_hi[ch][0]);	
       }
       else
 	for(int j=0; j<n_var2_bins; j++)

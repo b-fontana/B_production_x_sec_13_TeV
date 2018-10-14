@@ -1,16 +1,17 @@
 #include "/home/t3cms/balves/work/CMSSW_9_2_12/src/UserCode/B_production_x_sec_13_TeV/interface/BDefinitions.h"
 #include "/home/t3cms/balves/work/CMSSW_9_2_12/src/UserCode/B_production_x_sec_13_TeV/interface/functions.h"
 #include "/home/t3cms/balves/work/CMSSW_9_2_12/src/UserCode/B_production_x_sec_13_TeV/interface/BWarnings.h"
+#include <TH2D.h>
 
 double getWeight(double var, TH1D* h_weight);
 void Reweight(std::vector<TH1D*> h_weights, TFile* f_input, int channel, std::vector<std::string> var_str);
 TH1D* getHistogram(TFile *f, std::string var_str, int channel, bool cuts);
 
-//example: reweight --channel 4 --var1 lerrxy --var2 mu1pt --input_mc mc.root
+//example: reweight --channel 4 --var1 lerrxy --var2 mu1pt --var3 mu1eta --var4 tk1pt --var5 tk1pt --input_mc mc.root
 int main(int argc, char** argv) {
   BWarnings Warn;
 
-  if (argc != 5 && argc != 7 && argc != 9 && argc != 11 && argc != 13 && argc != 15)
+  if (argc != 5 && argc != 7 && argc != 9 && argc != 11 && argc != 13 && argc != 15 && argc != 17 && argc != 19 && argc != 21 && argc != 23 && argc != 25 && argc != 27 && argc != 29 && argc != 31)
     {
       Warn.RunningError("NUMBER_ERROR");
       return 0;
@@ -24,7 +25,8 @@ int main(int argc, char** argv) {
     }
 
   int channel = 0;
-  std::string var1_str, var2_str, var3_str, var4_str, var5_str; 
+  std::vector<std::string> var_str; 
+  std::string var1_str, var2_str, var3_str, var4_str, var5_str, var6_str, var7_str, var8_str, var9_str, var10_str, var11_str, var12_str, var13_str; 
   std::string mc_str;
   std::stringstream convert1, convert2;
   bool cuts = 1;
@@ -34,26 +36,32 @@ int main(int argc, char** argv) {
       std::string argument = argv[i];
       std::stringstream convert;
       if(argument == "--channel"){convert << argv[++i];convert >> channel;}
-      else if(argument == "--var1"){convert << argv[++i];convert >> var1_str;}
-      else if(argument == "--var2"){convert << argv[++i];convert >> var2_str;}
-      else if(argument == "--var3"){convert << argv[++i];convert >> var3_str;}
-      else if(argument == "--var4"){convert << argv[++i];convert >> var4_str;}
-      else if(argument == "--var5"){convert << argv[++i];convert >> var5_str;}
+      else if(argument == "--var1"){convert << argv[++i];convert >> var1_str;var_str.push_back(var1_str);}
+      else if(argument == "--var2"){convert << argv[++i];convert >> var2_str;var_str.push_back(var2_str);}
+      else if(argument == "--var3"){convert << argv[++i];convert >> var3_str;var_str.push_back(var3_str);}
+      else if(argument == "--var4"){convert << argv[++i];convert >> var4_str;var_str.push_back(var4_str);}
+      else if(argument == "--var5"){convert << argv[++i];convert >> var5_str;var_str.push_back(var5_str);}
+      else if(argument == "--var6"){convert << argv[++i];convert >> var6_str;var_str.push_back(var6_str);}
+      else if(argument == "--var7"){convert << argv[++i];convert >> var7_str;var_str.push_back(var7_str);}
+      else if(argument == "--var8"){convert << argv[++i];convert >> var8_str;var_str.push_back(var8_str);}
+      else if(argument == "--var9"){convert << argv[++i];convert >> var9_str;var_str.push_back(var9_str);}
+      else if(argument == "--var10"){convert << argv[++i];convert >> var10_str;var_str.push_back(var10_str);}
+      else if(argument == "--var11"){convert << argv[++i];convert >> var11_str;var_str.push_back(var11_str);}
+      else if(argument == "--var12"){convert << argv[++i];convert >> var12_str;var_str.push_back(var12_str);}
+      else if(argument == "--var13"){convert << argv[++i];convert >> var13_str;var_str.push_back(var13_str);}
       else if(argument == "--input_mc"){convert << argv[++i];convert >> mc_str;}
       else if(argument == "--cuts"){convert << argv[++i];convert >> cuts;}
     }
   if(channel!=1 && channel!=2 && channel!=4){Warn.RunningError("CHANNEL_ERROR");return 0;}
 
-  TFile *f_weight = new TFile("weights_2015rereco_" + channel_to_ntuple_name(channel) + ".root","READ");
+  TFile *f_weight = new TFile("weights/weights_2015rereco_" + channel_to_ntuple_name(channel) + ".root","READ");
   if (f_weight==nullptr) std::cout << "ERROR: The file f_weight could not be opened." << std::endl;
   
   TFile *f_mc = nullptr;
   if (mc_str.size() != 0) f_mc = new TFile(mc_str.c_str(),"READ");
   else  f_mc = new TFile("/lstore/cms/brunogal/input_for_B_production_x_sec_13_TeV/final_selection/myloop_new_mc_truth_"+channel_to_ntuple_name(channel)+"_with_cuts.root", "READ");
-
   if (f_mc==nullptr) std::cout << "ERROR: The file f_mc could not be opened." << std::endl;
 
-  std::vector<std::string> var_str = {var1_str, var2_str, var3_str, var4_str, var5_str};
   std::vector<TH1D*> h_weights;
   for(unsigned int j=0; j<var_str.size(); ++j)
     h_weights.push_back( getHistogram(f_weight, var_str[j], channel, cuts) );
@@ -88,6 +96,7 @@ TH1D* getHistogram(TFile *f, std::string var_str, int channel, bool cuts) {
   TH1D *h = nullptr;
   if(cuts) h = (TH1D*)f->Get( (var_str + "_with_cuts").c_str() );
   else h = (TH1D*)f->Get( (var_str + "_no_cuts").c_str() );
+  std::cout << "AHAHA " << (var_str + "_with_cuts").c_str() << std::endl;
 
   if (h==nullptr) std::cout << "ERROR: The histogram was not found." << std::endl;
   return h;
@@ -96,6 +105,15 @@ TH1D* getHistogram(TFile *f, std::string var_str, int channel, bool cuts) {
 void Reweight(std::vector<TH1D*> h_weights, TFile *f_input, int channel, std::vector<std::string> var_str) {  
   std::vector<double> var(VAR_NUMBER);
   std::vector<TH1D*> h_out(VAR_NUMBER); 
+  TH2D* multiweights_pt = new TH2D("multiweights_pt","multiweights_pt",150,5,90,50,0.,2.); //weights as a function of pT
+  TH2D* multiweights_y = new TH2D("multiweights_y","multiweights_y",150,-2.45,2.45,50,0.3,1.7);//weights as a function of y
+  multiweights_pt->SetTitle("");
+  multiweights_pt->GetXaxis()->SetTitle("pT [GeV]");
+  multiweights_pt->GetYaxis()->SetTitle("multiweight");
+  multiweights_y->SetTitle("");
+  multiweights_y->GetXaxis()->SetTitle("pT [GeV]");
+  multiweights_y->GetYaxis()->SetTitle("multiweight");
+
   TNtupleD* nt = (TNtupleD*)f_input->Get(channel_to_ntuple_name(channel));
   if (nt==nullptr) std::cout << "The pointer points to nothing! (Reweight)" << std::endl;
   TFile *f_output = new TFile("reweighted_mc_" + channel_to_ntuple_name(channel) + "_" + var_str[0].c_str() + ".root" ,"RECREATE");
@@ -116,11 +134,11 @@ void Reweight(std::vector<TH1D*> h_weights, TFile *f_input, int channel, std::ve
 
   BDefinitions Def;
   for (int i=0; i<VAR_NUMBER; ++i) {
-    /*if (i==11) //change name of histogram to "errxy_shifted"; the weights already reflect the shift 
+    if (i==11) //change name of histogram to "errxy_shifted"; the weights already reflect the shift 
       h_out.at(i) = new TH1D((VAR_LIST.at(i)+"_shifted").c_str(), (VAR_LIST.at(i)+"_shifted").c_str(), 100, Def.SelectionVarRange(VAR_LIST.at(i).c_str(),channel).first, Def.SelectionVarRange(VAR_LIST.at(i).c_str(),channel).second);
-      else {*/
+    else {
       h_out.at(i) = new TH1D((VAR_LIST.at(i)+"").c_str(), (VAR_LIST.at(i)+"").c_str(), 100, Def.SelectionVarRange(VAR_LIST.at(i).c_str(),channel).first, Def.SelectionVarRange(VAR_LIST.at(i).c_str(),channel).second);
-      //}
+    }
   }
 
   double weight = 1.;
@@ -155,8 +173,20 @@ void Reweight(std::vector<TH1D*> h_weights, TFile *f_input, int channel, std::ve
       else {
 	h_out.at(k)->Fill(var.at(k),weight);
       }
-    }               
+    }
+
+    multiweights_pt->Fill(var.at(0),weight);
+    multiweights_y->Fill(var.at(1),weight);
   }
+
+  TCanvas c_multiweights_pt;
+  c_multiweights_pt.cd();
+  multiweights_pt->Draw("colz");
+  c_multiweights_pt.SaveAs("c_multiweights_pt.png");
+  TCanvas c_multiweights_y;
+  c_multiweights_y.cd();
+  multiweights_y->Draw("colz");
+  c_multiweights_y.SaveAs("c_multiweights_y.png");
 
   f_output->Write();
   f_output->Close();

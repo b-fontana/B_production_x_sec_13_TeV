@@ -1,5 +1,6 @@
 #include "UserCode/B_production_x_sec_13_TeV/interface/syst.h"
 #include "UserCode/B_production_x_sec_13_TeV/interface/BWarnings.h"
+#include <TFitResult.h>
 
 //-----------------------------------------------------------------
 // Definition of channel #
@@ -388,7 +389,6 @@ int main(int argc, char** argv)
 	  graph->SetTitle("");
 	  graph->GetXaxis()->SetTitle(x_axis_name);
 	  graph->GetYaxis()->SetTitle(ratio_title);
-	  graph->GetYaxis()->SetRangeUser(0.55*ratio_min, 1.45*ratio_max);
 
 	  //to set the range of the plot, it takes the min and max value of ratio.
 	  if(n_var2_bins > 1)
@@ -416,22 +416,89 @@ int main(int argc, char** argv)
 		  graph2_total->GetYaxis()->SetRangeUser(0.55*ratio_min, 1.45*ratio_max);
 		  graph2_total->GetXaxis()->SetTitle(x_axis_name);
 		  graph2_total->SetMarkerSize(1);
-
-		  graph2_total->Fit("pol0","EM","");
+		  TFitResultPtr fit1_res = graph2_total->Fit("pol0","EMS","");
+		  double const_fit = fit1_res->Value(0);
+		  double const_fit_err = fit1_res->ParError(0);
                   graph2_total->GetFunction("pol0")->SetLineColor(1);
                   graph2_total->GetFunction("pol0")->SetLineWidth(2);
                   graph2_total->Draw("p same");
 		  gPad->Update();
-
 		  TPaveStats* tps1 = (TPaveStats*) graph2_total->FindObject("stats");
 		  tps1->SetTextColor(1);
 		  tps1->SetLineColor(1);		  
 		  tps1->Draw("a same");
 
+		  TCanvas c_norm;
+		  c_norm.cd();
+		  double ratio_array_norm[n_var1_bins];
+		  double err_lo_total_norm[n_var1_bins];
+		  double err_hi_total_norm[n_var1_bins];
+		  double err_lo_stat_norm[n_var1_bins];
+		  double err_hi_stat_norm[n_var1_bins];
+		  for(int ii=0; ii<n_var1_bins; ++ii) {
+		    ratio_array_norm[ii] = ratio_array[j][ii]/const_fit;
+		    err_lo_total_norm[ii] = (const_fit/ratio_array[j][ii]) * sqrt( pow(ratio_total_err_lo[j][ii]/ratio_array[j][ii],2) + pow(const_fit_err/const_fit,2) );
+		    err_hi_total_norm[ii] = (const_fit/ratio_array[j][ii]) * sqrt( pow(ratio_total_err_hi[j][ii]/ratio_array[j][ii],2) + pow(const_fit_err/const_fit,2) );
+		    err_lo_stat_norm[ii] = (const_fit/ratio_array[j][ii]) * sqrt( pow(ratio_err_lo[j][ii]/ratio_array[j][ii],2) + pow(const_fit_err/const_fit,2) );
+		    err_hi_stat_norm[ii] = (const_fit/ratio_array[j][ii]) * sqrt( pow(ratio_err_hi[j][ii]/ratio_array[j][ii],2) + pow(const_fit_err/const_fit,2) );
+		    std::cout << ratio_array_norm[ii] << "--" << err_lo_stat_norm[ii] << "--" << err_hi_stat_norm[ii] << std::endl;
+		  }
+		  TGraphAsymmErrors* graph_norm_stat = new TGraphAsymmErrors(n_var1_bins, var1_bin_centre, ratio_array_norm, var1_bin_centre_lo, var1_bin_centre_hi, err_lo_stat_norm, err_hi_stat_norm);
+		  graph_norm_stat->SetTitle("");
+		  graph_norm_stat->GetYaxis()->SetTitle(ratio_title);
+		  graph_norm_stat->GetXaxis()->SetTitle(x_axis_name);
+		  graph_norm_stat->SetMarkerSize(1);
+		  graph_norm_stat->SetFillColor(kRed-9);
+		  if( bins=="y") {
+		    graph_norm_stat->GetYaxis()->SetRangeUser(0.55,1.9);
+		    graph_norm_stat->GetXaxis()->SetRangeUser(-0.2,2.4);
+		  }
+		  else if(bins=="pt") {
+		    graph_norm_stat->GetYaxis()->SetRangeUser(0.4,1.8);
+		  }
+                  graph_norm_stat->Draw("a||2");
+                  graph_norm_stat->Draw("p");
+		  TGraphAsymmErrors* graph_norm_total = new TGraphAsymmErrors(n_var1_bins, var1_bin_centre, ratio_array_norm, var1_bin_centre_lo, var1_bin_centre_hi, err_lo_total_norm, err_hi_total_norm);
+		  graph_norm_total->SetTitle("");
+		  graph_norm_total->GetYaxis()->SetTitle(ratio_title);
+		  graph_norm_total->GetXaxis()->SetTitle(x_axis_name);
+		  graph_norm_total->SetMarkerSize(1);
+		  graph_norm_total->Fit("pol0","EMS","");
+                  graph_norm_total->GetFunction("pol0")->SetLineColor(1);
+                  graph_norm_total->GetFunction("pol0")->SetLineWidth(2);
+                  graph_norm_total->Draw("p same");
+		  gPad->Update();
+		  TPaveStats* tps_norm = (TPaveStats*) graph_norm_total->FindObject("stats");
+		  tps_norm->SetTextColor(1);
+		  tps_norm->SetLineColor(1);		  
+		  tps_norm->Draw("a same");
+		  TGraphAsymmErrors* graph3_norm = (TGraphAsymmErrors*)graph_norm_total->Clone("graph3_norm");		  
+		  TF1 *pol1_norm = new TF1("pol1_norm","[0] + [1]*x", 0, 100);
+		  pol1_norm->SetLineColor(4);
+		  pol1_norm->SetLineWidth(2); 
+		  graph3_norm->SetTitle("");
+		  graph3_norm->Fit("pol1_norm","EM","");
+		  graph3_norm->Draw("pX same");
+		  gPad->Update();
+		  double X1_norm = tps_norm->GetX1NDC();
+		  double Y1_norm = tps_norm->GetY1NDC();
+		  double X2_norm = tps_norm->GetX2NDC();
+		  double Y2_norm = tps_norm->GetY2NDC();
+		  TPaveStats *tps2_norm = (TPaveStats*) graph3_norm->FindObject("stats");
+		  tps2_norm->SetTextColor(4);
+		  tps2_norm->SetLineColor(4);
+		  tps2_norm->SetX1NDC(X1_norm);
+		  tps2_norm->SetX2NDC(X2_norm);
+		  tps2_norm->SetY1NDC(Y1_norm-(Y2_norm-Y1_norm));
+		  tps2_norm->SetY2NDC(Y1_norm);
+		  tps2_norm->Draw("same");
+		  c_norm.SaveAs(TString::Format(VERSION) + "/ratio/" + ratio_name + "_" + bins + "_bins_norm.png");
+		  
+		  cz.cd();
 		  TGraphAsymmErrors* graph3 = (TGraphAsymmErrors*)graph2_total->Clone("graph3");		  
 		  TF1 *mypol1 = new TF1("mypol1","[0] + [1]*x", 0, 100);
 		  mypol1->SetLineColor(4);
-		  mypol1->SetLineWidth(2);
+		  mypol1->SetLineWidth(2); 
 		  graph3->SetTitle("");
 		  graph3->Fit("mypol1","EM","");
 		  //graph3->GetFunction("mypol1")->SetLineColor(4);
@@ -447,6 +514,7 @@ int main(int argc, char** argv)
 		  tps2->SetTextColor(4);
 		  tps2->SetLineColor(4);
 		  tps2->SetX1NDC(X1);
+
 		  tps2->SetX2NDC(X2);
 		  tps2->SetY1NDC(Y1-(Y2-Y1));
 		  tps2->SetY2NDC(Y1);

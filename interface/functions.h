@@ -62,10 +62,10 @@ using namespace RooFit;
 
 #define LUMINOSITY          2.54 //2015 rereco: 17.748
 #define NUMBER_OF_CPU       1
-#define VERSION             "v2015" //2016: "v1_2016"
+#define VERSION             "v2015_Pt20"
 #define BASE_DIR_2015       "/lstore/cms/brunogal/input_for_B_production_x_sec_13_TeV/"
 #define BASE_DIR_2016       "/lstore/cms/balves/Jobs/"
-extern bool RERECO = true; //true for 2015 rereco; false for 2016
+extern bool RERECO = false; //true for 2015 rereco; false for 2016
 
 //////////////////////////////////////////////
 // Definition of channel #                  //
@@ -82,8 +82,7 @@ void create_dir(std::vector<std::string> list);
 void set_up_workspace_variables(RooWorkspace& w, int channel, double mass_min = 0.0 , double mass_max = 0.0);
 void read_data(RooWorkspace& w, TString filename,int channel);
 void read_data_cut(RooWorkspace& w, RooAbsData* data);
-void build_pdf(RooWorkspace& w, int channel, std::pair<double,double> pt_pair, std::pair<double,double> y_pair, 
-	       bool lowstat = false, std::string choice = "", std::string choice2 = "");
+void build_pdf(RooWorkspace& w, int channel, std::pair<double,double> pt_pair, std::pair<double,double> y_pair, bool lowstat = false, std::string choice = "", std::string choice2 = "");
 void setup_bins(TString measure, int channel, TString bins, TString* var1_name, int* n_var1_bins, TString* var2_name, int* n_var2_bins, double** var1_bins, double** var2_bins);
 
 double var_mean_value(RooWorkspace& w, TString var1_name, double var1_min, double var1_max, TString var2_name, double var2_min, double var2_max);
@@ -1207,9 +1206,9 @@ RooRealVar* reco_efficiency(int channel, double pt_min, double pt_max, double y_
 
       //shift correction of errxy
       if(RERECO) {
-	if((lxy/(1.14*errxy)) <= 3.5) {continue;}
+	if((lxy/(1.14*errxy)) <= 3.5) {continue;} //3.5
       }
-      else {if((lxy/(1.026*errxy)) <= 3.5)continue;}
+      else {if((lxy/(1.026*errxy)) <= 3.5)continue;} //3.5
 		
       bool muon1Filter = true;
       bool muon2Filter = true;
@@ -1217,8 +1216,8 @@ RooRealVar* reco_efficiency(int channel, double pt_min, double pt_max, double y_
       bool track2Filter = true;
       if(RERECO)
         {
-          muon1Filter = fabs(eta_mu1)<2.4 && pt_mu1>2.8;//pt_mu1>2.8;
-          muon2Filter = fabs(eta_mu2)<2.4 && pt_mu2>2.8;//pt_mu2>2.8;
+          muon1Filter = fabs(eta_mu1)<2.4 && pt_mu1>20.;//pt_mu1>2.8;
+          muon2Filter = fabs(eta_mu2)<2.4 && pt_mu2>20.;//pt_mu2>2.8;
         }
       else
         {

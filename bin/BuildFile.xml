@@ -37,8 +37,12 @@
   <bin name="2D"   file="2DPlot.cc"></bin>
   <bin name="myloop_new_Data2015_RunC_Significance10" file="myloop_new_Data2015_RunC_Significance10.cc"></bin>
   <bin name="myloop_new_Data2015_RunD_Significance10" file="myloop_new_Data2015_RunD_Significance10.cc"></bin>
+  <bin name="myloop_new_Data2015_RunC_Significance6" file="myloop_new_Data2015_RunC_Significance6.cc"></bin>
+  <bin name="myloop_new_Data2015_RunD_Significance6" file="myloop_new_Data2015_RunD_Significance6.cc"></bin>
   <bin name="myloop_new_Data2015_RunC_Pt10" file="myloop_new_Data2015_RunC_Pt10.cc"></bin>
   <bin name="myloop_new_Data2015_RunD_Pt10" file="myloop_new_Data2015_RunD_Pt10.cc"></bin>
+  <bin name="myloop_new_Data2015_RunC_Pt5" file="myloop_new_Data2015_RunC_Pt5.cc"></bin>
+  <bin name="myloop_new_Data2015_RunD_Pt5" file="myloop_new_Data2015_RunD_Pt5.cc"></bin>
 </environment>
 
 <Flags CXXFLAGS="-g"/>
